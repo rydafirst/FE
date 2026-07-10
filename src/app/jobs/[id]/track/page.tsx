@@ -2,8 +2,10 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
+import { LiveMap, type LatLng } from '@/components/LiveMap';
 import { api, type Job } from '@/lib/api';
-import { getToken } from '@/lib/session';
+import { getToken, getUserId } from '@/lib/session';
+import { connectSocket } from '@/lib/live';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
@@ -35,6 +37,13 @@ export default function TrackPage() {
   const id = String(useParams().id);
   const [job, setJob] = useState<Job | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [deliveryCode, setDeliveryCode] = useState<string | null>(null);
+  const [riderPos, setRiderPos] = useState<LatLng | null>(null);
+
+  const revealCode = async () => {
+    try { const r = await api.issueCode(getToken(), id); setDeliveryCode(r.code); }
+    catch (e) { setErr((e as Error).message); }
+  };
 
   const refresh = async () => {
     try { setJob(await api.getJob(getToken(), id)); setErr(null); }
@@ -54,6 +63,19 @@ export default function TrackPage() {
     const t = setInterval(refresh, 4000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Live rider location: join the job's realtime room and update the map as pings arrive.
+  useEffect(() => {
+    let sock: { emit: (e: string, d: unknown) => void; on: (e: string, cb: (d: unknown) => void) => void; disconnect: () => void } | null = null;
+    let closed = false;
+    connectSocket().then((s) => {
+      if (closed) { s.disconnect(); return; }
+      sock = s;
+      s.emit('subscribe', { jobId: id, userId: getUserId() });
+      s.on('location', (msg: { point?: LatLng }) => { if (msg?.point) setRiderPos({ lat: msg.point.lat, lng: msg.point.lng }); });
+    }).catch(() => { /* map still shows pickup/dropoff without live rider */ });
+    return () => { closed = true; if (sock) sock.disconnect(); };
   }, [id]);
 
   const step = job ? FLOW.indexOf(job.status) : -1;
@@ -85,6 +107,18 @@ export default function TrackPage() {
         </div>
       )}
 
+      {/* Live map: pickup + drop-off always; the rider marker appears once a rider is assigned and streaming. */}
+      {job && (job.pickup || job.dropoff) && (
+        <div style={{ marginBottom: 12 }}>
+          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} />
+          {hasRider && !riderPos && (
+            <p className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', textAlign: 'center', marginTop: 6 }}>
+              WAITING FOR RIDER LOCATION…
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Rider card (only once one is assigned) */}
       {hasRider ? (
         <div className="rf-card" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -97,6 +131,22 @@ export default function TrackPage() {
           <div className="mono" style={{ fontSize: 12 }}>
             {job?.status === 'SEARCHING' ? 'FINDING A RIDER NEARBY…' : job?.status === 'CREATED' ? 'WAITING FOR PAYMENT…' : 'NO RIDER ASSIGNED YET'}
           </div>
+        </div>
+      )}
+
+      {/* Receiver's delivery code — the sender reveals it and gives it to the rider on arrival.
+          The rider entering this code is what releases the escrow. */}
+      {hasRider && (
+        <div className="rf-card" style={{ marginBottom: 12, textAlign: 'center' }}>
+          {deliveryCode ? (
+            <>
+              <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>DELIVERY CODE</div>
+              <div className="mono" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '.3em', margin: '6px 0' }}>{deliveryCode}</div>
+              <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)' }}>GIVE THIS TO YOUR RIDER ON ARRIVAL</div>
+            </>
+          ) : (
+            <Button variant="ghost" onClick={revealCode}>Reveal delivery code</Button>
+          )}
         </div>
       )}
 

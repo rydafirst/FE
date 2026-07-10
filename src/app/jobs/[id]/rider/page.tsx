@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
-import { getToken } from '@/lib/session';
+import { getToken, getUserId } from '@/lib/session';
+import { connectSocket } from '@/lib/live';
 
 const FLOW = ['EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP'] as const;
 const LABEL: Record<(typeof FLOW)[number], string> = {
@@ -16,6 +17,29 @@ export default function RiderJob() {
   const [code, setCode] = useState('');
   const [done, setDone] = useState(false);
   const step = FLOW.indexOf(status as (typeof FLOW)[number]);
+
+  // Stream live GPS to the customer while the job is active. Stops on completion/unmount.
+  useEffect(() => {
+    if (done) return;
+    let sock: { emit: (e: string, d: unknown) => void; disconnect: () => void } | null = null;
+    let watchId: number | null = null;
+    let closed = false;
+    connectSocket().then((s) => {
+      if (closed) { s.disconnect(); return; }
+      sock = s;
+      if (!('geolocation' in navigator)) return;
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => sock?.emit('location', { jobId: id, riderId: getUserId(), lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => { /* permission denied — customer simply won't see live position */ },
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 },
+      );
+    }).catch(() => { /* tracking is best-effort; the job flow still works without it */ });
+    return () => {
+      closed = true;
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      if (sock) sock.disconnect();
+    };
+  }, [id, done]);
 
   const advance = async () => {
     const next = FLOW[step + 1] ?? FLOW[0];

@@ -1,37 +1,80 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { api } from '@/lib/api';
+import { api, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
+
+const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
 export default function RiderHome() {
   const [online, setOnline] = useState(false);
-  const [jobId, setJobId] = useState('');
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [earnings, setEarnings] = useState<number | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => { api.wallet(getToken()).then((w) => setEarnings(w.releasedMinor)).catch(() => setEarnings(null)); }, []);
 
-  const accept = async () => {
-    try { const j = await api.accept(getToken(), jobId.trim()); location.href = `/jobs/${j.id}/rider`; }
-    catch (e) { alert((e as Error).message); }
+  const loadFeed = useCallback(async () => {
+    try { setJobs(await api.availableJobs(getToken())); setErr(null); }
+    catch (e) { setErr((e as Error).message); }
+  }, []);
+
+  // Poll the available-jobs feed every 4s while online (Uber-style dispatch).
+  useEffect(() => {
+    if (!online) { setJobs([]); return; }
+    loadFeed();
+    const t = setInterval(loadFeed, 4000);
+    return () => clearInterval(t);
+  }, [online, loadFeed]);
+
+  const accept = async (id: string) => {
+    try { const j = await api.accept(getToken(), id); location.href = `/jobs/${j.id}/rider`; }
+    catch (e) { alert((e as Error).message); loadFeed(); }
   };
-  const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
   return (
     <main style={{ padding: 20 }}>
       <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.06em' }}>EARNINGS TODAY</div>
       <div className="mono" style={{ fontSize: 28, fontWeight: 700 }}>{earnings === null ? '—' : naira(earnings)}</div>
+
       <div style={{ height: 150, borderRadius: 6, background: 'var(--ink)', color: '#fff', display: 'flex',
         alignItems: 'center', justifyContent: 'center', margin: '12px 0' }} className="mono">
-        {online ? 'ONLINE — WAITING FOR JOBS' : 'OFFLINE'}
+        {online ? (jobs.length ? `${jobs.length} JOB${jobs.length > 1 ? 'S' : ''} NEARBY` : 'ONLINE — WAITING FOR JOBS') : 'OFFLINE'}
       </div>
       <Button variant={online ? 'ghost' : 'primary'} onClick={() => setOnline((v) => !v)}>{online ? 'Go offline' : 'Go online'}</Button>
-      <div className="rf-card" style={{ marginTop: 16 }}>
-        <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>ACCEPT A JOB (paste job id)</label>
-        <input className="rf-input" style={{ margin: '8px 0 12px' }} value={jobId} onChange={(e) => setJobId(e.target.value)} placeholder="job id" />
-        <Button onClick={accept}>Accept job</Button>
-      </div>
-      <div style={{ height: 10 }} />
+
+      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
+
+      {/* Live dispatch feed */}
+      {online && (
+        <div style={{ marginTop: 16 }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 8 }}>
+            AVAILABLE JOBS
+          </div>
+          {jobs.length === 0 ? (
+            <div className="rf-card" style={{ textAlign: 'center', color: 'var(--ink-2)' }}>
+              <div className="mono" style={{ fontSize: 12 }}>NO JOBS YET — YOU&apos;LL SEE THEM HERE</div>
+            </div>
+          ) : (
+            jobs.map((j) => (
+              <div key={j.id} className="rf-card" style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>{j.type}</span>
+                  <b className="mono" style={{ fontSize: 16 }}>{naira(j.amountMinor)}</b>
+                </div>
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', margin: '6px 0 10px' }}>
+                  {j.pickup ? `${j.pickup.lat.toFixed(3)}, ${j.pickup.lng.toFixed(3)}` : '—'}
+                  {'  →  '}
+                  {j.dropoff ? `${j.dropoff.lat.toFixed(3)}, ${j.dropoff.lng.toFixed(3)}` : '—'}
+                </div>
+                <Button onClick={() => accept(j.id)}>Accept job</Button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <div style={{ height: 16 }} />
       <Button variant="ghost" onClick={() => (location.href = '/kyc')}>Complete verification (KYC)</Button>
     </main>
   );
