@@ -75,6 +75,8 @@ export const api = {
   accept: (token: string, id: string) => call<Job>(`/jobs/${id}/accept`, { method: 'POST', token }),
   advance: (token: string, id: string, to: 'EN_ROUTE_PICKUP' | 'AT_PICKUP' | 'IN_PROGRESS' | 'EN_ROUTE_DROP') =>
     call<Job>(`/jobs/${id}/advance`, { method: 'POST', token, body: JSON.stringify({ to }) }),
+  arrivePickup: (token: string, id: string, lat: number, lng: number) =>
+    call<Job>(`/jobs/${id}/arrive-pickup`, { method: 'POST', token, body: JSON.stringify({ lat, lng }) }),
   arrive: (token: string, id: string, lat: number, lng: number) =>
     call<Job>(`/jobs/${id}/arrive`, { method: 'POST', token, body: JSON.stringify({ lat, lng }) }),
   failedAttempt: (token: string, id: string) =>

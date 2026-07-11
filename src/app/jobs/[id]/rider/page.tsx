@@ -85,6 +85,14 @@ export default function RiderJob() {
 
   const advance = async () => {
     const next = FLOW[step + 1] ?? FLOW[0];
+    // Reaching the pickup is GPS-verified (mirrors drop-off arrival). Other steps are plain.
+    if (next === 'AT_PICKUP') {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        try { const j = await api.arrivePickup(getToken(), id, pos.coords.latitude, pos.coords.longitude); setStatus(j.status); }
+        catch (e) { show((e as Error).message); }
+      }, () => show('Location needed to confirm you are at the pickup'));
+      return;
+    }
     try { const j = await api.advance(getToken(), id, next); setStatus(j.status); } catch (e) { show((e as Error).message); }
   };
   const arrive = () => {
@@ -214,7 +222,14 @@ export default function RiderJob() {
           )}
         </>
       ) : (
-        <Button onClick={advance}>Mark: {LABEL[FLOW[Math.min(step + 1, FLOW.length - 1)]]}</Button>
+        (() => {
+          const next = FLOW[Math.min(step + 1, FLOW.length - 1)];
+          return (
+            <Button onClick={advance}>
+              {next === 'AT_PICKUP' ? "I've arrived at pickup (verify GPS)" : `Mark: ${LABEL[next]}`}
+            </Button>
+          );
+        })()
       )}
       {toast}
     </main>
