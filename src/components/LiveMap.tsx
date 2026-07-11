@@ -11,6 +11,7 @@ interface Props {
   dropoff?: LatLng | null;
   rider?: LatLng | null;      // live rider position (updates as pings arrive)
   trail?: LatLng[];           // the actual path the rider has travelled (breadcrumb)
+  route?: LatLng[];           // planned road-following route pickup -> dropoff
   height?: number;
 }
 
@@ -22,10 +23,10 @@ const dot = (L: any, color: string, ring = '#fff') =>
     iconSize: [14, 14], iconAnchor: [7, 7],
   });
 
-export function LiveMap({ pickup, dropoff, rider, trail, height = 260 }: Props) {
+export function LiveMap({ pickup, dropoff, rider, trail, route, height = 260 }: Props) {
   const elRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
-  const markersRef = useRef<{ pickup?: any; dropoff?: any; rider?: any; line?: any; trail?: any }>({});
+  const markersRef = useRef<{ pickup?: any; dropoff?: any; rider?: any; line?: any; trail?: any; route?: any }>({});
 
   // Init once.
   useEffect(() => {
@@ -47,7 +48,7 @@ export function LiveMap({ pickup, dropoff, rider, trail, height = 260 }: Props) 
     const L = (window as any).L;
     if (L && mapRef.current) draw(L);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, rider?.lat, rider?.lng, trail?.length]);
+  }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, rider?.lat, rider?.lng, trail?.length, route?.length]);
 
   function draw(L: any) {
     const map = mapRef.current;
@@ -61,8 +62,13 @@ export function LiveMap({ pickup, dropoff, rider, trail, height = 260 }: Props) 
     set('dropoff', dropoff, '#111111', 'Drop-off');
     set('rider', rider, '#ff5a1f', 'Rider'); // the single accent, used only for the live rider
 
-    // Route hint line pickup -> dropoff (straight; real routing comes with the maps provider).
-    if (pickup && dropoff) {
+    // Planned route: road-following line when we have one, else a straight pickup->dropoff hint.
+    if (route && route.length >= 2) {
+      const pts = route.map((p) => [p.lat, p.lng]);
+      if (m.route) m.route.setLatLngs(pts);
+      else m.route = L.polyline(pts, { color: '#111', weight: 3, opacity: 0.35 }).addTo(map);
+      if (m.line) { m.line.remove(); m.line = undefined; } // drop the straight fallback
+    } else if (pickup && dropoff) {
       const pts = [[pickup.lat, pickup.lng], [dropoff.lat, dropoff.lng]];
       if (m.line) m.line.setLatLngs(pts);
       else m.line = L.polyline(pts, { color: '#111', weight: 2, opacity: 0.25, dashArray: '4 6' }).addTo(map);

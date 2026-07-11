@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { LiveMap, type LatLng } from '@/components/LiveMap';
 import { api, type Job } from '@/lib/api';
 import { getToken, getUserId } from '@/lib/session';
-import { connectSocket } from '@/lib/live';
+import { connectSocket, fetchRoute } from '@/lib/live';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
@@ -40,6 +40,7 @@ export default function TrackPage() {
   const [deliveryCode, setDeliveryCode] = useState<string | null>(null);
   const [riderPos, setRiderPos] = useState<LatLng | null>(null);
   const [trail, setTrail] = useState<LatLng[]>([]); // breadcrumb of the rider's actual movement
+  const [route, setRoute] = useState<LatLng[]>([]); // planned road route pickup -> dropoff
   // Read the payment status Flutterwave appended on redirect. A cancelled/failed payment must
   // NOT start a trip — the job stays unfunded and we send the customer back to booking.
   const [cancelled, setCancelled] = useState<boolean>(() => {
@@ -89,6 +90,13 @@ export default function TrackPage() {
     return () => stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, cancelled]);
+
+  // Fetch the road-following route once we know pickup + drop-off (keyless OSRM; best-effort).
+  useEffect(() => {
+    if (!job?.pickup || !job?.dropoff || route.length) return;
+    fetchRoute(job.pickup, job.dropoff).then((r) => { if (r) setRoute(r); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job?.pickup?.lat, job?.pickup?.lng, job?.dropoff?.lat, job?.dropoff?.lng]);
 
   // Live rider location: join the job's realtime room and update the map as pings arrive.
   useEffect(() => {
@@ -176,7 +184,7 @@ export default function TrackPage() {
       {/* Live map: pickup + drop-off always; the rider marker appears once a rider is assigned and streaming. */}
       {job && (job.pickup || job.dropoff) && (
         <div style={{ marginBottom: 12 }}>
-          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} trail={hasRider ? trail : undefined} />
+          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} trail={hasRider ? trail : undefined} route={route} />
           {hasRider && !riderPos && (
             <p className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', textAlign: 'center', marginTop: 6 }}>
               WAITING FOR RIDER LOCATION…

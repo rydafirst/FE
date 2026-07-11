@@ -62,3 +62,28 @@ export async function connectSocket(): Promise<any> {
   const io = await loadSocketIo();
   return io(socketBase(), { transports: ['websocket'], forceNew: true });
 }
+
+export interface RoutePoint { lat: number; lng: number }
+
+/**
+ * Road-following route between two points via OSRM (keyless). Returns an ordered list of
+ * lat/lng points to draw the planned road path. Best-effort: returns null on any failure so
+ * the map falls back to a straight line.
+ * NOTE(prod): router.project-osrm.org is a demo server with no SLA — swap for a self-hosted
+ * OSRM or Mapbox Directions before launch. Contained to this function.
+ */
+export async function fetchRoute(from: RoutePoint, to: RoutePoint): Promise<RoutePoint[] | null> {
+  try {
+    const url =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const coords = data?.routes?.[0]?.geometry?.coordinates;
+    if (!Array.isArray(coords) || coords.length < 2) return null;
+    return coords.map((c: [number, number]) => ({ lat: c[1], lng: c[0] }));
+  } catch {
+    return null;
+  }
+}
