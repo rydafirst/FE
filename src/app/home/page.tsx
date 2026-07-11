@@ -82,6 +82,8 @@ export default function HomePage() {
         quoteToken: quote.quoteToken, fallbackPolicy: fallback,
         ...(pickup?.label ? { pickupAddress: pickup.label } : {}),
         ...(dropoff?.label ? { dropoffAddress: dropoff.label } : {}),
+        ...(pickup?.area ? { pickupArea: pickup.area } : {}),
+        ...(dropoff?.area ? { dropoffArea: dropoff.area } : {}),
         ...(type === 'DELIVERY' && recipientName && recipientPhone ? { recipient: { name: recipientName, phone: recipientPhone } } : {}),
         ...(type === 'DELIVERY' && item ? { item } : {}),
         ...(type === 'DELIVERY' && instructions ? { instructions } : {}),

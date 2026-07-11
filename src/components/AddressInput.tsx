@@ -2,7 +2,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '@/lib/google-maps';
 
-export interface Place { label: string; lat: number; lng: number }
+export interface Place { label: string; lat: number; lng: number; area?: string }
+
+// Pull the neighbourhood/locality from Google's structured components (reliable, unlike
+// string-parsing the formatted address). Prefers the most specific area, falls back upward.
+function localityOf(place: google.maps.places.PlaceResult): string {
+  const comps = place.address_components ?? [];
+  const byType = (t: string) => comps.find((c: google.maps.GeocoderAddressComponent) => c.types.includes(t))?.long_name;
+  return (
+    byType('neighborhood') || byType('sublocality_level_1') || byType('sublocality') ||
+    byType('locality') || byType('administrative_area_level_2') || ''
+  );
+}
 
 // Google Places Autocomplete bound to the input. Requires (in the Google Cloud project):
 // Maps JavaScript API + Places API, and Geocoding API for "use my location".
@@ -18,14 +29,15 @@ export function AddressInput({ label, placeholder, onSelect }: {
     loadGoogleMaps().then((g) => {
       if (!inputRef.current) return;
       ac = new g.maps.places.Autocomplete(inputRef.current, {
-        fields: ['geometry', 'formatted_address', 'name'],
+        fields: ['geometry', 'formatted_address', 'name', 'address_components'],
         componentRestrictions: { country: 'ng' },
       });
       ac.addListener('place_changed', () => {
         const place = ac!.getPlace();
         const loc = place.geometry?.location;
         if (!loc) return;
-        onSelect({ label: place.formatted_address ?? place.name ?? '', lat: loc.lat(), lng: loc.lng() });
+        const area = localityOf(place);
+        onSelect({ label: place.formatted_address ?? place.name ?? '', lat: loc.lat(), lng: loc.lng(), ...(area ? { area } : {}) });
       });
       setReady(true);
     }).catch((e) => setError((e as Error).message));

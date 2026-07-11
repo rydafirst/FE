@@ -52,7 +52,7 @@ export const api = {
   createJob: (token: string, body: {
     quoteToken: string; refundAccountId?: string;
     recipient?: { name: string; phone: string }; item?: string; instructions?: string;
-    pickupAddress?: string; dropoffAddress?: string;
+    pickupAddress?: string; dropoffAddress?: string; pickupArea?: string; dropoffArea?: string;
     fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
   }) =>
     call<Job>(`/jobs`, {
