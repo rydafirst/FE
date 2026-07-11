@@ -61,15 +61,31 @@ export default function TrackPage() {
   // then poll the real job status every 4s (so you see FUNDED → SEARCHING → … as it happens).
   useEffect(() => {
     if (cancelled) return; // payment didn't go through — don't fetch or poll a trip
-    const params = new URLSearchParams(window.location.search);
-    const txn = params.get('transaction_id');
-    const status = params.get('status');
-    if (txn && (status === 'successful' || status === 'completed')) {
-      api.confirmPayment(getToken(), id, txn).then(refresh).catch(() => { /* ignore; polling continues */ });
-    }
-    refresh();
-    const t = setInterval(refresh, 4000);
-    return () => clearInterval(t);
+    const txn = new URLSearchParams(window.location.search).get('transaction_id');
+    let stopped = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const stop = () => { stopped = true; if (timer) clearInterval(timer); };
+    const TERMINAL = ['CANCELLED', 'RELEASED', 'COMPLETED', 'DISPUTE_RESOLVED', 'FAILED_ATTEMPT'];
+
+    // Bank transfers settle asynchronously, so keep re-verifying while the job is still
+    // unfunded (CREATED). confirmFunding is idempotent, so this can never double-fund.
+    // Stop polling once the order reaches a terminal state (delivered/cancelled/etc.).
+    const tick = async () => {
+      let current: Job | null = null;
+      try { current = await api.getJob(getToken(), id); setJob(current); setErr(null); }
+      catch (e) { setErr((e as Error).message); }
+      if (current && TERMINAL.includes(current.status)) { stop(); return; }
+      if (txn && current && current.status === 'CREATED') {
+        try {
+          const r = await api.confirmPayment(getToken(), id, txn);
+          if (r.funded && !stopped) { try { setJob(await api.getJob(getToken(), id)); } catch { /* next tick */ } }
+        } catch { /* still settling — try again next tick */ }
+      }
+    };
+
+    tick();
+    timer = setInterval(() => { if (!stopped) tick(); }, 4000);
+    return () => stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, cancelled]);
 
@@ -87,16 +103,21 @@ export default function TrackPage() {
     return () => { closed = true; if (sock) sock.disconnect(); };
   }, [id]);
 
-  // Payment cancelled/failed: no trip, no charge. Send the customer back to booking.
-  if (cancelled) {
+  // Payment cancelled / order expired: no trip, no charge. Send the customer back to booking.
+  if (cancelled || job?.status === 'CANCELLED') {
+    const expired = !cancelled && job?.status === 'CANCELLED';
     return (
       <main style={{ padding: 20, minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div className="rf-card" style={{ textAlign: 'center' }}>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--warning)', letterSpacing: '.08em', marginBottom: 8 }}>PAYMENT NOT COMPLETED</div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--warning)', letterSpacing: '.08em', marginBottom: 8 }}>
+            {expired ? 'ORDER EXPIRED' : 'PAYMENT NOT COMPLETED'}
+          </div>
           <b style={{ fontSize: 18 }}>You weren’t charged</b>
           <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: '8px 0 16px' }}>
-            The payment was cancelled, so no rider was requested and nothing was held in escrow.
-            You can start again whenever you’re ready.
+            {expired
+              ? 'This order timed out before payment was completed, so it was cancelled and nothing was held in escrow.'
+              : 'The payment was cancelled, so no rider was requested and nothing was held in escrow.'}
+            {' '}You can start again whenever you’re ready.
           </p>
           <Button onClick={() => (location.href = '/home')}>Back to booking</Button>
         </div>

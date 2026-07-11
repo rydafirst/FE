@@ -10,6 +10,7 @@ type Tab = { href: string; label: string; icon: JSX.Element };
 const ICON = {
   home: <path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
   bike: <><circle cx="6" cy="17" r="3.2" /><circle cx="18" cy="17" r="3.2" /><path d="M6 17 10 9h5l2 4M9 9h4" /></>,
+  orders: <><path d="M6 3h9l4 4v14a0 0 0 0 1 0 0H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" /><path d="M9 12h7M9 16h7M9 8h4" /></>,
   user: <><circle cx="12" cy="8" r="3.6" /><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" /></>,
 };
 
@@ -25,6 +26,7 @@ export function BottomNav() {
         ]
       : [
           { href: '/home', label: 'Book', icon: ICON.home },
+          { href: '/orders', label: 'Orders', icon: ICON.orders },
           { href: '/profile', label: 'Profile', icon: ICON.user },
         ];
 
