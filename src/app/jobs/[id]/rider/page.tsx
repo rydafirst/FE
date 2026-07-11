@@ -18,8 +18,10 @@ export default function RiderJob() {
   const [policy, setPolicy] = useState<Fallback>('WAIT');
   const [code, setCode] = useState('');
   const [outcome, setOutcome] = useState<'paid' | 'failed' | null>(null);
+  const [feeMinor, setFeeMinor] = useState<number | null>(null);
   const [showUnavailable, setShowUnavailable] = useState(false);
   const done = outcome !== null;
+  const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   const step = FLOW.indexOf(status as (typeof FLOW)[number]);
 
   // Load the real job once to sync status and read the customer's "receiver unavailable" policy.
@@ -67,8 +69,10 @@ export default function RiderJob() {
     catch (e) { alert((e as Error).message); }
   };
   const reportUnavailable = async () => {
-    try { const r = await api.failedAttempt(getToken(), id); setStatus(r.status); setOutcome('failed'); }
-    catch (e) { alert((e as Error).message); }
+    try {
+      const r = await api.failedAttempt(getToken(), id);
+      setStatus(r.status); setFeeMinor(r.attemptFeeMinor); setOutcome('failed');
+    } catch (e) { alert((e as Error).message); }
   };
 
   const codeLabel = policy === 'DELEGATE'
@@ -91,7 +95,8 @@ export default function RiderJob() {
             <div className="mono" style={{ color: 'var(--warning)', fontWeight: 700, marginBottom: 6 }}>DELIVERY FAILED — RECEIVER UNAVAILABLE</div>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>
               {policy === 'RETURN' ? 'Please return the parcel to the sender. ' : ''}
-              Your attempt fee has been paid; the rest was refunded to the customer.
+              {feeMinor !== null ? `${naira(feeMinor)} (attempt + any waiting fee) was paid to you; ` : 'Your attempt fee has been paid; '}
+              the rest was refunded to the customer.
             </p>
           </div>
         )

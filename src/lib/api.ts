@@ -63,7 +63,7 @@ export const api = {
   arrive: (token: string, id: string, lat: number, lng: number) =>
     call<Job>(`/jobs/${id}/arrive`, { method: 'POST', token, body: JSON.stringify({ lat, lng }) }),
   failedAttempt: (token: string, id: string) =>
-    call<{ status: string; attemptFeeMinor: number }>(`/jobs/${id}/failed-attempt`, {
+    call<{ status: string; attemptFeeMinor: number; waitingFeeMinor: number }>(`/jobs/${id}/failed-attempt`, {
       method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() },
     }),
   issueCode: (token: string, id: string) => call<{ code: string }>(`/jobs/${id}/issue-code`, { method: 'POST', token }),
