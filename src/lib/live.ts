@@ -52,8 +52,9 @@ function loadSocketIo(): Promise<any> {
 
 /** Base origin of the API (strip the /v1 version suffix) — the socket.io server lives at the root. */
 export function socketBase(): string {
-  const api = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/v1';
-  return api.replace(/\/v\d+\/?$/, '');
+  let api = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/v1').trim().replace(/\/+$/, '');
+  if (!/^https?:\/\//i.test(api)) api = `https://${api}`; // guard against a scheme-less env value
+  return api.replace(/\/v\d+$/, '');
 }
 
 /** Connect to the tracking gateway. Returns the socket.io client instance. */

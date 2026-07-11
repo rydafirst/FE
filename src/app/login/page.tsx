@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 
 type Role = 'CUSTOMER' | 'RIDER';
+const RESEND_COOLDOWN = 30; // seconds between code requests (UX guard on top of the server rate limit)
 
 export default function LoginPage() {
   const [phase, setPhase] = useState<'phone' | 'code'>('phone');
@@ -12,19 +13,46 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [err, setErr] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [busy, setBusy] = useState(false);
+
+  // Tick the resend cooldown down to zero.
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   async function sendOtp() {
-    setErr(null);
-    try { await api.requestOtp(phone, email); setPhase('code'); }
-    catch (e) { setErr((e as Error).message); }
+    setErr(null); setNote(null); setBusy(true);
+    try {
+      await api.requestOtp(phone, email);
+      setPhase('code');
+      setCooldown(RESEND_COOLDOWN);
+    } catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
   }
+
+  async function resend() {
+    if (cooldown > 0 || busy) return;
+    setErr(null); setNote(null); setBusy(true);
+    try {
+      await api.requestOtp(phone, email);
+      setNote(`New code sent to ${email}`);
+      setCooldown(RESEND_COOLDOWN);
+    } catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
   async function verify() {
-    setErr(null);
+    setErr(null); setNote(null); setBusy(true);
     try {
       const t = await api.verifyOtp(phone, code, role);
       sessionStorage.setItem('rf_token', t.accessToken);
       location.href = role === 'RIDER' ? '/rider' : '/home';
     } catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
   }
 
   return (
@@ -59,17 +87,35 @@ export default function LoginPage() {
           <p className="mono" style={{ fontSize: 10, color: 'var(--mid)', margin: '0 0 16px' }}>
             WE&apos;LL EMAIL YOUR CODE FOR NOW
           </p>
-          <Button onClick={sendOtp}>Send code</Button>
+          <Button onClick={sendOtp} disabled={busy}>{busy ? 'Sending…' : 'Send code'}</Button>
         </>
       ) : (
         <>
           <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>ENTER 6-DIGIT CODE</label>
-          <input className="rf-input mono" style={{ margin: '8px 0 16px', letterSpacing: '.4em', textAlign: 'center', fontSize: 22 }}
-            value={code} onChange={(e) => setCode(e.target.value)} maxLength={6} inputMode="numeric" />
-          <Button onClick={verify}>Verify as {role === 'RIDER' ? 'rider' : 'customer'}</Button>
+          <input className="rf-input mono" style={{ margin: '8px 0 10px', letterSpacing: '.4em', textAlign: 'center', fontSize: 22 }}
+            value={code} onChange={(e) => setCode(e.target.value)} maxLength={6} inputMode="numeric" autoFocus />
+
+          {/* Didn't get it? Resend, gated by a short cooldown. */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <span className="mono" style={{ fontSize: 10.5, color: 'var(--mid)' }}>SENT TO {email.toUpperCase()}</span>
+            <button onClick={resend} disabled={cooldown > 0 || busy} className="mono"
+              style={{ background: 'none', border: 'none', padding: 4, cursor: cooldown > 0 || busy ? 'default' : 'pointer',
+                fontSize: 11, letterSpacing: '.06em', color: cooldown > 0 || busy ? 'var(--mid)' : 'var(--ink)' }}>
+              {cooldown > 0 ? `RESEND IN ${cooldown}S` : 'RESEND CODE'}
+            </button>
+          </div>
+
+          <Button onClick={verify} disabled={busy}>{busy ? 'Working…' : `Verify as ${role === 'RIDER' ? 'rider' : 'customer'}`}</Button>
+
+          <button onClick={() => { setPhase('phone'); setCode(''); setErr(null); setNote(null); }} className="mono"
+            style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+            ← USE A DIFFERENT EMAIL
+          </button>
         </>
       )}
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
+
+      {note && <p style={{ color: 'var(--success)', fontSize: 13, marginBottom: 0 }}>{note}</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 0 }}>{err}</p>}
     </main>
   );
 }

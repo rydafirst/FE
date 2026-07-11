@@ -1,5 +1,13 @@
 // Thin typed client for contracts/openapi.yaml. Generate a full client in CI; this covers core calls.
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/v1';
+// Normalize the base URL: if NEXT_PUBLIC_API_URL is set without a scheme (e.g. "host/v1"),
+// the browser would treat it as a *relative* path and hit the current site instead of the API.
+// Prepend https:// when missing and strip any trailing slash so requests always go to the API.
+function normalizeBase(raw: string | undefined): string {
+  const v = (raw ?? 'http://localhost:4000/v1').trim().replace(/\/+$/, '');
+  if (/^https?:\/\//i.test(v)) return v;
+  return `https://${v}`;
+}
+const BASE = normalizeBase(process.env.NEXT_PUBLIC_API_URL);
 
 export type JobType = 'DELIVERY' | 'RIDE';
 export interface GeoPoint { lat: number; lng: number }
