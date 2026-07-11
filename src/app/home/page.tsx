@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { AddressInput, type Place } from '@/components/AddressInput';
 import { MapPreview } from '@/components/MapPreview';
-import { api, type JobType, type Quote } from '@/lib/api';
+import { api, type JobType, type Quote, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
 import { useRequireAuth } from '@/lib/useAuth';
@@ -33,12 +33,25 @@ export default function HomePage() {
   const [err, setErr] = useState<string | null>(null);
   const [showFallback, setShowFallback] = useState(false);
   const [fallbackAck, setFallbackAck] = useState(false); // only prompt once per session
+  const [pending, setPending] = useState<Job | null>(null); // an existing unpaid order, if any
   const quoteRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to the price breakdown as soon as a quote is ready.
   useEffect(() => {
     if (quote) quoteRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [quote]);
+
+  // Block booking while a previous order is still awaiting payment (avoids duplicate pending orders).
+  useEffect(() => {
+    if (!ready) return;
+    api.myJobs(getToken()).then((js) => setPending(js.find((j) => j.status === 'CREATED') ?? null)).catch(() => {});
+  }, [ready]);
+
+  const cancelPending = async () => {
+    if (!pending) return;
+    try { await api.cancelJob(getToken(), pending.id); setPending(null); }
+    catch (e) { setErr((e as Error).message); }
+  };
 
   const getQuote = async () => {
     setErr(null);
@@ -86,6 +99,21 @@ export default function HomePage() {
         </b>
       </header>
 
+      {/* Block a second order while one is still awaiting payment. */}
+      {pending && (
+        <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 16 }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--warning)', letterSpacing: '.08em', marginBottom: 6 }}>ORDER AWAITING PAYMENT</div>
+          <b style={{ fontSize: 15 }}>Finish your last order first</b>
+          <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45, margin: '6px 0 12px' }}>
+            You have an unpaid order of {naira(pending.amountMinor)}. Complete or cancel it before booking a new one.
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="ghost" onClick={() => (location.href = `/jobs/${pending.id}/track`)}>View order</Button>
+            <Button variant="ghost" onClick={cancelPending}>Cancel it</Button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {(['DELIVERY', 'RIDE'] as JobType[]).map((t) => (
           <button key={t} onClick={() => { setType(t); setQuote(null); }} className="mono"
@@ -119,7 +147,7 @@ export default function HomePage() {
       )}
 
       <div style={{ height: 8 }} />
-      <Button onClick={getQuote} disabled={busy}>{busy ? 'Working…' : 'Get quote'}</Button>
+      <Button onClick={getQuote} disabled={busy || !!pending}>{busy ? 'Working…' : pending ? 'Finish your pending order first' : 'Get quote'}</Button>
       {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
 
       {quote && (

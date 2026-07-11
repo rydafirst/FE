@@ -10,6 +10,7 @@ interface Props {
   pickup?: LatLng | null;
   dropoff?: LatLng | null;
   rider?: LatLng | null;      // live rider position (updates as pings arrive)
+  trail?: LatLng[];           // the actual path the rider has travelled (breadcrumb)
   height?: number;
 }
 
@@ -21,10 +22,10 @@ const dot = (L: any, color: string, ring = '#fff') =>
     iconSize: [14, 14], iconAnchor: [7, 7],
   });
 
-export function LiveMap({ pickup, dropoff, rider, height = 260 }: Props) {
+export function LiveMap({ pickup, dropoff, rider, trail, height = 260 }: Props) {
   const elRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
-  const markersRef = useRef<{ pickup?: any; dropoff?: any; rider?: any; line?: any }>({});
+  const markersRef = useRef<{ pickup?: any; dropoff?: any; rider?: any; line?: any; trail?: any }>({});
 
   // Init once.
   useEffect(() => {
