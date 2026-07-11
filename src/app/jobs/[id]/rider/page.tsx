@@ -143,6 +143,9 @@ export default function RiderJob() {
         <div className="rf-card" style={{ marginBottom: 16 }}>
           <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 10 }}>DELIVERY DETAILS</div>
 
+          {job.pickupAddress && <Detail label="Pickup" value={job.pickupAddress} />}
+          {job.dropoffAddress && <Detail label="Drop-off" value={job.dropoffAddress} />}
+
           {job.recipient && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div>

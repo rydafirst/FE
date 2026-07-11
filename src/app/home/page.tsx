@@ -80,6 +80,8 @@ export default function HomePage() {
     try {
       const body: Parameters<typeof api.createJob>[1] = {
         quoteToken: quote.quoteToken, fallbackPolicy: fallback,
+        ...(pickup?.label ? { pickupAddress: pickup.label } : {}),
+        ...(dropoff?.label ? { dropoffAddress: dropoff.label } : {}),
         ...(type === 'DELIVERY' && recipientName && recipientPhone ? { recipient: { name: recipientName, phone: recipientPhone } } : {}),
         ...(type === 'DELIVERY' && item ? { item } : {}),
         ...(type === 'DELIVERY' && instructions ? { instructions } : {}),

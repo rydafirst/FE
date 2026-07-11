@@ -16,6 +16,7 @@ export interface Quote { quoteToken: string; amountMinor: number; currency: 'NGN
 export interface Job {
   id: string; type: JobType; status: string; amountMinor: number; currency: 'NGN'; createdAt: string;
   pickup?: GeoPoint; dropoff?: GeoPoint;
+  pickupAddress?: string; dropoffAddress?: string;
   recipient?: { name: string; phone: string };
   item?: string; instructions?: string;
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
@@ -50,6 +51,7 @@ export const api = {
   createJob: (token: string, body: {
     quoteToken: string; refundAccountId?: string;
     recipient?: { name: string; phone: string }; item?: string; instructions?: string;
+    pickupAddress?: string; dropoffAddress?: string;
     fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
   }) =>
     call<Job>(`/jobs`, {
