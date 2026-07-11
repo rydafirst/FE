@@ -7,15 +7,26 @@ import { BottomNav } from '@/components/BottomNav';
 import { useRequireAuth } from '@/lib/useAuth';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+// A trip is "active" (resumable) until it reaches a terminal state.
+const ACTIVE = ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'];
 
 export default function RiderHome() {
   const { ready } = useRequireAuth();
   const [online, setOnline] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [activeJob, setActiveJob] = useState<Job | null>(null);
   const [earnings, setEarnings] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => { api.wallet(getToken()).then((w) => setEarnings(w.releasedMinor)).catch(() => setEarnings(null)); }, []);
+
+  // Look up the rider's assigned job on load, so an in-progress trip is resumable on ANY device.
+  useEffect(() => {
+    if (!ready) return;
+    api.assignedJobs(getToken())
+      .then((js) => setActiveJob(js.find((j) => ACTIVE.includes(j.status)) ?? null))
+      .catch(() => {});
+  }, [ready]);
 
   const loadFeed = useCallback(async () => {
     try { setJobs(await api.availableJobs(getToken())); setErr(null); }
@@ -39,6 +50,16 @@ export default function RiderHome() {
 
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>
+      {/* Resume an in-progress trip — visible on any browser/device signed into this account. */}
+      {activeJob && (
+        <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 16 }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.08em', marginBottom: 4 }}>YOU HAVE AN ACTIVE DELIVERY</div>
+          <b style={{ fontSize: 15 }}>{naira(activeJob.amountMinor)} · {activeJob.status.replace(/_/g, ' ').toLowerCase()}</b>
+          <div style={{ height: 10 }} />
+          <Button onClick={() => (location.href = `/jobs/${activeJob.id}/rider`)}>Resume delivery</Button>
+        </div>
+      )}
+
       <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.06em' }}>EARNINGS TODAY</div>
       <div className="mono" style={{ fontSize: 28, fontWeight: 700 }}>{earnings === null ? '—' : naira(earnings)}</div>
 

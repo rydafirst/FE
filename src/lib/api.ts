@@ -57,6 +57,7 @@ export const api = {
       method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ code }),
     }),
   availableJobs: (token: string) => call<Job[]>(`/jobs/available`, { token }),
+  assignedJobs: (token: string) => call<Job[]>(`/jobs/assigned`, { token }),
   myJobs: (token: string) => call<Job[]>(`/jobs/mine`, { token }),
   cancelJob: (token: string, id: string) => call<{ status: string; refunded: boolean }>(`/jobs/${id}/cancel`, { method: 'POST', token }),
   accept: (token: string, id: string) => call<Job>(`/jobs/${id}/accept`, { method: 'POST', token }),
