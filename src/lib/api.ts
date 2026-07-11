@@ -16,6 +16,7 @@ export interface Quote { quoteToken: string; amountMinor: number; currency: 'NGN
 export interface Job {
   id: string; type: JobType; status: string; amountMinor: number; currency: 'NGN'; createdAt: string;
   pickup?: GeoPoint; dropoff?: GeoPoint;
+  fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
 }
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
@@ -61,6 +62,10 @@ export const api = {
     call<Job>(`/jobs/${id}/advance`, { method: 'POST', token, body: JSON.stringify({ to }) }),
   arrive: (token: string, id: string, lat: number, lng: number) =>
     call<Job>(`/jobs/${id}/arrive`, { method: 'POST', token, body: JSON.stringify({ lat, lng }) }),
+  failedAttempt: (token: string, id: string) =>
+    call<{ status: string; attemptFeeMinor: number }>(`/jobs/${id}/failed-attempt`, {
+      method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() },
+    }),
   issueCode: (token: string, id: string) => call<{ code: string }>(`/jobs/${id}/issue-code`, { method: 'POST', token }),
   submitKyc: (token: string, inputs: { ninVerified: boolean; bvnVerified: boolean; idDocUploaded: boolean; selfieMatched: boolean; addressProvided: boolean }) =>
     call<{ status: string }>(`/riders/kyc`, { method: 'POST', token, body: JSON.stringify(inputs) }),

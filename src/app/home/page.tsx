@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { AddressInput, type Place } from '@/components/AddressInput';
 import { MapPreview } from '@/components/MapPreview';
@@ -10,6 +10,15 @@ import { useRequireAuth } from '@/lib/useAuth';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
+type Fallback = 'WAIT' | 'DELEGATE' | 'RETURN';
+
+// Plain-language explanation of each "receiver unavailable" choice, shown in the picker + popup.
+const FALLBACK_OPTIONS: { value: Fallback; title: string; desc: string }[] = [
+  { value: 'WAIT', title: 'Wait for them', desc: 'The rider waits 10 minutes free. After that a small waiting fee applies (₦50/min, max ₦1,000). Best if the receiver is just running late.' },
+  { value: 'DELEGATE', title: 'Let someone else receive it', desc: 'If your receiver isn’t there, anyone present (a colleague, neighbour, security) can accept it with the code. The delivery still completes.' },
+  { value: 'RETURN', title: 'Return it to me', desc: 'If no one can receive it, the rider brings the parcel back to you. The delivery is marked failed and you’re refunded, minus the rider’s trip.' },
+];
+
 export default function HomePage() {
   const { ready } = useRequireAuth();
   const [type, setType] = useState<JobType>('DELIVERY');
@@ -18,21 +27,38 @@ export default function HomePage() {
   const [item, setItem] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
-  const [fallback, setFallback] = useState<'WAIT' | 'DELEGATE' | 'RETURN'>('WAIT');
+  const [fallback, setFallback] = useState<Fallback>('WAIT');
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [showFallback, setShowFallback] = useState(false);
+  const [fallbackAck, setFallbackAck] = useState(false); // only prompt once per session
+  const quoteRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to the price breakdown as soon as a quote is ready.
+  useEffect(() => {
+    if (quote) quoteRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [quote]);
 
   const getQuote = async () => {
     setErr(null);
     if (!pickup || !dropoff) { setErr('Choose a pickup and drop-off'); return; }
+    // For deliveries, explain the "receiver unavailable" choice once before quoting.
+    if (type === 'DELIVERY' && !fallbackAck) { setShowFallback(true); return; }
+    await fetchQuote();
+  };
+
+  const fetchQuote = async () => {
     setBusy(true);
     try {
       setQuote(await api.quote(getToken(), {
-        type, pickup: { lat: pickup.lat, lng: pickup.lng }, dropoff: { lat: dropoff.lat, lng: dropoff.lng },
+        type, pickup: { lat: pickup!.lat, lng: pickup!.lng }, dropoff: { lat: dropoff!.lat, lng: dropoff!.lng },
       }));
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
+
+  // Called from the popup: keep whatever option is selected, then proceed to the quote.
+  const confirmFallback = () => { setFallbackAck(true); setShowFallback(false); void fetchQuote(); };
 
   const pay = async () => {
     if (!quote) return;
@@ -81,11 +107,13 @@ export default function HomePage() {
             <Field label="RECIPIENT PHONE"><input className="rf-input" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} placeholder="+234…" /></Field>
           </div>
           <Field label="IF RECEIVER UNAVAILABLE">
-            <select className="rf-input" value={fallback} onChange={(e) => setFallback(e.target.value as typeof fallback)}>
-              <option value="WAIT">Wait (grace + waiting fee)</option>
-              <option value="DELEGATE">Allow a proxy to receive</option>
-              <option value="RETURN">Return to me</option>
+            <select className="rf-input" value={fallback} onChange={(e) => setFallback(e.target.value as Fallback)}>
+              {FALLBACK_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.title}</option>)}
             </select>
+            <button onClick={() => setShowFallback(true)} className="mono"
+              style={{ background: 'none', border: 'none', padding: '6px 0 0', cursor: 'pointer', fontSize: 10, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+              WHAT DO THESE MEAN? →
+            </button>
           </Field>
         </>
       )}
@@ -95,7 +123,7 @@ export default function HomePage() {
       {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
 
       {quote && (
-        <div className="rf-card" style={{ marginTop: 16 }}>
+        <div className="rf-card" ref={quoteRef} style={{ marginTop: 16, scrollMarginTop: 16 }}>
           <Row label="Base" value={naira(quote.breakdown.baseMinor)} />
           <Row label="Distance" value={naira(quote.breakdown.distanceMinor)} />
           <Row label="Platform fee" value={naira(quote.breakdown.platformFeeMinor)} />
@@ -106,6 +134,53 @@ export default function HomePage() {
           <p className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', textAlign: 'center', marginBottom: 0 }}>
             HELD SAFELY UNTIL DELIVERY IS CONFIRMED
           </p>
+        </div>
+      )}
+
+      {/* Explainer popup for the "receiver unavailable" choice, shown on first Get quote. */}
+      {showFallback && (
+        <div onClick={confirmFallback} style={{
+          position: 'fixed', inset: 0, background: 'rgba(17,17,17,0.45)', zIndex: 100,
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        }}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            width: '100%', maxWidth: 480, background: 'var(--bg)', borderTopLeftRadius: 16, borderTopRightRadius: 16,
+            padding: 20, maxHeight: '86vh', overflowY: 'auto',
+          }}>
+            <b style={{ fontSize: 17 }}>If your receiver isn’t available</b>
+            <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '4px 0 14px' }}>
+              Pick what the rider should do. You can change this any time before paying.
+            </p>
+
+            {FALLBACK_OPTIONS.map((o) => {
+              const active = fallback === o.value;
+              return (
+                <button key={o.value} onClick={() => setFallback(o.value)} style={{
+                  display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', marginBottom: 10,
+                  border: `1px solid ${active ? 'var(--ink)' : 'var(--line)'}`, borderRadius: 8, padding: 14,
+                  background: active ? 'var(--bg-2)' : 'var(--bg)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{
+                      width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                      border: `4px solid ${active ? 'var(--primary)' : 'var(--line)'}`,
+                    }} />
+                    <b style={{ fontSize: 14 }}>{o.title}</b>
+                  </div>
+                  <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '0 0 0 24px', lineHeight: 1.45 }}>{o.desc}</p>
+                </button>
+              );
+            })}
+
+            <div style={{ height: 6 }} />
+            <Button onClick={confirmFallback}>Continue</Button>
+            <button onClick={confirmFallback} className="mono" style={{
+              display: 'block', width: '100%', background: 'none', border: 'none', padding: '12px 0 2px',
+              cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)',
+            }}>
+              SKIP — USE “{FALLBACK_OPTIONS.find((o) => o.value === fallback)?.title.toUpperCase()}”
+            </button>
+          </div>
         </div>
       )}
 
