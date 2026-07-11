@@ -90,10 +90,8 @@ export default function RiderHome() {
                   <span className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>{j.type}</span>
                   <b className="mono" style={{ fontSize: 16 }}>{naira(j.amountMinor)}</b>
                 </div>
-                <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', margin: '6px 0 10px' }}>
-                  {j.pickup ? `${j.pickup.lat.toFixed(3)}, ${j.pickup.lng.toFixed(3)}` : '—'}
-                  {'  →  '}
-                  {j.dropoff ? `${j.dropoff.lat.toFixed(3)}, ${j.dropoff.lng.toFixed(3)}` : '—'}
+                <div style={{ fontSize: 13, color: 'var(--ink)', margin: '6px 0 10px' }}>
+                  {j.pickupArea || 'Nearby'} <span style={{ color: 'var(--mid)' }}>→</span> {j.dropoffArea || 'Nearby'}
                 </div>
                 <Button onClick={() => accept(j.id)}>Accept job</Button>
               </div>

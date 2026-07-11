@@ -17,6 +17,7 @@ export interface Job {
   id: string; type: JobType; status: string; amountMinor: number; currency: 'NGN'; createdAt: string;
   pickup?: GeoPoint; dropoff?: GeoPoint;
   pickupAddress?: string; dropoffAddress?: string;
+  pickupArea?: string; dropoffArea?: string; // coarse area shown in the pre-accept feed
   recipient?: { name: string; phone: string };
   item?: string; instructions?: string;
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
