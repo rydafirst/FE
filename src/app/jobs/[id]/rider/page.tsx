@@ -2,9 +2,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
-import { api } from '@/lib/api';
+import { api, type Job } from '@/lib/api';
 import { getToken, getUserId } from '@/lib/session';
 import { connectSocket } from '@/lib/live';
+import { useToast } from '@/components/ui/Toast';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Geo = 'checking' | 'on' | 'off' | 'denied';
@@ -18,6 +19,7 @@ type Fallback = 'WAIT' | 'DELEGATE' | 'RETURN';
 export default function RiderJob() {
   const id = String(useParams().id);
   const [status, setStatus] = useState('ACCEPTED');
+  const [job, setJob] = useState<Job | null>(null);
   const [policy, setPolicy] = useState<Fallback>('WAIT');
   const [code, setCode] = useState('');
   const [outcome, setOutcome] = useState<'paid' | 'failed' | null>(null);
@@ -25,6 +27,7 @@ export default function RiderJob() {
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [geo, setGeo] = useState<Geo>('checking');
   const sockRef = useRef<any>(null);
+  const { show, node: toast } = useToast();
   const done = outcome !== null;
   const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   const step = FLOW.indexOf(status as (typeof FLOW)[number]);
@@ -32,7 +35,7 @@ export default function RiderJob() {
   // Load the real job once to sync status and read the customer's "receiver unavailable" policy.
   useEffect(() => {
     api.getJob(getToken(), id)
-      .then((j) => { setStatus(j.status); if (j.fallbackPolicy) setPolicy(j.fallbackPolicy); })
+      .then((j) => { setJob(j); setStatus(j.status); if (j.fallbackPolicy) setPolicy(j.fallbackPolicy); })
       .catch(() => { /* keep local defaults */ });
   }, [id]);
 
@@ -82,23 +85,23 @@ export default function RiderJob() {
 
   const advance = async () => {
     const next = FLOW[step + 1] ?? FLOW[0];
-    try { const j = await api.advance(getToken(), id, next); setStatus(j.status); } catch (e) { alert((e as Error).message); }
+    try { const j = await api.advance(getToken(), id, next); setStatus(j.status); } catch (e) { show((e as Error).message); }
   };
   const arrive = () => {
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try { const j = await api.arrive(getToken(), id, pos.coords.latitude, pos.coords.longitude); setStatus(j.status); }
-      catch (e) { alert((e as Error).message); } // server rejects if outside geofence
-    }, () => alert('Location permission needed to verify arrival'));
+      catch (e) { show((e as Error).message); } // server rejects if outside geofence
+    }, () => show('Location permission needed to verify arrival'));
   };
   const confirm = async () => {
     try { const r = await api.confirmCode(getToken(), id, code); setStatus(r.status); setOutcome('paid'); }
-    catch (e) { alert((e as Error).message); }
+    catch (e) { show((e as Error).message); }
   };
   const reportUnavailable = async () => {
     try {
       const r = await api.failedAttempt(getToken(), id);
       setStatus(r.status); setFeeMinor(r.attemptFeeMinor); setOutcome('failed');
-    } catch (e) { alert((e as Error).message); }
+    } catch (e) { show((e as Error).message); }
   };
 
   const codeLabel = policy === 'DELEGATE'
@@ -132,6 +135,34 @@ export default function RiderJob() {
       {!done && geo === 'on' && (
         <div className="mono" style={{ fontSize: 10.5, color: 'var(--success)', letterSpacing: '.06em', marginBottom: 16 }}>
           ● SHARING YOUR LIVE LOCATION
+        </div>
+      )}
+
+      {/* Delivery details the rider needs to complete the drop. */}
+      {!done && job && (
+        <div className="rf-card" style={{ marginBottom: 16 }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 10 }}>DELIVERY DETAILS</div>
+
+          {job.recipient && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{job.recipient.name}</div>
+                <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>{job.recipient.phone}</div>
+              </div>
+              <a href={`tel:${job.recipient.phone}`} className="mono"
+                style={{ fontSize: 11, letterSpacing: '.06em', textDecoration: 'none', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 6, padding: '6px 12px' }}>
+                CALL
+              </a>
+            </div>
+          )}
+
+          {job.item && <Detail label="Sending" value={job.item} />}
+          {job.instructions && <Detail label="Notes" value={job.instructions} />}
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            {job.pickup && <NavLink label="Navigate to pickup" pt={job.pickup} />}
+            {job.dropoff && <NavLink label="Navigate to drop-off" pt={job.dropoff} />}
+          </div>
         </div>
       )}
 
@@ -182,6 +213,28 @@ export default function RiderJob() {
       ) : (
         <Button onClick={advance}>Mark: {LABEL[FLOW[Math.min(step + 1, FLOW.length - 1)]]}</Button>
       )}
+      {toast}
     </main>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 13.5, marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
+
+function NavLink({ label, pt }: { label: string; pt: { lat: number; lng: number } }) {
+  // Opens the device's maps app with directions to the point.
+  const href = `https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}`;
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="mono"
+      style={{ flex: 1, textAlign: 'center', fontSize: 10.5, letterSpacing: '.05em', textDecoration: 'none',
+        color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 6, padding: '8px 6px' }}>
+      {label.toUpperCase()}
+    </a>
   );
 }

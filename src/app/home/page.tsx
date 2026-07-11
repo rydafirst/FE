@@ -25,6 +25,7 @@ export default function HomePage() {
   const [pickup, setPickup] = useState<Place | null>(null);
   const [dropoff, setDropoff] = useState<Place | null>(null);
   const [item, setItem] = useState('');
+  const [instructions, setInstructions] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
   const [fallback, setFallback] = useState<Fallback>('WAIT');
@@ -77,11 +78,12 @@ export default function HomePage() {
     if (!quote) return;
     setErr(null); setBusy(true);
     try {
-      const body: Parameters<typeof api.createJob>[1] = { quoteToken: quote.quoteToken, refundAccountId: 'acct_demo' };
-      if (type === 'DELIVERY' && recipientName && recipientPhone) {
-        (body as Record<string, unknown>).recipient = { name: recipientName, phone: recipientPhone };
-      }
-      (body as Record<string, unknown>).fallbackPolicy = fallback;
+      const body: Parameters<typeof api.createJob>[1] = {
+        quoteToken: quote.quoteToken, refundAccountId: 'acct_demo', fallbackPolicy: fallback,
+        ...(type === 'DELIVERY' && recipientName && recipientPhone ? { recipient: { name: recipientName, phone: recipientPhone } } : {}),
+        ...(type === 'DELIVERY' && item ? { item } : {}),
+        ...(type === 'DELIVERY' && instructions ? { instructions } : {}),
+      };
       const job = await api.createJob(getToken(), body);
       // Redirect to the Flutterwave hosted checkout; after paying, the customer returns to tracking.
       const link = (job as { paymentLink?: string }).paymentLink;
@@ -134,6 +136,9 @@ export default function HomePage() {
             <Field label="RECIPIENT NAME"><input className="rf-input" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} /></Field>
             <Field label="RECIPIENT PHONE"><input className="rf-input" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} placeholder="+234…" /></Field>
           </div>
+          <Field label="NOTES FOR THE RIDER (OPTIONAL)">
+            <input className="rf-input" value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="e.g. call on arrival, gate code 1234, apartment 4B" />
+          </Field>
           <Field label="IF RECEIVER UNAVAILABLE">
             <select className="rf-input" value={fallback} onChange={(e) => setFallback(e.target.value as Fallback)}>
               {FALLBACK_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.title}</option>)}

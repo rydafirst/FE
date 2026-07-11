@@ -5,6 +5,7 @@ import { api, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
 import { useRequireAuth } from '@/lib/useAuth';
+import { useToast } from '@/components/ui/Toast';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 // A trip is "active" (resumable) until it reaches a terminal state.
@@ -17,6 +18,7 @@ export default function RiderHome() {
   const [activeJob, setActiveJob] = useState<Job | null>(null);
   const [earnings, setEarnings] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const { show, node: toast } = useToast();
 
   useEffect(() => { api.wallet(getToken()).then((w) => setEarnings(w.releasedMinor)).catch(() => setEarnings(null)); }, []);
 
@@ -43,7 +45,7 @@ export default function RiderHome() {
 
   const accept = async (id: string) => {
     try { const j = await api.accept(getToken(), id); location.href = `/jobs/${j.id}/rider`; }
-    catch (e) { alert((e as Error).message); loadFeed(); }
+    catch (e) { show((e as Error).message); loadFeed(); }
   };
 
   if (!ready) return null;
@@ -103,6 +105,7 @@ export default function RiderHome() {
       <div style={{ height: 16 }} />
       <Button variant="ghost" onClick={() => (location.href = '/kyc')}>Complete verification (KYC)</Button>
 
+      {toast}
       <BottomNav />
     </main>
   );

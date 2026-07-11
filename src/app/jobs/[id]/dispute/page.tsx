@@ -4,15 +4,17 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import { getToken } from '@/lib/session';
+import { useToast } from '@/components/ui/Toast';
 
 export default function Dispute() {
   const id = String(useParams().id);
   const [counter, setCounter] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const { show, node: toast } = useToast();
   const open = async () => {
     try { const d = await api.openDispute(getToken(), id, counter);
       setResult(d.tier === 'auto' ? `Auto-resolved: ${d.resolution}` : 'Escalated for review'); }
-    catch (e) { alert((e as Error).message); }
+    catch (e) { show((e as Error).message); }
   };
   return (
     <main style={{ padding: 20 }}>
@@ -24,6 +26,7 @@ export default function Dispute() {
       </label>
       <Button onClick={open}>Open dispute</Button>
       {result && <div className="mono" style={{ marginTop: 12, fontWeight: 700 }}>{result}</div>}
+      {toast}
     </main>
   );
 }

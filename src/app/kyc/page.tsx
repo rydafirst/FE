@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import { getToken } from '@/lib/session';
+import { useToast } from '@/components/ui/Toast';
 
 const ITEMS = [
   ['ninVerified', 'NIN verified'], ['bvnVerified', 'BVN verified'],
@@ -15,9 +16,13 @@ export default function Kyc() {
   const [state, setState] = useState<Record<Key, boolean>>({
     ninVerified: false, bvnVerified: false, idDocUploaded: false, selfieMatched: false, addressProvided: false,
   });
+  const { show, node: toast } = useToast();
   const submit = async () => {
-    try { await api.submitKyc(getToken(), state); alert('KYC submitted — pending review.'); location.href = '/rider'; }
-    catch (e) { alert((e as Error).message); }
+    try {
+      await api.submitKyc(getToken(), state);
+      show('KYC submitted — pending review.', 'success');
+      setTimeout(() => (location.href = '/rider'), 1200);
+    } catch (e) { show((e as Error).message); }
   };
   return (
     <main style={{ padding: 20 }}>
@@ -31,6 +36,7 @@ export default function Kyc() {
       ))}
       <div style={{ height: 16 }} />
       <Button onClick={submit}>Submit for review</Button>
+      {toast}
     </main>
   );
 }
