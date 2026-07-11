@@ -79,7 +79,7 @@ export default function HomePage() {
     setErr(null); setBusy(true);
     try {
       const body: Parameters<typeof api.createJob>[1] = {
-        quoteToken: quote.quoteToken, refundAccountId: 'acct_demo', fallbackPolicy: fallback,
+        quoteToken: quote.quoteToken, fallbackPolicy: fallback,
         ...(type === 'DELIVERY' && recipientName && recipientPhone ? { recipient: { name: recipientName, phone: recipientPhone } } : {}),
         ...(type === 'DELIVERY' && item ? { item } : {}),
         ...(type === 'DELIVERY' && instructions ? { instructions } : {}),

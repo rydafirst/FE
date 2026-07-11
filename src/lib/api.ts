@@ -48,7 +48,7 @@ export const api = {
   quote: (token: string, body: { type: JobType; pickup: GeoPoint; dropoff: GeoPoint }) =>
     call<Quote>(`/jobs/quote`, { method: 'POST', token, body: JSON.stringify(body) }),
   createJob: (token: string, body: {
-    quoteToken: string; refundAccountId: string;
+    quoteToken: string; refundAccountId?: string;
     recipient?: { name: string; phone: string }; item?: string; instructions?: string;
     fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
   }) =>
@@ -81,6 +81,10 @@ export const api = {
   openDispute: (token: string, id: string, counterEvidence = false) =>
     call<{ id: string; status: string; tier: string; resolution?: string }>(`/jobs/${id}/disputes`, { method: 'POST', token, body: JSON.stringify({ counterEvidence }) }),
   wallet: (token: string) => call<{ releasedMinor: number; currency: 'NGN'; jobsCount: number; activeCount: number }>(`/wallet`, { token }),
+  getAccount: (token: string) =>
+    call<{ bankCode: string; accountName: string; accountNumberMasked: string; type: 'refund' | 'payout' } | null>(`/me/account`, { token }),
+  setAccount: (token: string, body: { bankCode: string; accountNumber: string; accountName: string; type?: 'refund' | 'payout' }) =>
+    call<{ bankCode: string; accountName: string; accountNumberMasked: string; type: 'refund' | 'payout' }>(`/me/account`, { method: 'PUT', token, body: JSON.stringify(body) }),
   confirmPayment: (token: string, id: string, transactionId: string) =>
     call<{ funded: boolean; status: string }>(`/jobs/${id}/confirm-payment`, { method: 'POST', token, body: JSON.stringify({ transactionId }) }),
 };
