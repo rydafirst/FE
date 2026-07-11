@@ -25,8 +25,11 @@ async function call<T>(path: string, opts: RequestInit & { token?: string } = {}
 }
 
 export const api = {
-  requestOtp: (phone: string) =>
-    call<{ status: string }>(`/auth/otp/request`, { method: 'POST', body: JSON.stringify({ phone }) }),
+  requestOtp: (phone: string, email?: string) =>
+    call<{ status: string }>(`/auth/otp/request`, {
+      method: 'POST',
+      body: JSON.stringify(email ? { phone, email } : { phone }),
+    }),
   verifyOtp: (phone: string, code: string, role: 'CUSTOMER' | 'RIDER' = 'CUSTOMER') =>
     call<{ accessToken: string; refreshToken: string }>(`/auth/otp/verify`, {
       method: 'POST', body: JSON.stringify({ phone, code, role }),

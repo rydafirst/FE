@@ -9,12 +9,13 @@ export default function LoginPage() {
   const [phase, setPhase] = useState<'phone' | 'code'>('phone');
   const [role, setRole] = useState<Role>('CUSTOMER');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [err, setErr] = useState<string | null>(null);
 
   async function sendOtp() {
     setErr(null);
-    try { await api.requestOtp(phone); setPhase('code'); }
+    try { await api.requestOtp(phone, email); setPhase('code'); }
     catch (e) { setErr((e as Error).message); }
   }
   async function verify() {
@@ -52,6 +53,12 @@ export default function LoginPage() {
           <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>PHONE NUMBER</label>
           <input className="rf-input" style={{ margin: '8px 0 16px' }} value={phone}
             onChange={(e) => setPhone(e.target.value)} placeholder="+234…" inputMode="tel" />
+          <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>EMAIL</label>
+          <input className="rf-input" style={{ margin: '8px 0 6px' }} value={email}
+            onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" inputMode="email" type="email" />
+          <p className="mono" style={{ fontSize: 10, color: 'var(--mid)', margin: '0 0 16px' }}>
+            WE&apos;LL EMAIL YOUR CODE FOR NOW
+          </p>
           <Button onClick={sendOtp}>Send code</Button>
         </>
       ) : (
