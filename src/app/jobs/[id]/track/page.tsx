@@ -120,6 +120,10 @@ export default function TrackPage() {
             {' '}You can start again whenever you’re ready.
           </p>
           <Button onClick={() => (location.href = '/home')}>Back to booking</Button>
+          <button onClick={() => (location.href = '/orders')} className="mono"
+            style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+            VIEW MY ORDERS →
+          </button>
         </div>
       </main>
     );
@@ -132,7 +136,11 @@ export default function TrackPage() {
   return (
     <main style={{ padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <b style={{ fontSize: 16 }}>Your delivery</b>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => (location.href = '/orders')} aria-label="Back to orders"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, lineHeight: 1, color: 'var(--ink)', padding: 0 }}>←</button>
+          <b style={{ fontSize: 16 }}>Your delivery</b>
+        </div>
         <span className="rf-pill" style={{ background: l.color, color: '#fff' }}>{l.text.toUpperCase()}</span>
       </div>
 
