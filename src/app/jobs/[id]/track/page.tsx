@@ -39,6 +39,7 @@ export default function TrackPage() {
   const [err, setErr] = useState<string | null>(null);
   const [deliveryCode, setDeliveryCode] = useState<string | null>(null);
   const [riderPos, setRiderPos] = useState<LatLng | null>(null);
+  const [trail, setTrail] = useState<LatLng[]>([]); // breadcrumb of the rider's actual movement
   // Read the payment status Flutterwave appended on redirect. A cancelled/failed payment must
   // NOT start a trip — the job stays unfunded and we send the customer back to booking.
   const [cancelled, setCancelled] = useState<boolean>(() => {
@@ -98,7 +99,17 @@ export default function TrackPage() {
       if (closed) { s.disconnect(); return; }
       sock = s;
       s.emit('subscribe', { jobId: id, userId: getUserId() });
-      s.on('location', (msg: { point?: LatLng }) => { if (msg?.point) setRiderPos({ lat: msg.point.lat, lng: msg.point.lng }); });
+      s.on('location', (msg: { point?: LatLng }) => {
+        if (!msg?.point) return;
+        const p = { lat: msg.point.lat, lng: msg.point.lng };
+        setRiderPos(p);
+        // Append to the breadcrumb trail, skipping near-duplicate consecutive pings.
+        setTrail((prev) => {
+          const last = prev[prev.length - 1];
+          if (last && Math.abs(last.lat - p.lat) < 1e-5 && Math.abs(last.lng - p.lng) < 1e-5) return prev;
+          return [...prev, p];
+        });
+      });
     }).catch(() => { /* map still shows pickup/dropoff without live rider */ });
     return () => { closed = true; if (sock) sock.disconnect(); };
   }, [id]);
@@ -165,7 +176,7 @@ export default function TrackPage() {
       {/* Live map: pickup + drop-off always; the rider marker appears once a rider is assigned and streaming. */}
       {job && (job.pickup || job.dropoff) && (
         <div style={{ marginBottom: 12 }}>
-          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} />
+          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} trail={hasRider ? trail : undefined} />
           {hasRider && !riderPos && (
             <p className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', textAlign: 'center', marginTop: 6 }}>
               WAITING FOR RIDER LOCATION…

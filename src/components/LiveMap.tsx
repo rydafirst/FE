@@ -47,7 +47,7 @@ export function LiveMap({ pickup, dropoff, rider, trail, height = 260 }: Props) 
     const L = (window as any).L;
     if (L && mapRef.current) draw(L);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, rider?.lat, rider?.lng]);
+  }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, rider?.lat, rider?.lng, trail?.length]);
 
   function draw(L: any) {
     const map = mapRef.current;
@@ -66,6 +66,13 @@ export function LiveMap({ pickup, dropoff, rider, trail, height = 260 }: Props) 
       const pts = [[pickup.lat, pickup.lng], [dropoff.lat, dropoff.lng]];
       if (m.line) m.line.setLatLngs(pts);
       else m.line = L.polyline(pts, { color: '#111', weight: 2, opacity: 0.25, dashArray: '4 6' }).addTo(map);
+    }
+
+    // Breadcrumb: the actual path the rider has travelled so far (solid orange).
+    if (trail && trail.length >= 2) {
+      const pts = trail.map((p) => [p.lat, p.lng]);
+      if (m.trail) m.trail.setLatLngs(pts);
+      else m.trail = L.polyline(pts, { color: '#ff5a1f', weight: 3.5, opacity: 0.9 }).addTo(map);
     }
 
     // Keep everything in view.

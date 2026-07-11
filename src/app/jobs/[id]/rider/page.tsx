@@ -1,10 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import { getToken, getUserId } from '@/lib/session';
 import { connectSocket } from '@/lib/live';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Geo = 'checking' | 'on' | 'off' | 'denied';
 
 const FLOW = ['EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP'] as const;
 const LABEL: Record<(typeof FLOW)[number], string> = {
@@ -20,6 +23,8 @@ export default function RiderJob() {
   const [outcome, setOutcome] = useState<'paid' | 'failed' | null>(null);
   const [feeMinor, setFeeMinor] = useState<number | null>(null);
   const [showUnavailable, setShowUnavailable] = useState(false);
+  const [geo, setGeo] = useState<Geo>('checking');
+  const sockRef = useRef<any>(null);
   const done = outcome !== null;
   const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   const step = FLOW.indexOf(status as (typeof FLOW)[number]);
@@ -31,28 +36,49 @@ export default function RiderJob() {
       .catch(() => { /* keep local defaults */ });
   }, [id]);
 
-  // Stream live GPS to the customer while the job is active. Stops on completion/unmount.
+  // Open one realtime socket for the whole job.
   useEffect(() => {
-    if (done) return;
-    let sock: { emit: (e: string, d: unknown) => void; disconnect: () => void } | null = null;
-    let watchId: number | null = null;
     let closed = false;
-    connectSocket().then((s) => {
-      if (closed) { s.disconnect(); return; }
-      sock = s;
-      if (!('geolocation' in navigator)) return;
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => sock?.emit('location', { jobId: id, riderId: getUserId(), lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => { /* permission denied — customer simply won't see live position */ },
-        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 },
-      );
-    }).catch(() => { /* tracking is best-effort; the job flow still works without it */ });
-    return () => {
-      closed = true;
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-      if (sock) sock.disconnect();
-    };
-  }, [id, done]);
+    connectSocket().then((s) => { if (closed) { s.disconnect(); return; } sockRef.current = s; }).catch(() => {});
+    return () => { closed = true; if (sockRef.current) { sockRef.current.disconnect(); sockRef.current = null; } };
+  }, []);
+
+  // Detect the current location-permission state so we can prompt the rider explicitly.
+  useEffect(() => {
+    if (!('geolocation' in navigator)) { setGeo('off'); return; }
+    const perms = (navigator as any).permissions;
+    if (perms?.query) {
+      perms.query({ name: 'geolocation' })
+        .then((st: any) => {
+          const map = (s: string): Geo => (s === 'granted' ? 'on' : s === 'denied' ? 'denied' : 'off');
+          setGeo(map(st.state));
+          st.onchange = () => setGeo(map(st.state));
+        })
+        .catch(() => setGeo('off'));
+    } else {
+      setGeo('off');
+    }
+  }, []);
+
+  // Explicit opt-in: triggers the browser's location prompt, then starts sharing.
+  const enableLocation = () => {
+    navigator.geolocation.getCurrentPosition(
+      () => setGeo('on'),
+      (err) => setGeo(err.code === err.PERMISSION_DENIED ? 'denied' : 'off'),
+      { enableHighAccuracy: true },
+    );
+  };
+
+  // Stream live GPS to the customer only while location is on and the job is active.
+  useEffect(() => {
+    if (geo !== 'on' || done) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => sockRef.current?.emit('location', { jobId: id, riderId: getUserId(), lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => { if (err.code === err.PERMISSION_DENIED) setGeo('denied'); },
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [geo, done, id]);
 
   const advance = async () => {
     const next = FLOW[step + 1] ?? FLOW[0];
@@ -86,6 +112,28 @@ export default function RiderJob() {
       <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
         {FLOW.map((_, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= step ? 'var(--ink)' : 'var(--line-2)' }} />)}
       </div>
+
+      {/* Location sharing — required so the customer can track the rider. */}
+      {!done && geo !== 'on' && geo !== 'checking' && (
+        <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 16 }}>
+          <b style={{ fontSize: 15 }}>Turn on location</b>
+          <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45, margin: '6px 0 12px' }}>
+            Share your location so the customer can see you moving and so you can confirm arrival at the drop-off.
+          </p>
+          {geo === 'denied' ? (
+            <p className="mono" style={{ fontSize: 11, color: 'var(--danger)', margin: 0 }}>
+              LOCATION IS BLOCKED FOR THIS SITE. ENABLE IT IN YOUR BROWSER SETTINGS, THEN RELOAD.
+            </p>
+          ) : (
+            <Button onClick={enableLocation}>Enable location</Button>
+          )}
+        </div>
+      )}
+      {!done && geo === 'on' && (
+        <div className="mono" style={{ fontSize: 10.5, color: 'var(--success)', letterSpacing: '.06em', marginBottom: 16 }}>
+          ● SHARING YOUR LIVE LOCATION
+        </div>
+      )}
 
       {done ? (
         outcome === 'paid' ? (
