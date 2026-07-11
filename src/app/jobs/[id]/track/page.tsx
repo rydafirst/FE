@@ -39,6 +39,13 @@ export default function TrackPage() {
   const [err, setErr] = useState<string | null>(null);
   const [deliveryCode, setDeliveryCode] = useState<string | null>(null);
   const [riderPos, setRiderPos] = useState<LatLng | null>(null);
+  // Read the payment status Flutterwave appended on redirect. A cancelled/failed payment must
+  // NOT start a trip — the job stays unfunded and we send the customer back to booking.
+  const [cancelled, setCancelled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const s = new URLSearchParams(window.location.search).get('status');
+    return s === 'cancelled' || s === 'failed';
+  });
 
   const revealCode = async () => {
     try { const r = await api.issueCode(getToken(), id); setDeliveryCode(r.code); }
@@ -53,6 +60,7 @@ export default function TrackPage() {
   // On return from Flutterwave, verify the transaction and fund the job (webhook-independent),
   // then poll the real job status every 4s (so you see FUNDED → SEARCHING → … as it happens).
   useEffect(() => {
+    if (cancelled) return; // payment didn't go through — don't fetch or poll a trip
     const params = new URLSearchParams(window.location.search);
     const txn = params.get('transaction_id');
     const status = params.get('status');
@@ -63,10 +71,11 @@ export default function TrackPage() {
     const t = setInterval(refresh, 4000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, cancelled]);
 
   // Live rider location: join the job's realtime room and update the map as pings arrive.
   useEffect(() => {
+    if (cancelled) return; // no trip to track
     let sock: { emit: (e: string, d: unknown) => void; on: (e: string, cb: (d: unknown) => void) => void; disconnect: () => void } | null = null;
     let closed = false;
     connectSocket().then((s) => {
@@ -77,6 +86,23 @@ export default function TrackPage() {
     }).catch(() => { /* map still shows pickup/dropoff without live rider */ });
     return () => { closed = true; if (sock) sock.disconnect(); };
   }, [id]);
+
+  // Payment cancelled/failed: no trip, no charge. Send the customer back to booking.
+  if (cancelled) {
+    return (
+      <main style={{ padding: 20, minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="rf-card" style={{ textAlign: 'center' }}>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--warning)', letterSpacing: '.08em', marginBottom: 8 }}>PAYMENT NOT COMPLETED</div>
+          <b style={{ fontSize: 18 }}>You weren’t charged</b>
+          <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: '8px 0 16px' }}>
+            The payment was cancelled, so no rider was requested and nothing was held in escrow.
+            You can start again whenever you’re ready.
+          </p>
+          <Button onClick={() => (location.href = '/home')}>Back to booking</Button>
+        </div>
+      </main>
+    );
+  }
 
   const step = job ? FLOW.indexOf(job.status) : -1;
   const l = job ? label(job.status) : { text: 'Loading…', color: 'var(--ink-2)' };
