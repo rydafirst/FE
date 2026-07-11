@@ -67,6 +67,9 @@ export const api = {
     }),
   availableJobs: (token: string) => call<Job[]>(`/jobs/available`, { token }),
   assignedJobs: (token: string) => call<Job[]>(`/jobs/assigned`, { token }),
+  getAvailability: (token: string) => call<{ online: boolean }>(`/me/availability`, { token }),
+  setAvailability: (token: string, online: boolean) =>
+    call<{ online: boolean }>(`/me/availability`, { method: 'PUT', token, body: JSON.stringify({ online }) }),
   myJobs: (token: string) => call<Job[]>(`/jobs/mine`, { token }),
   cancelJob: (token: string, id: string) => call<{ status: string; refunded: boolean }>(`/jobs/${id}/cancel`, { method: 'POST', token }),
   accept: (token: string, id: string) => call<Job>(`/jobs/${id}/accept`, { method: 'POST', token }),

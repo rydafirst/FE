@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { api, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useRequireAuth } from '@/lib/useAuth';
 import { useToast } from '@/components/ui/Toast';
 
@@ -22,12 +23,14 @@ export default function RiderHome() {
 
   useEffect(() => { api.wallet(getToken()).then((w) => setEarnings(w.releasedMinor)).catch(() => setEarnings(null)); }, []);
 
-  // Look up the rider's assigned job on load, so an in-progress trip is resumable on ANY device.
+  // On load, read the rider's assigned job AND their persisted online state (both survive reloads
+  // and are the same on any device, because they live on the backend, not this browser).
   useEffect(() => {
     if (!ready) return;
     api.assignedJobs(getToken())
       .then((js) => setActiveJob(js.find((j) => ACTIVE.includes(j.status)) ?? null))
       .catch(() => {});
+    api.getAvailability(getToken()).then((a) => setOnline(a.online)).catch(() => {});
   }, [ready]);
 
   const loadFeed = useCallback(async () => {
@@ -43,6 +46,24 @@ export default function RiderHome() {
     return () => clearInterval(t);
   }, [online, loadFeed]);
 
+  // Toggle online/offline and RECORD it on the backend (optimistic; revert if the call fails).
+  const toggleOnline = async () => {
+    const next = !online;
+    setOnline(next);
+    try { await api.setAvailability(getToken(), next); }
+    catch (e) { setOnline(!next); show((e as Error).message); }
+  };
+
+  // Pull-to-refresh: refetch everything that could have changed.
+  const refreshAll = useCallback(async () => {
+    await Promise.all([
+      loadFeed(),
+      api.getAvailability(getToken()).then((a) => setOnline(a.online)).catch(() => {}),
+      api.assignedJobs(getToken()).then((js) => setActiveJob(js.find((j) => ACTIVE.includes(j.status)) ?? null)).catch(() => {}),
+      api.wallet(getToken()).then((w) => setEarnings(w.releasedMinor)).catch(() => {}),
+    ]);
+  }, [loadFeed]);
+
   const accept = async (id: string) => {
     try { const j = await api.accept(getToken(), id); location.href = `/jobs/${j.id}/rider`; }
     catch (e) { show((e as Error).message); loadFeed(); }
@@ -52,6 +73,7 @@ export default function RiderHome() {
 
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>
+      <PullToRefresh onRefresh={refreshAll}>
       {/* Resume an in-progress trip — visible on any browser/device signed into this account. */}
       {activeJob && (
         <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 16 }}>
@@ -69,7 +91,7 @@ export default function RiderHome() {
         alignItems: 'center', justifyContent: 'center', margin: '12px 0' }} className="mono">
         {online ? (jobs.length ? `${jobs.length} JOB${jobs.length > 1 ? 'S' : ''} NEARBY` : 'ONLINE — WAITING FOR JOBS') : 'OFFLINE'}
       </div>
-      <Button variant={online ? 'ghost' : 'primary'} onClick={() => setOnline((v) => !v)}>{online ? 'Go offline' : 'Go online'}</Button>
+      <Button variant={online ? 'ghost' : 'primary'} onClick={toggleOnline}>{online ? 'Go offline' : 'Go online'}</Button>
 
       {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
 
@@ -102,6 +124,7 @@ export default function RiderHome() {
 
       <div style={{ height: 16 }} />
       <Button variant="ghost" onClick={() => (location.href = '/kyc')}>Complete verification (KYC)</Button>
+      </PullToRefresh>
 
       {toast}
       <BottomNav />
