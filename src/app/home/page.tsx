@@ -5,10 +5,13 @@ import { AddressInput, type Place } from '@/components/AddressInput';
 import { MapPreview } from '@/components/MapPreview';
 import { api, type JobType, type Quote } from '@/lib/api';
 import { getToken } from '@/lib/session';
+import { BottomNav } from '@/components/BottomNav';
+import { useRequireAuth } from '@/lib/useAuth';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
 export default function HomePage() {
+  const { ready } = useRequireAuth();
   const [type, setType] = useState<JobType>('DELIVERY');
   const [pickup, setPickup] = useState<Place | null>(null);
   const [dropoff, setDropoff] = useState<Place | null>(null);
@@ -47,13 +50,14 @@ export default function HomePage() {
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
 
+  if (!ready) return null;
+
   return (
-    <main style={{ padding: 20, paddingBottom: 40 }}>
+    <main style={{ padding: 20, paddingBottom: 96 }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
           <span style={{ color: 'var(--ink)' }}>Ryda</span><span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
         </b>
-        <a href="/rider" className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', textDecoration: 'none' }}>RIDER →</a>
       </header>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -104,6 +108,8 @@ export default function HomePage() {
           </p>
         </div>
       )}
+
+      <BottomNav />
     </main>
   );
 }

@@ -3,10 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { api, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
+import { BottomNav } from '@/components/BottomNav';
+import { useRequireAuth } from '@/lib/useAuth';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
 export default function RiderHome() {
+  const { ready } = useRequireAuth();
   const [online, setOnline] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [earnings, setEarnings] = useState<number | null>(null);
@@ -32,8 +35,10 @@ export default function RiderHome() {
     catch (e) { alert((e as Error).message); loadFeed(); }
   };
 
+  if (!ready) return null;
+
   return (
-    <main style={{ padding: 20 }}>
+    <main style={{ padding: 20, paddingBottom: 96 }}>
       <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.06em' }}>EARNINGS TODAY</div>
       <div className="mono" style={{ fontSize: 28, fontWeight: 700 }}>{earnings === null ? '—' : naira(earnings)}</div>
 
@@ -76,6 +81,8 @@ export default function RiderHome() {
 
       <div style={{ height: 16 }} />
       <Button variant="ghost" onClick={() => (location.href = '/kyc')}>Complete verification (KYC)</Button>
+
+      <BottomNav />
     </main>
   );
 }

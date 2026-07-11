@@ -2,11 +2,17 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
+import { getUserRole, isLoggedIn, setToken } from '@/lib/session';
 
 type Role = 'CUSTOMER' | 'RIDER';
 const RESEND_COOLDOWN = 30; // seconds between code requests (UX guard on top of the server rate limit)
 
 export default function LoginPage() {
+  // Already signed in? Skip login and go straight into the app.
+  useEffect(() => {
+    if (isLoggedIn()) window.location.href = getUserRole() === 'RIDER' ? '/rider' : '/home';
+  }, []);
+
   const [phase, setPhase] = useState<'phone' | 'code'>('phone');
   const [role, setRole] = useState<Role>('CUSTOMER');
   const [phone, setPhone] = useState('');
@@ -49,7 +55,7 @@ export default function LoginPage() {
     setErr(null); setNote(null); setBusy(true);
     try {
       const t = await api.verifyOtp(phone, code, role);
-      sessionStorage.setItem('rf_token', t.accessToken);
+      setToken(t.accessToken);
       location.href = role === 'RIDER' ? '/rider' : '/home';
     } catch (e) { setErr((e as Error).message); }
     finally { setBusy(false); }
