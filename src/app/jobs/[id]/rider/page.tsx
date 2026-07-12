@@ -26,6 +26,7 @@ export default function RiderJob() {
   const [feeMinor, setFeeMinor] = useState<number | null>(null);
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [geo, setGeo] = useState<Geo>('checking');
+  const [showRelease, setShowRelease] = useState(false);
   const sockRef = useRef<any>(null);
   const { show, node: toast } = useToast();
   const done = outcome !== null;
@@ -111,6 +112,12 @@ export default function RiderJob() {
       setStatus(r.status); setFeeMinor(r.attemptFeeMinor); setOutcome('failed');
     } catch (e) { show((e as Error).message); }
   };
+  // Hand an accepted job back to the pool (before pickup only) so another rider is matched.
+  const release = async () => {
+    try { await api.releaseJob(getToken(), id); show('Job released — back to the pool', 'success'); setTimeout(() => (location.href = '/rider'), 800); }
+    catch (e) { show((e as Error).message); }
+  };
+  const releasable = ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP'].includes(status);
 
   const codeLabel = policy === 'DELEGATE'
     ? 'ENTER THE CODE (RECEIVER OR THEIR PROXY)'
@@ -230,6 +237,23 @@ export default function RiderJob() {
             </Button>
           );
         })()
+      )}
+
+      {!done && releasable && (
+        showRelease ? (
+          <div className="rf-card" style={{ marginTop: 16 }}>
+            <b style={{ fontSize: 14 }}>Release this job?</b>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
+              It goes back to the pool for another rider — only possible before pickup, and no money moves. Releasing too many jobs can limit the offers you get.
+            </p>
+            <Button variant="ghost" onClick={release}>Release to another rider</Button>
+          </div>
+        ) : (
+          <button onClick={() => setShowRelease(true)} className="mono"
+            style={{ display: 'block', width: '100%', textAlign: 'center', background: 'none', border: 'none', padding: '16px 4px 4px', cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+            CAN&apos;T CONTINUE? RELEASE THIS JOB →
+          </button>
+        )
       )}
       {toast}
     </main>

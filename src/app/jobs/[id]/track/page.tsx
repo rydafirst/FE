@@ -11,6 +11,8 @@ const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFr
 
 // Ordered lifecycle for the progress bar.
 const FLOW = ['FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'COMPLETED', 'RELEASED'];
+// A customer can cancel (and be refunded) any time before the parcel is picked up.
+const CANCELLABLE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP'];
 
 function label(status: string): { text: string; color: string } {
   switch (status) {
@@ -38,6 +40,7 @@ export default function TrackPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [deliveryCode, setDeliveryCode] = useState<string | null>(null);
+  const [showCancel, setShowCancel] = useState(false);
   const [riderPos, setRiderPos] = useState<LatLng | null>(null);
   const [trail, setTrail] = useState<LatLng[]>([]); // breadcrumb of the rider's actual movement
   const [route, setRoute] = useState<LatLng[]>([]); // planned road route pickup -> dropoff
@@ -51,6 +54,10 @@ export default function TrackPage() {
 
   const revealCode = async () => {
     try { const r = await api.issueCode(getToken(), id); setDeliveryCode(r.code); }
+    catch (e) { setErr((e as Error).message); }
+  };
+  const cancelOrder = async () => {
+    try { await api.cancelJob(getToken(), id); location.href = '/orders'; }
     catch (e) { setErr((e as Error).message); }
   };
 
@@ -222,6 +229,28 @@ export default function TrackPage() {
             <Button variant="ghost" onClick={revealCode}>Reveal delivery code</Button>
           )}
         </div>
+      )}
+
+      {job && CANCELLABLE.includes(job.status) && (
+        showCancel ? (
+          <div className="rf-card" style={{ marginBottom: 12 }}>
+            <b style={{ fontSize: 14 }}>Cancel this order?</b>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
+              {job.status === 'CREATED'
+                ? 'This order isn’t paid yet, so nothing will be charged.'
+                : 'You’ll be refunded the full amount held in escrow. Cancelling is only possible before pickup.'}
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button variant="ghost" onClick={cancelOrder}>Yes, cancel</Button>
+              <Button variant="ghost" onClick={() => setShowCancel(false)}>Keep order</Button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowCancel(true)} className="mono"
+            style={{ display: 'block', width: '100%', textAlign: 'center', background: 'none', border: 'none', padding: '4px', cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--danger)', marginBottom: 12 }}>
+            CANCEL THIS ORDER →
+          </button>
+        )
       )}
 
       <div style={{ display: 'flex', gap: 8 }}>
