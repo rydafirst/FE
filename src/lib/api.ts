@@ -23,6 +23,12 @@ export interface Job {
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
 }
 export interface Notification { id: string; jobId?: string; title: string; body: string; createdAt: number; read: boolean }
+export interface AdminQueueEntry { riderId: string; track: string | null; status: string; oldestPendingAt: number }
+export interface AdminRiderDoc {
+  id: string; type: string; label: string; status: string; version: number;
+  rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
+}
+export interface AdminRiderDetail { riderId: string; track: string | null; status: string; documents: AdminRiderDoc[] }
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
   const { token, headers, ...rest } = opts;
@@ -101,4 +107,11 @@ export const api = {
     call<{ funded: boolean; status: string }>(`/jobs/${id}/confirm-payment`, { method: 'POST', token, body: JSON.stringify({ transactionId }) }),
   notifications: (token: string) => call<{ items: Notification[]; unread: number }>(`/me/notifications`, { token }),
   markNotificationsRead: (token: string) => call<{ ok: boolean }>(`/me/notifications/read`, { method: 'POST', token }),
+  adminDocQueue: (token: string) => call<AdminQueueEntry[]>(`/admin/documents/queue`, { token }),
+  adminRiderDocuments: (token: string, riderId: string) =>
+    call<AdminRiderDetail>(`/admin/documents/riders/${riderId}`, { token }),
+  adminApproveDocument: (token: string, id: string) =>
+    call<{ riderStatus: string }>(`/admin/documents/${id}/approve`, { method: 'POST', token }),
+  adminRejectDocument: (token: string, id: string, reason: string) =>
+    call<{ riderStatus: string }>(`/admin/documents/${id}/reject`, { method: 'POST', token, body: JSON.stringify({ reason }) }),
 };

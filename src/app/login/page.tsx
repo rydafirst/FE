@@ -10,7 +10,10 @@ const RESEND_COOLDOWN = 30; // seconds between code requests (UX guard on top of
 export default function LoginPage() {
   // Already signed in? Skip login and go straight into the app.
   useEffect(() => {
-    if (isLoggedIn()) window.location.href = getUserRole() === 'RIDER' ? '/rider' : '/home';
+    if (isLoggedIn()) {
+      const r = getUserRole();
+      window.location.href = r === 'ADMIN' ? '/admin' : r === 'RIDER' ? '/rider' : '/home';
+    }
   }, []);
 
   const [phase, setPhase] = useState<'phone' | 'code'>('phone');
@@ -56,7 +59,10 @@ export default function LoginPage() {
     try {
       const t = await api.verifyOtp(phone, code, role);
       setToken(t.accessToken);
-      location.href = role === 'RIDER' ? '/rider' : '/home';
+      // Route by the *actual* role in the issued token (an allowlisted admin phone is upgraded to
+      // ADMIN server-side regardless of the requested role).
+      const actual = getUserRole();
+      location.href = actual === 'ADMIN' ? '/admin' : actual === 'RIDER' ? '/rider' : '/home';
     } catch (e) { setErr((e as Error).message); }
     finally { setBusy(false); }
   }
