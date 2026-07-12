@@ -44,3 +44,6 @@ body {
 .rf-pill--transit { background: var(--info); color: #fff; }
 .rf-pill--waiting { background: var(--warning); color: #fff; }
 .rf-pill--dispute { background: var(--danger); color: #fff; }
+
+@keyframes rfPulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+.rf-pulse { animation: rfPulse 1.6s ease-in-out infinite; }

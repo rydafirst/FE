@@ -1,11 +1,31 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { getUserRole } from '@/lib/session';
+import { getUserRole, getToken } from '@/lib/session';
+import { api, type Job } from '@/lib/api';
 
 // Persistent bottom navigation for signed-in screens. Role-aware: customers book & track,
 // riders get their dashboard. Everyone gets Profile (where logout lives).
 type Tab = { href: string; label: string; icon: JSX.Element };
+
+const CUSTOMER_ACTIVE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'];
+const RIDER_ACTIVE = ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'];
+
+function bannerLabel(status: string, isRider: boolean): string {
+  if (isRider) return 'Active delivery — tap to continue';
+  switch (status) {
+    case 'CREATED': return 'Order awaiting payment';
+    case 'FUNDED': case 'SEARCHING': return 'Finding you a rider…';
+    case 'ACCEPTED': return 'Rider assigned';
+    case 'EN_ROUTE_PICKUP': return 'Rider heading to pickup';
+    case 'AT_PICKUP': return 'Rider at pickup';
+    case 'IN_PROGRESS': return 'Your parcel is on the way';
+    case 'EN_ROUTE_DROP': return 'Almost at the drop-off';
+    case 'ARRIVED': case 'AWAITING_CODE': return 'Rider has arrived';
+    default: return 'Order in progress';
+  }
+}
 
 const ICON = {
   home: <path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
@@ -17,6 +37,24 @@ const ICON = {
 export function BottomNav() {
   const path = usePathname();
   const role = getUserRole();
+  const isRider = role === 'RIDER';
+  const [activeJob, setActiveJob] = useState<Job | null>(null);
+
+  // Poll the user's live order/trip so a persistent banner keeps it in view across pages.
+  useEffect(() => {
+    let stop = false;
+    const set = isRider ? RIDER_ACTIVE : CUSTOMER_ACTIVE;
+    const tick = async () => {
+      try {
+        const jobs = isRider ? await api.assignedJobs(getToken()) : await api.myJobs(getToken());
+        const found = jobs.find((j) => set.includes(j.status)) ?? null;
+        if (!stop) setActiveJob(found);
+      } catch { /* keep last */ }
+    };
+    tick();
+    const id = setInterval(tick, 6000);
+    return () => { stop = true; clearInterval(id); };
+  }, [isRider]);
 
   const tabs: Tab[] =
     role === 'RIDER'
@@ -32,10 +70,16 @@ export function BottomNav() {
         ];
 
   return (
-    <nav style={{
-      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480,
-      display: 'flex', borderTop: '1px solid var(--line)', background: 'var(--bg)', zIndex: 50,
-    }}>
+    <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, zIndex: 50 }}>
+      {activeJob && (
+        <Link href={isRider ? `/jobs/${activeJob.id}/rider` : `/jobs/${activeJob.id}/track`}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--ink)', color: '#fff', padding: '11px 16px', textDecoration: 'none' }}>
+          <span className="rf-pulse" style={{ width: 9, height: 9, borderRadius: 5, background: 'var(--primary)', flexShrink: 0 }} />
+          <span style={{ flex: 1, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bannerLabel(activeJob.status, isRider)}</span>
+          <span className="mono" style={{ fontSize: 11, letterSpacing: '.06em' }}>VIEW ›</span>
+        </Link>
+      )}
+      <nav style={{ display: 'flex', borderTop: '1px solid var(--line)', background: 'var(--bg)' }}>
       {tabs.map((t) => {
         // Exact match: '/rider' must not also light up when on '/rider/trips'.
         const active = path === t.href;
@@ -53,6 +97,7 @@ export function BottomNav() {
           </Link>
         );
       })}
-    </nav>
+      </nav>
+    </div>
   );
 }
