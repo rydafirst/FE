@@ -92,7 +92,9 @@ export const api = {
   wallet: (token: string) => call<{ releasedMinor: number; currency: 'NGN'; jobsCount: number; activeCount: number }>(`/wallet`, { token }),
   getAccount: (token: string) =>
     call<{ bankCode: string; accountName: string; accountNumberMasked: string; type: 'refund' | 'payout' } | null>(`/me/account`, { token }),
-  setAccount: (token: string, body: { bankCode: string; accountNumber: string; accountName: string; type?: 'refund' | 'payout' }) =>
+  resolveAccount: (token: string, body: { bankCode: string; accountNumber: string }) =>
+    call<{ accountName: string }>(`/me/account/resolve`, { method: 'POST', token, body: JSON.stringify(body) }),
+  setAccount: (token: string, body: { bankCode: string; accountNumber: string; type?: 'refund' | 'payout' }) =>
     call<{ bankCode: string; accountName: string; accountNumberMasked: string; type: 'refund' | 'payout' }>(`/me/account`, { method: 'PUT', token, body: JSON.stringify(body) }),
   confirmPayment: (token: string, id: string, transactionId: string) =>
     call<{ funded: boolean; status: string }>(`/jobs/${id}/confirm-payment`, { method: 'POST', token, body: JSON.stringify({ transactionId }) }),

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { LiveMap, type LatLng } from '@/components/LiveMap';
+import { BankAccountForm } from '@/components/BankAccountForm';
 import { api, type Job } from '@/lib/api';
 import { getToken, getUserId } from '@/lib/session';
 import { connectSocket, fetchRoute } from '@/lib/live';
@@ -41,6 +42,7 @@ export default function TrackPage() {
   const [err, setErr] = useState<string | null>(null);
   const [deliveryCode, setDeliveryCode] = useState<string | null>(null);
   const [showCancel, setShowCancel] = useState(false);
+  const [refAcct, setRefAcct] = useState<{ accountName: string; accountNumberMasked: string; bankCode: string } | null>(null);
   const [riderPos, setRiderPos] = useState<LatLng | null>(null);
   const [trail, setTrail] = useState<LatLng[]>([]); // breadcrumb of the rider's actual movement
   const [route, setRoute] = useState<LatLng[]>([]); // planned road route pickup -> dropoff
@@ -60,6 +62,7 @@ export default function TrackPage() {
     try { await api.cancelJob(getToken(), id); location.href = '/orders'; }
     catch (e) { setErr((e as Error).message); }
   };
+  useEffect(() => { api.getAccount(getToken()).then(setRefAcct).catch(() => {}); }, []);
 
   const refresh = async () => {
     try { setJob(await api.getJob(getToken(), id)); setErr(null); }
@@ -238,8 +241,17 @@ export default function TrackPage() {
             <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
               {job.status === 'CREATED'
                 ? 'This order isn’t paid yet, so nothing will be charged.'
-                : 'You’ll be refunded the full amount held in escrow. Cancelling is only possible before pickup.'}
+                : `You’ll be refunded ${naira(job.amountMinor)} to your original payment method. You can add a bank account below as a backup — it’s optional.`}
             </p>
+            {job.status !== 'CREATED' && !refAcct && (
+              <div style={{ marginBottom: 12 }}>
+                <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 6 }}>BACKUP REFUND ACCOUNT (OPTIONAL)</div>
+                <BankAccountForm type="refund" onSaved={setRefAcct} />
+              </div>
+            )}
+            {job.status !== 'CREATED' && refAcct && (
+              <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', marginBottom: 12 }}>BACKUP ACCOUNT ON FILE · {refAcct.accountNumberMasked}</div>
+            )}
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="ghost" onClick={cancelOrder}>Yes, cancel</Button>
               <Button variant="ghost" onClick={() => setShowCancel(false)}>Keep order</Button>

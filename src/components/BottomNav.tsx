@@ -22,6 +22,7 @@ export function BottomNav() {
     role === 'RIDER'
       ? [
           { href: '/rider', label: 'Dashboard', icon: ICON.bike },
+          { href: '/rider/trips', label: 'Trips', icon: ICON.orders },
           { href: '/profile', label: 'Profile', icon: ICON.user },
         ]
       : [
@@ -36,7 +37,8 @@ export function BottomNav() {
       display: 'flex', borderTop: '1px solid var(--line)', background: 'var(--bg)', zIndex: 50,
     }}>
       {tabs.map((t) => {
-        const active = path === t.href || path.startsWith(t.href + '/');
+        // Exact match: '/rider' must not also light up when on '/rider/trips'.
+        const active = path === t.href;
         return (
           <Link key={t.href} href={t.href} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,

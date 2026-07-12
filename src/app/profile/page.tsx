@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { BottomNav } from '@/components/BottomNav';
-import { useToast } from '@/components/ui/Toast';
+import { BankAccountForm } from '@/components/BankAccountForm';
 import { useRequireAuth } from '@/lib/useAuth';
 import { clearToken, getToken, getUserId, getUserRole } from '@/lib/session';
 import { api } from '@/lib/api';
@@ -61,25 +61,10 @@ function BankAccountCard({ role }: { role: 'CUSTOMER' | 'RIDER' | 'ADMIN' }) {
   const [acct, setAcct] = useState<{ bankCode: string; accountName: string; accountNumberMasked: string } | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [bankCode, setBankCode] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [busy, setBusy] = useState(false);
-  const { show, node: toast } = useToast();
 
   useEffect(() => {
     api.getAccount(getToken()).then((a) => { setAcct(a); setLoaded(true); }).catch(() => setLoaded(true));
   }, []);
-
-  const save = async () => {
-    setBusy(true);
-    try {
-      const a = await api.setAccount(getToken(), { bankCode, accountNumber, accountName, type: isRider ? 'payout' : 'refund' });
-      setAcct(a); setEditing(false); setAccountNumber('');
-      show('Bank account saved.', 'success');
-    } catch (e) { show((e as Error).message); }
-    finally { setBusy(false); }
-  };
 
   return (
     <div className="rf-card" style={{ marginBottom: 16 }}>
@@ -108,18 +93,10 @@ function BankAccountCard({ role }: { role: 'CUSTOMER' | 'RIDER' | 'ADMIN' }) {
 
       {editing && (
         <div>
-          <input className="rf-input" style={{ marginBottom: 8 }} placeholder="Account name" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
-          <input className="rf-input" style={{ marginBottom: 8 }} placeholder="Account number (10 digits)" inputMode="numeric" maxLength={10} value={accountNumber} onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))} />
-          <input className="rf-input" style={{ marginBottom: 12 }} placeholder="Bank code (e.g. 044)" inputMode="numeric" value={bankCode} onChange={(e) => setBankCode(e.target.value.replace(/\D/g, ''))} />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save account'}</Button>
-            <Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
-          </div>
-          <p className="mono" style={{ fontSize: 10, color: 'var(--mid)', margin: '10px 0 0' }}>STORED ENCRYPTED · ONLY THE LAST 4 DIGITS ARE EVER SHOWN</p>
+          <BankAccountForm type={isRider ? 'payout' : 'refund'} onSaved={(a) => { setAcct(a); setEditing(false); }} />
+          <button onClick={() => setEditing(false)} className="mono" style={{ background: 'none', border: 'none', padding: '10px 0 0', cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>CANCEL</button>
         </div>
       )}
-
-      {toast}
     </div>
   );
 }
