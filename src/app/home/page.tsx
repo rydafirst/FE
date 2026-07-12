@@ -6,6 +6,7 @@ import { MapPreview } from '@/components/MapPreview';
 import { api, type JobType, type Quote, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useRequireAuth } from '@/lib/useAuth';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
@@ -103,6 +104,7 @@ export default function HomePage() {
         <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
           <span style={{ color: 'var(--ink)' }}>Ryda</span><span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
         </b>
+        <NotificationBell />
       </header>
 
       {/* Block a second order while one is still awaiting payment. */}

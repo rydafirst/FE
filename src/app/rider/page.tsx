@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { api, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
+import { NotificationBell } from '@/components/NotificationBell';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useRequireAuth } from '@/lib/useAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -74,6 +75,12 @@ export default function RiderHome() {
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>
       <PullToRefresh onRefresh={refreshAll}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+          <span style={{ color: 'var(--ink)' }}>Ryda</span><span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
+        </b>
+        <NotificationBell />
+      </header>
       {/* Resume an in-progress trip — visible on any browser/device signed into this account. */}
       {activeJob && (
         <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 16 }}>

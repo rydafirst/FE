@@ -22,6 +22,7 @@ export interface Job {
   item?: string; instructions?: string;
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
 }
+export interface Notification { id: string; jobId?: string; title: string; body: string; createdAt: number; read: boolean }
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
   const { token, headers, ...rest } = opts;
@@ -98,4 +99,6 @@ export const api = {
     call<{ bankCode: string; accountName: string; accountNumberMasked: string; type: 'refund' | 'payout' }>(`/me/account`, { method: 'PUT', token, body: JSON.stringify(body) }),
   confirmPayment: (token: string, id: string, transactionId: string) =>
     call<{ funded: boolean; status: string }>(`/jobs/${id}/confirm-payment`, { method: 'POST', token, body: JSON.stringify({ transactionId }) }),
+  notifications: (token: string) => call<{ items: Notification[]; unread: number }>(`/me/notifications`, { token }),
+  markNotificationsRead: (token: string) => call<{ ok: boolean }>(`/me/notifications/read`, { method: 'POST', token }),
 };
