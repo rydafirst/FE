@@ -37,8 +37,9 @@ export default function ProfilePage() {
       <BankAccountCard role={role} />
 
       <div className="rf-card" style={{ padding: 0, marginBottom: 16 }}>
-        {role === 'RIDER' ? <Row href="/rider" label="Rider dashboard" /> : <Row href="/home" label="Book a delivery" />}
-        <Row href="/kyc" label="Verification (KYC)" last />
+        {role === 'RIDER'
+          ? <><Row href="/rider" label="Rider dashboard" /><Row href="/documents" label="Documents & verification" last /></>
+          : <Row href="/home" label="Book a delivery" last />}
       </div>
 
       <div className="rf-card" style={{ marginBottom: 16 }}>

@@ -130,7 +130,7 @@ export default function RiderHome() {
       )}
 
       <div style={{ height: 16 }} />
-      <Button variant="ghost" onClick={() => (location.href = '/kyc')}>Complete verification (KYC)</Button>
+      <Button variant="ghost" onClick={() => (location.href = '/documents')}>Documents &amp; verification</Button>
       </PullToRefresh>
 
       {toast}

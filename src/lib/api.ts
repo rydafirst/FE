@@ -29,6 +29,14 @@ export interface AdminRiderDoc {
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
 export interface AdminRiderDetail { riderId: string; track: string | null; status: string; documents: AdminRiderDoc[] }
+export type VehicleTrack = 'BIKE' | 'CAR' | 'KEKE';
+export type DocType =
+  | 'PROFILE_PHOTO' | 'GOV_ID' | 'LICENSE' | 'ADDRESS_PROOF' | 'VEHICLE_REG' | 'PROOF_OF_OWNERSHIP'
+  | 'ROADWORTHINESS' | 'INSURANCE' | 'VEHICLE_PHOTO' | 'GUARANTOR' | 'LASRRA' | 'LASDRI' | 'HACKNEY_PERMIT' | 'KEKE_PERMIT';
+export type DocState = 'MISSING' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+export type DocOnboarding = 'NO_TRACK' | 'INCOMPLETE' | 'UNDER_REVIEW' | 'ACTION_REQUIRED' | 'APPROVED' | 'EXPIRED';
+export interface ChecklistItem { type: DocType; label: string; required: boolean; expires: boolean; status: DocState; rejectionReason?: string; expiresAt?: number }
+export interface DocChecklist { track: VehicleTrack | null; onboarding: DocOnboarding; items: ChecklistItem[] }
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
   const { token, headers, ...rest } = opts;
@@ -107,6 +115,11 @@ export const api = {
     call<{ funded: boolean; status: string }>(`/jobs/${id}/confirm-payment`, { method: 'POST', token, body: JSON.stringify({ transactionId }) }),
   notifications: (token: string) => call<{ items: Notification[]; unread: number }>(`/me/notifications`, { token }),
   markNotificationsRead: (token: string) => call<{ ok: boolean }>(`/me/notifications/read`, { method: 'POST', token }),
+  documentsChecklist: (token: string) => call<DocChecklist>(`/me/documents`, { token }),
+  setVehicleTrack: (token: string, track: VehicleTrack) =>
+    call<{ track: VehicleTrack }>(`/me/documents/track`, { method: 'PUT', token, body: JSON.stringify({ track }) }),
+  requestDocumentUpload: (token: string, body: { type: DocType; contentType: string; issuedAt?: number; expiresAt?: number }) =>
+    call<{ documentId: string; uploadUrl: string }>(`/me/documents/upload-url`, { method: 'POST', token, body: JSON.stringify(body) }),
   adminDocQueue: (token: string) => call<AdminQueueEntry[]>(`/admin/documents/queue`, { token }),
   adminRiderDocuments: (token: string, riderId: string) =>
     call<AdminRiderDetail>(`/admin/documents/riders/${riderId}`, { token }),
