@@ -33,7 +33,7 @@ export interface AdminRiderDoc {
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
 export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: string; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: boolean } }
-export interface AdminOps { summary: Record<string, number>; jobs: { id: string; status: string; type: string }[] }
+export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; jobs: { id: string; status: string; type: string }[] }
 export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string }
 export interface AdminFinance { totals: { held: number; released: number; refunded: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
 export interface AdminDispute { id: string; jobId: string; openedBy: string; status: string; tier: string; resolution?: string; createdAt: string; resolvedAt?: string }

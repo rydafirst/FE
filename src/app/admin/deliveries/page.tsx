@@ -53,7 +53,11 @@ export default function AdminDeliveriesPage() {
 
       {summary && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 16 }}>
-          {Object.entries(summary).map(([k, v]) => (
+          <div className="rf-card" style={{ padding: '12px 14px' }}>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>ACTIVE TOTAL</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{summary.activeTotal}</div>
+          </div>
+          {Object.entries(summary.byStatus).map(([k, v]) => (
             <div key={k} className="rf-card" style={{ padding: '12px 14px' }}>
               <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>{k.replace(/_/g, ' ').toUpperCase()}</div>
               <div className="mono" style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{v}</div>
