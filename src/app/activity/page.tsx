@@ -85,7 +85,7 @@ export default function ActivityPage() {
             <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--line)',
               display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 3h9l4 4v14a0 0 0 0 1 0 0H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" /><path d="M9 12h7M9 16h7M9 8h4" />
+                <circle cx="6" cy="17" r="3.2" /><circle cx="18" cy="17" r="3.2" /><path d="M6 17 10 9h5l2 4M9 9h4" />
               </svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>

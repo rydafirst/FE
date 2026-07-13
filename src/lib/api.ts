@@ -32,6 +32,11 @@ export interface AdminRiderDoc {
   id: string; type: string; label: string; status: string; version: number;
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
+export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: string; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: boolean } }
+export interface AdminOps { summary: Record<string, number>; jobs: { id: string; status: string; type: string }[] }
+export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string }
+export interface AdminFinance { totals: { held: number; released: number; refunded: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
+export interface AdminDispute { id: string; jobId: string; openedBy: string; status: string; tier: string; resolution?: string; createdAt: string; resolvedAt?: string }
 export interface AdminRiderProfile { track: string | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: string }
 export interface AdminRiderDetail { riderId: string; track: string | null; status: string; profile?: AdminRiderProfile; documents: AdminRiderDoc[] }
 export type VehicleTrack = 'BIKE' | 'CAR' | 'KEKE';
@@ -139,6 +144,15 @@ export const api = {
     call<{ id: string }>(`/jobs/${id}/rating`, { method: 'POST', token, body: JSON.stringify(body) }),
   adminVerifyRiderName: (token: string, riderId: string, verified: boolean) =>
     call<{ ok?: boolean }>(`/admin/documents/riders/${riderId}/verify-name`, { method: 'POST', token, body: JSON.stringify({ verified }) }),
+  adminSettings: (token: string) => call<EffectiveSettings>(`/admin/settings`, { token }),
+  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'launchCity'>>) =>
+    call<EffectiveSettings>(`/admin/settings`, { method: 'PUT', token, body: JSON.stringify(patch) }),
+  adminOps: (token: string) => call<AdminOps>(`/admin/ops/jobs/active`, { token }),
+  adminDeliveries: (token: string) => call<AdminDelivery[]>(`/admin/ops/deliveries`, { token }),
+  adminFinance: (token: string) => call<AdminFinance>(`/admin/finance/reconciliation`, { token }),
+  adminDisputes: (token: string) => call<AdminDispute[]>(`/admin/disputes`, { token }),
+  adminResolveDispute: (token: string, id: string, resolution: 'RELEASE' | 'REFUND' | 'SPLIT', riderShareMinor?: number) =>
+    call<{ status: string }>(`/admin/disputes/${id}/resolve`, { method: 'POST', token, body: JSON.stringify({ resolution, ...(riderShareMinor != null ? { riderShareMinor } : {}) }) }),
   adminDocQueue: (token: string) => call<AdminQueueEntry[]>(`/admin/documents/queue`, { token }),
   adminRiderDocuments: (token: string, riderId: string) =>
     call<AdminRiderDetail>(`/admin/documents/riders/${riderId}`, { token }),
