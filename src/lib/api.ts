@@ -22,13 +22,18 @@ export interface Job {
   item?: string; instructions?: string;
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
 }
+export interface AvailableJob {
+  id: string; type: JobType; amountMinor: number; currency: 'NGN'; createdAt: string;
+  pickupArea: string; dropoffArea: string; pickupApprox: { lat: number; lng: number };
+}
 export interface Notification { id: string; jobId?: string; title: string; body: string; createdAt: number; read: boolean }
 export interface AdminQueueEntry { riderId: string; track: string | null; status: string; oldestPendingAt: number }
 export interface AdminRiderDoc {
   id: string; type: string; label: string; status: string; version: number;
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
-export interface AdminRiderDetail { riderId: string; track: string | null; status: string; documents: AdminRiderDoc[] }
+export interface AdminRiderProfile { track: string | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: string }
+export interface AdminRiderDetail { riderId: string; track: string | null; status: string; profile?: AdminRiderProfile; documents: AdminRiderDoc[] }
 export type VehicleTrack = 'BIKE' | 'CAR' | 'KEKE';
 export type DocType =
   | 'PROFILE_PHOTO' | 'GOV_ID' | 'LICENSE' | 'ADDRESS_PROOF' | 'VEHICLE_REG' | 'PROOF_OF_OWNERSHIP'
@@ -37,6 +42,11 @@ export type DocState = 'MISSING' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | '
 export type DocOnboarding = 'NO_TRACK' | 'INCOMPLETE' | 'UNDER_REVIEW' | 'ACTION_REQUIRED' | 'APPROVED' | 'EXPIRED';
 export interface ChecklistItem { type: DocType; label: string; required: boolean; expires: boolean; status: DocState; rejectionReason?: string; expiresAt?: number }
 export interface DocChecklist { track: VehicleTrack | null; onboarding: DocOnboarding; items: ChecklistItem[] }
+export type VehicleColor = 'BLACK' | 'WHITE' | 'SILVER' | 'GREY' | 'RED' | 'BLUE' | 'GREEN' | 'GOLD' | 'OTHER';
+export const VEHICLE_COLORS: VehicleColor[] = ['BLACK', 'WHITE', 'SILVER', 'GREY', 'RED', 'BLUE', 'GREEN', 'GOLD', 'OTHER'];
+export interface RiderProfile { track: VehicleTrack | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: VehicleColor }
+export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number }
+export interface PendingRating { jobId: string; amountMinor: number; createdAt: string; dropoffArea?: string; riderName?: string }
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
   const { token, headers, ...rest } = opts;
@@ -80,7 +90,7 @@ export const api = {
     call<{ status: string }>(`/jobs/${id}/confirm-code`, {
       method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ code }),
     }),
-  availableJobs: (token: string) => call<Job[]>(`/jobs/available`, { token }),
+  availableJobs: (token: string) => call<AvailableJob[]>(`/jobs/available`, { token }),
   assignedJobs: (token: string) => call<Job[]>(`/jobs/assigned`, { token }),
   getAvailability: (token: string) => call<{ online: boolean }>(`/me/availability`, { token }),
   setAvailability: (token: string, online: boolean) =>
@@ -120,6 +130,15 @@ export const api = {
     call<{ track: VehicleTrack }>(`/me/documents/track`, { method: 'PUT', token, body: JSON.stringify({ track }) }),
   requestDocumentUpload: (token: string, body: { type: DocType; contentType: string; issuedAt?: number; expiresAt?: number }) =>
     call<{ documentId: string; uploadUrl: string }>(`/me/documents/upload-url`, { method: 'POST', token, body: JSON.stringify(body) }),
+  riderProfile: (token: string) => call<RiderProfile>(`/me/documents/profile`, { token }),
+  updateRiderProfile: (token: string, body: { legalName?: string; vehiclePlate?: string; vehicleColor?: VehicleColor }) =>
+    call<RiderProfile>(`/me/documents/profile`, { method: 'PUT', token, body: JSON.stringify(body) }),
+  jobRider: (token: string, id: string) => call<{ rider: RiderSummary | null }>(`/jobs/${id}/rider`, { token }),
+  pendingRatings: (token: string) => call<PendingRating[]>(`/jobs/pending-ratings`, { token }),
+  rateJob: (token: string, id: string, body: { stars: number; comment?: string }) =>
+    call<{ id: string }>(`/jobs/${id}/rating`, { method: 'POST', token, body: JSON.stringify(body) }),
+  adminVerifyRiderName: (token: string, riderId: string, verified: boolean) =>
+    call<{ ok?: boolean }>(`/admin/documents/riders/${riderId}/verify-name`, { method: 'POST', token, body: JSON.stringify({ verified }) }),
   adminDocQueue: (token: string) => call<AdminQueueEntry[]>(`/admin/documents/queue`, { token }),
   adminRiderDocuments: (token: string, riderId: string) =>
     call<AdminRiderDetail>(`/admin/documents/riders/${riderId}`, { token }),

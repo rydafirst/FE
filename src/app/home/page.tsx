@@ -7,6 +7,7 @@ import { api, type JobType, type Quote, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
+import { RatingPrompt } from '@/components/RatingModal';
 import { useRequireAuth } from '@/lib/useAuth';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
@@ -106,6 +107,7 @@ export default function HomePage() {
         </b>
         <NotificationBell />
       </header>
+      <RatingPrompt />
 
       {/* Block a second order while one is still awaiting payment. */}
       {pending && (

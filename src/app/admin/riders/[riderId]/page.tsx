@@ -35,6 +35,12 @@ export default function AdminRiderPage() {
     catch (e) { setErr((e as Error).message); } finally { setBusy(null); }
   };
 
+  const verifyName = async (verified: boolean) => {
+    setBusy('name');
+    try { await api.adminVerifyRiderName(getToken(), riderId, verified); await load(); }
+    catch (e) { setErr((e as Error).message); } finally { setBusy(null); }
+  };
+
   const reject = async (doc: AdminRiderDoc) => {
     const reason = window.prompt(`Reject "${doc.label}" — reason shown to the rider:`);
     if (!reason || reason.trim().length < 3) return;
@@ -54,6 +60,25 @@ export default function AdminRiderPage() {
       {data && (
         <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', marginBottom: 16 }}>
           {(data.track ?? 'NO VEHICLE')} · {data.status}
+        </div>
+      )}
+
+      {/* Identity + vehicle the rider entered — verify the name against the Gov ID document below. */}
+      {data?.profile && (
+        <div className="rf-card" style={{ marginBottom: 16 }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', marginBottom: 8 }}>RIDER DETAILS</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <b style={{ fontSize: 15 }}>{data.profile.legalName ?? '— no name —'}</b>
+              <div className="mono" style={{ fontSize: 11, color: 'var(--mid)', marginTop: 2 }}>
+                {[data.profile.vehiclePlate, data.profile.vehicleColor].filter(Boolean).join(' · ') || 'no vehicle details'}
+              </div>
+            </div>
+            <button onClick={() => verifyName(!data.profile!.nameVerified)} disabled={busy === 'name'} className="rf-btn"
+              style={{ background: data.profile.nameVerified ? 'var(--bg)' : 'var(--ink)', color: data.profile.nameVerified ? 'var(--ink-2)' : '#fff', border: '1px solid var(--line)', fontSize: 12 }}>
+              {data.profile.nameVerified ? 'Verified ✓ (undo)' : 'Verify name'}
+            </button>
+          </div>
         </div>
       )}
 

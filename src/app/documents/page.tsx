@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BottomNav } from '@/components/BottomNav';
 import { useRequireAuth } from '@/lib/useAuth';
-import { api, type ChecklistItem, type DocChecklist, type DocState, type VehicleTrack } from '@/lib/api';
+import { api, VEHICLE_COLORS, type ChecklistItem, type DocChecklist, type DocState, type VehicleColor, type VehicleTrack } from '@/lib/api';
 import { getToken } from '@/lib/session';
 
 const TRACKS: { value: VehicleTrack; label: string; hint: string }[] = [
@@ -116,6 +116,8 @@ export default function DocumentsPage() {
         </>
       )}
 
+      {data?.track && <RiderDetails />}
+
       {data?.track && data.items.map((item) => {
         const st = STATE[item.status];
         const isBusy = busy === item.type;
@@ -141,5 +143,69 @@ export default function DocumentsPage() {
 
       <BottomNav />
     </main>
+  );
+}
+
+// The identity + vehicle details a customer sees once this rider is assigned.
+function RiderDetails() {
+  const [legalName, setLegalName] = useState('');
+  const [plate, setPlate] = useState('');
+  const [color, setColor] = useState<VehicleColor | ''>('');
+  const [verified, setVerified] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.riderProfile(getToken()).then((p) => {
+      setLegalName(p.legalName ?? ''); setPlate(p.vehiclePlate ?? '');
+      setColor((p.vehicleColor as VehicleColor) ?? ''); setVerified(p.nameVerified); setLoaded(true);
+    }).catch(() => setLoaded(true));
+  }, []);
+
+  const save = async () => {
+    setSaving(true); setMsg(null);
+    try {
+      const p = await api.updateRiderProfile(getToken(), {
+        ...(legalName.trim() ? { legalName: legalName.trim() } : {}),
+        ...(plate.trim() ? { vehiclePlate: plate.trim() } : {}),
+        ...(color ? { vehicleColor: color } : {}),
+      });
+      setVerified(p.nameVerified); setMsg('Saved');
+    } catch (e) { setMsg((e as Error).message); } finally { setSaving(false); }
+  };
+
+  if (!loaded) return null;
+
+  return (
+    <div className="rf-card" style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>YOUR DETAILS (SHOWN TO CUSTOMERS)</span>
+        {legalName.trim() && (
+          <span className="rf-pill" style={{ background: verified ? 'var(--success)' : 'var(--warning)', color: '#fff', fontSize: 10 }}>
+            {verified ? 'NAME VERIFIED' : 'PENDING CHECK'}
+          </span>
+        )}
+      </div>
+      <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>FULL NAME (AS ON YOUR ID)</label>
+      <input className="rf-input" value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder="e.g. Tolu Olonibua" style={{ marginBottom: 10 }} />
+      <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>VEHICLE PLATE NUMBER</label>
+      <input className="rf-input" value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="e.g. ABC 123 DE" style={{ marginBottom: 10 }} />
+      <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>VEHICLE COLOUR</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        {VEHICLE_COLORS.map((c) => (
+          <button key={c} onClick={() => setColor(c)} className="mono"
+            style={{ padding: '6px 12px', borderRadius: 999, fontSize: 11, cursor: 'pointer',
+              border: `1px solid ${color === c ? 'var(--ink)' : 'var(--line)'}`,
+              background: color === c ? 'var(--ink)' : 'var(--bg)', color: color === c ? '#fff' : 'var(--ink-2)' }}>
+            {c}
+          </button>
+        ))}
+      </div>
+      <button onClick={save} disabled={saving} className="rf-btn" style={{ width: '100%', background: 'var(--ink)', color: '#fff', opacity: saving ? 0.6 : 1 }}>
+        {saving ? 'Saving…' : 'Save details'}
+      </button>
+      {msg && <p style={{ fontSize: 12.5, color: msg === 'Saved' ? 'var(--success)' : 'var(--danger)', marginTop: 8, textAlign: 'center' }}>{msg}</p>}
+    </div>
   );
 }

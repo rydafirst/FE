@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { LiveMap, type LatLng } from '@/components/LiveMap';
 import { BankAccountForm } from '@/components/BankAccountForm';
-import { api, type Job } from '@/lib/api';
+import { api, type Job, type RiderSummary } from '@/lib/api';
 import { getToken, getUserId } from '@/lib/session';
 import { connectSocket, fetchRoute } from '@/lib/live';
 
@@ -59,7 +59,7 @@ export default function TrackPage() {
     catch (e) { setErr((e as Error).message); }
   };
   const cancelOrder = async () => {
-    try { await api.cancelJob(getToken(), id); location.href = '/orders'; }
+    try { await api.cancelJob(getToken(), id); location.href = '/activity'; }
     catch (e) { setErr((e as Error).message); }
   };
   useEffect(() => { api.getAccount(getToken()).then(setRefAcct).catch(() => {}); }, []);
@@ -149,9 +149,9 @@ export default function TrackPage() {
             {' '}You can start again whenever you’re ready.
           </p>
           <Button onClick={() => (location.href = '/home')}>Back to booking</Button>
-          <button onClick={() => (location.href = '/orders')} className="mono"
+          <button onClick={() => (location.href = '/activity')} className="mono"
             style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
-            VIEW MY ORDERS →
+            VIEW MY ACTIVITY →
           </button>
         </div>
       </main>
@@ -162,11 +162,21 @@ export default function TrackPage() {
   const l = job ? label(job.status) : { text: 'Loading…', color: 'var(--ink-2)' };
   const hasRider = !!job && ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'].includes(job.status);
 
+  // Load the assigned rider's public details (name + vehicle) once one is assigned.
+  const [rider, setRider] = useState<RiderSummary | null>(null);
+  useEffect(() => {
+    if (!hasRider) { setRider(null); return; }
+    let stop = false;
+    api.jobRider(getToken(), id).then((r) => { if (!stop) setRider(r.rider); }).catch(() => {});
+    return () => { stop = true; };
+  }, [hasRider, id]);
+  const vehicleLabel = (tk: string | null) => tk === 'BIKE' ? 'Motorcycle' : tk === 'CAR' ? 'Car / Van' : tk === 'KEKE' ? 'Keke' : 'Vehicle';
+
   return (
     <main style={{ padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={() => (location.href = '/orders')} aria-label="Back to orders"
+          <button onClick={() => (location.href = '/activity')} aria-label="Back to activity"
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, lineHeight: 1, color: 'var(--ink)', padding: 0 }}>←</button>
           <b style={{ fontSize: 16 }}>Your delivery</b>
         </div>
@@ -206,9 +216,18 @@ export default function TrackPage() {
       {/* Rider card (only once one is assigned) */}
       {hasRider ? (
         <div className="rf-card" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--ink)', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">R</div>
-          <div style={{ flex: 1 }}><b>Your rider</b><div className="mono" style={{ fontSize: 11, color: 'var(--mid)' }}>ASSIGNED · BIKE</div></div>
+          <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--ink)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">
+            {(rider?.name ?? 'R').trim().charAt(0).toUpperCase()}
+          </div>
+          <div style={{ flex: 1 }}>
+            <b>{rider?.name ?? 'Assigned rider'}{rider?.nameVerified ? ' ✓' : ''}{rider?.ratingCount ? `  ★ ${rider.rating?.toFixed(1)}` : ''}</b>
+            <div className="mono" style={{ fontSize: 11, color: 'var(--mid)' }}>
+              {rider ? vehicleLabel(rider.vehicleType) : 'ASSIGNED'}
+              {rider?.vehicleColor ? ` · ${rider.vehicleColor.charAt(0) + rider.vehicleColor.slice(1).toLowerCase()}` : ''}
+              {rider?.vehiclePlate ? ` · ${rider.vehiclePlate}` : ''}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="rf-card" style={{ marginBottom: 12, textAlign: 'center', color: 'var(--ink-2)' }}>

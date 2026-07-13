@@ -60,12 +60,12 @@ export function BottomNav() {
     role === 'RIDER'
       ? [
           { href: '/rider', label: 'Dashboard', icon: ICON.bike },
-          { href: '/rider/trips', label: 'Trips', icon: ICON.orders },
+          { href: '/activity', label: 'Activity', icon: ICON.orders },
           { href: '/profile', label: 'Profile', icon: ICON.user },
         ]
       : [
           { href: '/home', label: 'Book', icon: ICON.home },
-          { href: '/orders', label: 'Orders', icon: ICON.orders },
+          { href: '/activity', label: 'Activity', icon: ICON.orders },
           { href: '/profile', label: 'Profile', icon: ICON.user },
         ];
 

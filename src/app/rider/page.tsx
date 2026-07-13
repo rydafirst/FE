@@ -1,10 +1,11 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { api, type Job } from '@/lib/api';
+import { api, type AvailableJob, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
+import { JobsMap } from '@/components/JobsMap';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useRequireAuth } from '@/lib/useAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -16,7 +17,7 @@ const ACTIVE = ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_R
 export default function RiderHome() {
   const { ready } = useRequireAuth();
   const [online, setOnline] = useState(false);
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<AvailableJob[]>([]);
   const [activeJob, setActiveJob] = useState<Job | null>(null);
   const [earnings, setEarnings] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -94,10 +95,17 @@ export default function RiderHome() {
       <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.06em' }}>EARNINGS TODAY</div>
       <div className="mono" style={{ fontSize: 28, fontWeight: 700 }}>{earnings === null ? '—' : naira(earnings)}</div>
 
-      <div style={{ height: 150, borderRadius: 6, background: 'var(--ink)', color: '#fff', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', margin: '12px 0' }} className="mono">
-        {online ? (jobs.length ? `${jobs.length} JOB${jobs.length > 1 ? 'S' : ''} NEARBY` : 'ONLINE — WAITING FOR JOBS') : 'OFFLINE'}
-      </div>
+      {online ? (
+        <div style={{ margin: '12px 0' }}>
+          <JobsMap pins={jobs.map((j) => ({ id: j.id, lat: j.pickupApprox.lat, lng: j.pickupApprox.lng, label: naira(j.amountMinor) }))} />
+          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', textAlign: 'center', marginTop: 8, letterSpacing: '.06em' }}>
+            {jobs.length ? `${jobs.length} JOB${jobs.length > 1 ? 'S' : ''} NEARBY` : 'ONLINE — WAITING FOR JOBS'}
+          </div>
+        </div>
+      ) : (
+        <div style={{ height: 120, borderRadius: 6, background: 'var(--ink)', color: '#fff', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', margin: '12px 0' }} className="mono">OFFLINE</div>
+      )}
       <Button variant={online ? 'ghost' : 'primary'} onClick={toggleOnline}>{online ? 'Go offline' : 'Go online'}</Button>
 
       {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
