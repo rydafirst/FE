@@ -66,6 +66,10 @@ export default function TrackPage() {
     try { const r = await api.initiateReturn(getToken(), id); if (r.paymentLink) window.open(r.paymentLink, '_blank'); }
     catch (e) { setErr((e as Error).message); }
   };
+  const notifyComing = async () => {
+    try { await api.notifyComing(getToken(), id); setErr(null); }
+    catch (e) { setErr((e as Error).message); }
+  };
 
   const revealCode = async () => {
     try { const r = await api.issueCode(getToken(), id); setDeliveryCode(r.code); }
@@ -228,11 +232,16 @@ export default function TrackPage() {
       {/* Live map: pickup + drop-off always; the rider marker appears once a rider is assigned and streaming. */}
       {job && (job.pickup || job.dropoff) && (
         <div style={{ marginBottom: 12 }}>
-          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} trail={hasRider ? trail : undefined} route={route} />
+          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} trail={hasRider ? trail : undefined} route={route} height={360} />
           {hasRider && !riderPos && (
             <p className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', textAlign: 'center', marginTop: 6 }}>
               WAITING FOR RIDER LOCATION…
             </p>
+          )}
+          {hasRider && (
+            <div style={{ marginTop: 10 }}>
+              <Button variant="ghost" onClick={notifyComing}>I&apos;m on my way — notify rider</Button>
+            </div>
           )}
         </div>
       )}
@@ -240,10 +249,15 @@ export default function TrackPage() {
       {/* Rider card (only once one is assigned) */}
       {hasRider ? (
         <div className="rf-card" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--ink)', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">
-            {(rider?.name ?? 'R').trim().charAt(0).toUpperCase()}
-          </div>
+          {rider?.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={rider.photoUrl} alt="" style={{ width: 40, height: 40, borderRadius: 20, objectFit: 'cover', background: 'var(--bg-2)' }} />
+          ) : (
+            <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--ink)', color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">
+              {(rider?.name ?? 'R').trim().charAt(0).toUpperCase()}
+            </div>
+          )}
           <div style={{ flex: 1 }}>
             <b>{rider?.name ?? 'Assigned rider'}{rider?.nameVerified ? ' ✓' : ''}{rider?.ratingCount ? `  ★ ${rider.rating?.toFixed(1)}` : ''}</b>
             <div className="mono" style={{ fontSize: 11, color: 'var(--mid)' }}>

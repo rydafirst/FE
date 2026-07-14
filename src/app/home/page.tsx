@@ -27,6 +27,8 @@ export default function HomePage() {
   const [pickup, setPickup] = useState<Place | null>(null);
   const [dropoff, setDropoff] = useState<Place | null>(null);
   const [item, setItem] = useState('');
+  const [weight, setWeight] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [instructions, setInstructions] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
@@ -88,6 +90,8 @@ export default function HomePage() {
         ...(dropoff?.area ? { dropoffArea: dropoff.area } : {}),
         ...(type === 'DELIVERY' && recipientName && recipientPhone ? { recipient: { name: recipientName, phone: recipientPhone } } : {}),
         ...(type === 'DELIVERY' && item ? { item } : {}),
+        ...(type === 'DELIVERY' && customerName.trim() ? { customerName: customerName.trim() } : {}),
+        ...(type === 'DELIVERY' && Number(weight) > 0 ? { weightKg: Number(weight) } : {}),
         ...(type === 'DELIVERY' && instructions ? { instructions } : {}),
       };
       const job = await api.createJob(getToken(), body);
@@ -139,7 +143,11 @@ export default function HomePage() {
 
       {type === 'DELIVERY' && (
         <>
-          <Field label="WHAT ARE YOU SENDING?"><input className="rf-input" value={item} onChange={(e) => setItem(e.target.value)} placeholder="e.g. documents, phone" /></Field>
+          <Field label="YOUR NAME"><input className="rf-input" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Shown to your rider" /></Field>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 2 }}><Field label="WHAT ARE YOU SENDING?"><input className="rf-input" value={item} onChange={(e) => setItem(e.target.value)} placeholder="e.g. documents, phone" /></Field></div>
+            <div style={{ flex: 1 }}><Field label="WEIGHT (KG)"><input className="rf-input" value={weight} inputMode="decimal" onChange={(e) => setWeight(e.target.value)} placeholder="e.g. 2" /></Field></div>
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <Field label="RECIPIENT NAME"><input className="rf-input" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} /></Field>
             <Field label="RECIPIENT PHONE"><input className="rf-input" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} placeholder="+234…" /></Field>

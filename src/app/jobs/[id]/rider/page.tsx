@@ -175,6 +175,7 @@ export default function RiderJob() {
         <div className="rf-card" style={{ marginBottom: 16 }}>
           <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 10 }}>DELIVERY DETAILS</div>
 
+          {job.customerName && <Detail label="Customer" value={job.customerName} />}
           {job.pickupAddress && <Detail label="Pickup" value={job.pickupAddress} />}
           {job.dropoffAddress && <Detail label="Drop-off" value={job.dropoffAddress} />}
 
@@ -192,6 +193,7 @@ export default function RiderJob() {
           )}
 
           {job.item && <Detail label="Sending" value={job.item} />}
+          {job.weightGrams ? <Detail label="Weight" value={`${(job.weightGrams / 1000).toLocaleString()} kg`} /> : null}
           {job.instructions && <Detail label="Notes" value={job.instructions} />}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

@@ -15,11 +15,12 @@ export interface Quote { quoteToken: string; amountMinor: number; currency: 'NGN
   baseMinor: number; distanceMinor: number; platformFeeMinor: number; totalMinor: number } }
 export interface Job {
   id: string; type: JobType; status: string; amountMinor: number; currency: 'NGN'; createdAt: string;
+  customerName?: string;
   pickup?: GeoPoint; dropoff?: GeoPoint;
   pickupAddress?: string; dropoffAddress?: string;
   pickupArea?: string; dropoffArea?: string; // coarse area shown in the pre-accept feed
   recipient?: { name: string; phone: string };
-  item?: string; instructions?: string;
+  item?: string; weightGrams?: number; instructions?: string;
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
   waitStartedAt?: number; waitingFeeMinor?: number; waitingTxId?: string; returnOfJobId?: string;
   returnReserveMinor?: number;
@@ -55,7 +56,7 @@ export interface DocChecklist { track: VehicleTrack | null; onboarding: DocOnboa
 export type VehicleColor = 'BLACK' | 'WHITE' | 'SILVER' | 'GREY' | 'RED' | 'BLUE' | 'GREEN' | 'GOLD' | 'OTHER';
 export const VEHICLE_COLORS: VehicleColor[] = ['BLACK', 'WHITE', 'SILVER', 'GREY', 'RED', 'BLUE', 'GREEN', 'GOLD', 'OTHER'];
 export interface RiderProfile { track: VehicleTrack | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: VehicleColor }
-export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number }
+export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string }
 export interface PendingRating { jobId: string; amountMinor: number; createdAt: string; dropoffArea?: string; riderName?: string }
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
@@ -91,7 +92,7 @@ export const api = {
     call<Quote>(`/jobs/quote`, { method: 'POST', token, body: JSON.stringify(body) }),
   createJob: (token: string, body: {
     quoteToken: string; refundAccountId?: string;
-    recipient?: { name: string; phone: string }; item?: string; instructions?: string;
+    customerName?: string; recipient?: { name: string; phone: string }; item?: string; weightKg?: number; instructions?: string;
     pickupAddress?: string; dropoffAddress?: string; pickupArea?: string; dropoffArea?: string;
     fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
   }) =>
@@ -113,6 +114,7 @@ export const api = {
     call<{ online: boolean }>(`/me/availability`, { method: 'PUT', token, body: JSON.stringify({ online }) }),
   myJobs: (token: string) => call<Job[]>(`/jobs/mine`, { token }),
   cancelJob: (token: string, id: string) => call<{ status: string; refunded: boolean }>(`/jobs/${id}/cancel`, { method: 'POST', token }),
+  notifyComing: (token: string, id: string) => call<{ ok: boolean }>(`/jobs/${id}/coming`, { method: 'POST', token }),
   accept: (token: string, id: string) => call<Job>(`/jobs/${id}/accept`, { method: 'POST', token }),
   releaseJob: (token: string, id: string) => call<{ status: string }>(`/jobs/${id}/release`, { method: 'POST', token }),
   advance: (token: string, id: string, to: 'EN_ROUTE_PICKUP' | 'AT_PICKUP' | 'IN_PROGRESS' | 'EN_ROUTE_DROP') =>
