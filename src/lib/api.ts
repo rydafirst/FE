@@ -64,7 +64,12 @@ async function call<T>(path: string, opts: RequestInit & { token?: string } = {}
     },
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? `Request failed (${res.status})`);
-  return res.json() as Promise<T>;
+  // Some endpoints return no body (204, or a void handler). Calling res.json() on an
+  // empty body throws a SyntaxError ("The string did not match the expected pattern" in
+  // WebKit / "Unexpected end of JSON input" in Chrome), so only parse when there's content.
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const api = {
