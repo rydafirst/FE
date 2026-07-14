@@ -22,9 +22,10 @@ export default function ProfilePage() {
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { if (fileRef.current) fileRef.current.value = ''; return; }
     setUploading(true);
     try {
-      const { uploadUrl } = await api.avatarUploadUrl(getToken(), f.type);
+      const { uploadUrl } = await api.avatarUploadUrl(getToken(), f.type, f.size);
       const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': f.type }, body: f });
       if (!put.ok) throw new Error('Upload failed');
       const a = await api.myAvatar(getToken());

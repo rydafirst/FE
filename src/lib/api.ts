@@ -107,7 +107,7 @@ export const api = {
       method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ code }),
     }),
   availableJobs: (token: string, pos?: { lat: number; lng: number }) =>
-    call<AvailableJob[]>(`/jobs/available${pos ? `?lat=${pos.lat}&lng=${pos.lng}` : ''}`, { token }),
+    call<AvailableJob[]>(`/jobs/available`, { method: 'POST', token, body: JSON.stringify(pos ?? {}) }),
   assignedJobs: (token: string) => call<Job[]>(`/jobs/assigned`, { token }),
   getAvailability: (token: string) => call<{ online: boolean }>(`/me/availability`, { token }),
   setAvailability: (token: string, online: boolean) =>
@@ -169,7 +169,7 @@ export const api = {
     call<RiderProfile>(`/me/documents/profile`, { method: 'PUT', token, body: JSON.stringify(body) }),
   jobRider: (token: string, id: string) => call<{ rider: RiderSummary | null }>(`/jobs/${id}/rider`, { token }),
   jobCustomer: (token: string, id: string) => call<{ name?: string; photoUrl?: string }>(`/jobs/${id}/customer`, { token }),
-  avatarUploadUrl: (token: string, contentType: string) => call<{ uploadUrl: string }>(`/me/avatar/upload-url`, { method: 'POST', token, body: JSON.stringify({ contentType }) }),
+  avatarUploadUrl: (token: string, contentType: string, sizeBytes: number) => call<{ uploadUrl: string }>(`/me/avatar/upload-url`, { method: 'POST', token, body: JSON.stringify({ contentType, sizeBytes }) }),
   myAvatar: (token: string) => call<{ photoUrl: string | null }>(`/me/avatar`, { token }),
   me: (token: string) => call<{ id: string; phone: string | null }>(`/me`, { token }),
   pendingRatings: (token: string) => call<PendingRating[]>(`/jobs/pending-ratings`, { token }),
