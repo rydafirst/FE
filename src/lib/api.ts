@@ -168,6 +168,10 @@ export const api = {
   updateRiderProfile: (token: string, body: { legalName?: string; vehiclePlate?: string; vehicleColor?: VehicleColor }) =>
     call<RiderProfile>(`/me/documents/profile`, { method: 'PUT', token, body: JSON.stringify(body) }),
   jobRider: (token: string, id: string) => call<{ rider: RiderSummary | null }>(`/jobs/${id}/rider`, { token }),
+  jobCustomer: (token: string, id: string) => call<{ name?: string; photoUrl?: string }>(`/jobs/${id}/customer`, { token }),
+  avatarUploadUrl: (token: string, contentType: string) => call<{ uploadUrl: string }>(`/me/avatar/upload-url`, { method: 'POST', token, body: JSON.stringify({ contentType }) }),
+  myAvatar: (token: string) => call<{ photoUrl: string | null }>(`/me/avatar`, { token }),
+  me: (token: string) => call<{ id: string; phone: string | null }>(`/me`, { token }),
   pendingRatings: (token: string) => call<PendingRating[]>(`/jobs/pending-ratings`, { token }),
   rateJob: (token: string, id: string, body: { stars: number; comment?: string }) =>
     call<{ id: string }>(`/jobs/${id}/rating`, { method: 'POST', token, body: JSON.stringify(body) }),

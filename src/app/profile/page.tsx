@@ -1,18 +1,36 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { BottomNav } from '@/components/BottomNav';
 import { BankAccountForm } from '@/components/BankAccountForm';
 import { useRequireAuth } from '@/lib/useAuth';
-import { clearToken, getToken, getUserId, getUserRole } from '@/lib/session';
+import { clearToken, getToken, getUserRole } from '@/lib/session';
 import { api } from '@/lib/api';
 
 export default function ProfilePage() {
   const { ready } = useRequireAuth();
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [phone, setPhone] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (ready) api.myAvatar(getToken()).then((a) => setPhotoUrl(a.photoUrl)).catch(() => {}); }, [ready]);
+  useEffect(() => { if (ready) api.me(getToken()).then((m) => setPhone(m.phone)).catch(() => {}); }, [ready]);
   if (!ready) return null;
 
   const role = getUserRole();
-  const id = getUserId();
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setUploading(true);
+    try {
+      const { uploadUrl } = await api.avatarUploadUrl(getToken(), f.type);
+      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': f.type }, body: f });
+      if (!put.ok) throw new Error('Upload failed');
+      const a = await api.myAvatar(getToken());
+      setPhotoUrl(a.photoUrl);
+    } catch { /* surfaced by retry */ } finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+  };
 
   const logout = () => {
     clearToken();
@@ -24,14 +42,24 @@ export default function ProfilePage() {
       <h1 style={{ fontSize: 22, margin: '4px 0 16px', letterSpacing: '-0.02em' }}>Profile</h1>
 
       <div className="rf-card" style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-        <div style={{ width: 48, height: 48, borderRadius: 10, background: 'var(--ink)', color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">
-          {role === 'RIDER' ? 'R' : 'C'}
-        </div>
-        <div>
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photoUrl} alt="" onClick={() => fileRef.current?.click()} style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover', background: 'var(--bg-2)', cursor: 'pointer' }} />
+        ) : (
+          <div onClick={() => fileRef.current?.click()} style={{ width: 48, height: 48, borderRadius: 10, background: 'var(--ink)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, cursor: 'pointer' }} className="mono">
+            {role === 'RIDER' ? 'R' : 'C'}
+          </div>
+        )}
+        <div style={{ flex: 1 }}>
           <b style={{ fontSize: 15 }}>{role === 'RIDER' ? 'Rider account' : 'Customer account'}</b>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--mid)' }}>ID {id.slice(0, 8) || '—'}…</div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--mid)' }}>{phone || '—'}</div>
+          <button onClick={() => fileRef.current?.click()} disabled={uploading} className="mono"
+            style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink)' }}>
+            {uploading ? 'UPLOADING…' : photoUrl ? 'CHANGE PHOTO →' : 'ADD A PHOTO →'}
+          </button>
         </div>
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} style={{ display: 'none' }} />
       </div>
 
       <BankAccountCard role={role} />

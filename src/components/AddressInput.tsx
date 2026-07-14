@@ -17,8 +17,8 @@ function localityOf(place: google.maps.places.PlaceResult): string {
 
 // Google Places Autocomplete bound to the input. Requires (in the Google Cloud project):
 // Maps JavaScript API + Places API, and Geocoding API for "use my location".
-export function AddressInput({ label, placeholder, onSelect }: {
-  label: string; placeholder?: string; onSelect: (p: Place) => void;
+export function AddressInput({ label, placeholder, onSelect, autoLocate }: {
+  label: string; placeholder?: string; onSelect: (p: Place) => void; autoLocate?: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [ready, setReady] = useState(false);
@@ -58,6 +58,10 @@ export function AddressInput({ label, placeholder, onSelect }: {
       } catch { onSelect({ label: 'Current location', lat, lng }); }
     }, () => setError('Location permission denied'));
   };
+
+  // Parent-triggered "use my location" (the Home location prompt bumps this).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (autoLocate) useMyLocation(); }, [autoLocate]);
 
   return (
     <div className="rf-card" style={{ marginBottom: 12 }}>

@@ -29,6 +29,7 @@ export default function RiderJob() {
   const [showRelease, setShowRelease] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [customer, setCustomer] = useState<{ name?: string; photoUrl?: string } | null>(null);
   const sockRef = useRef<any>(null);
   const { show, node: toast } = useToast();
   const done = outcome !== null;
@@ -52,6 +53,7 @@ export default function RiderJob() {
     api.getJob(getToken(), id)
       .then((j) => { setJob(j); setStatus(j.status); if (j.fallbackPolicy) setPolicy(j.fallbackPolicy); })
       .catch(() => { /* keep local defaults */ });
+    api.jobCustomer(getToken(), id).then(setCustomer).catch(() => {});
   }, [id]);
 
   // Open one realtime socket for the whole job.
@@ -175,7 +177,22 @@ export default function RiderJob() {
         <div className="rf-card" style={{ marginBottom: 16 }}>
           <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 10 }}>DELIVERY DETAILS</div>
 
-          {job.customerName && <Detail label="Customer" value={job.customerName} />}
+          {(customer?.photoUrl || customer?.name || job.customerName) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              {customer?.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={customer.photoUrl} alt="" style={{ width: 40, height: 40, borderRadius: 20, objectFit: 'cover', background: 'var(--bg-2)' }} />
+              ) : (
+                <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--ink)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">
+                  {(customer?.name || job.customerName || 'C').trim().charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>CUSTOMER</div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{customer?.name || job.customerName || 'Customer'}</div>
+              </div>
+            </div>
+          )}
           {job.pickupAddress && <Detail label="Pickup" value={job.pickupAddress} />}
           {job.dropoffAddress && <Detail label="Drop-off" value={job.dropoffAddress} />}
 

@@ -225,7 +225,6 @@ export default function TrackPage() {
               Your {naira(job.returnReserveMinor)} return deposit is refunded in full once the delivery is completed.
             </p>
           ) : null}
-          <Row label="Job ID" value={job.id.slice(0, 8) + '…'} mono />
         </div>
       )}
 

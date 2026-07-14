@@ -25,6 +25,14 @@ export default function HomePage() {
   const { ready } = useRequireAuth();
   const [type, setType] = useState<JobType>('DELIVERY');
   const [pickup, setPickup] = useState<Place | null>(null);
+  const [locateSignal, setLocateSignal] = useState(0);
+  const [showLocPrompt, setShowLocPrompt] = useState(false);
+  useEffect(() => {
+    // Proactively offer to use location on first open (dismissed once enabled).
+    const perms = (navigator as unknown as { permissions?: { query: (o: { name: PermissionName }) => Promise<{ state: string }> } }).permissions;
+    if (perms?.query) perms.query({ name: 'geolocation' as PermissionName }).then((s) => setShowLocPrompt(s.state !== 'granted')).catch(() => setShowLocPrompt(true));
+    else setShowLocPrompt(true);
+  }, []);
   const [dropoff, setDropoff] = useState<Place | null>(null);
   const [item, setItem] = useState('');
   const [weight, setWeight] = useState('');
@@ -138,7 +146,17 @@ export default function HomePage() {
       </div>
 
       <MapPreview pickup={pickup} dropoff={dropoff} />
-      <AddressInput label={type === 'DELIVERY' ? 'PICKUP' : 'FROM'} onSelect={(p) => { setPickup(p); setQuote(null); }} />
+      {showLocPrompt && (
+        <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 20 }}>📍</span>
+          <div style={{ flex: 1 }}>
+            <b style={{ fontSize: 14 }}>Turn on location</b>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>Autofill your pickup from where you are.</div>
+          </div>
+          <Button onClick={() => { setShowLocPrompt(false); setLocateSignal((n) => n + 1); }}>Enable</Button>
+        </div>
+      )}
+      <AddressInput label={type === 'DELIVERY' ? 'PICKUP' : 'FROM'} autoLocate={locateSignal} onSelect={(p) => { setPickup(p); setQuote(null); }} />
       <AddressInput label={type === 'DELIVERY' ? 'DROP-OFF' : 'TO'} onSelect={(p) => { setDropoff(p); setQuote(null); }} />
 
       {type === 'DELIVERY' && (
