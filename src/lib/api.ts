@@ -21,10 +21,15 @@ export interface Job {
   recipient?: { name: string; phone: string };
   item?: string; instructions?: string;
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
+  waitStartedAt?: number; waitingFeeMinor?: number; waitingTxId?: string; returnOfJobId?: string;
+  returnReserveMinor?: number;
 }
+export interface ChatMessage { id: string; jobId: string; senderId: string; body: string; createdAt: number }
 export interface AvailableJob {
   id: string; type: JobType; amountMinor: number; currency: 'NGN'; createdAt: string;
   pickupArea: string; dropoffArea: string; pickupApprox: { lat: number; lng: number };
+  tripDistanceMeters: number; tripEtaMin: number;
+  toPickupMeters?: number; toPickupEtaMin?: number;
 }
 export interface Notification { id: string; jobId?: string; title: string; body: string; createdAt: number; read: boolean }
 export interface AdminQueueEntry { riderId: string; track: string | null; status: string; oldestPendingAt: number }
@@ -35,7 +40,7 @@ export interface AdminRiderDoc {
 export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: string; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: boolean } }
 export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; jobs: { id: string; status: string; type: string }[] }
 export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string }
-export interface AdminFinance { totals: { held: number; released: number; refunded: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
+export interface AdminFinance { totals: { held: number; released: number; refunded: number; platformRevenue: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
 export interface AdminDispute { id: string; jobId: string; openedBy: string; status: string; tier: string; resolution?: string; createdAt: string; resolvedAt?: string }
 export interface AdminRiderProfile { track: string | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: string }
 export interface AdminRiderDetail { riderId: string; track: string | null; status: string; profile?: AdminRiderProfile; documents: AdminRiderDoc[] }
@@ -100,7 +105,8 @@ export const api = {
     call<{ status: string }>(`/jobs/${id}/confirm-code`, {
       method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ code }),
     }),
-  availableJobs: (token: string) => call<AvailableJob[]>(`/jobs/available`, { token }),
+  availableJobs: (token: string, pos?: { lat: number; lng: number }) =>
+    call<AvailableJob[]>(`/jobs/available${pos ? `?lat=${pos.lat}&lng=${pos.lng}` : ''}`, { token }),
   assignedJobs: (token: string) => call<Job[]>(`/jobs/assigned`, { token }),
   getAvailability: (token: string) => call<{ online: boolean }>(`/me/availability`, { token }),
   setAvailability: (token: string, online: boolean) =>
@@ -120,11 +126,27 @@ export const api = {
       method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() },
     }),
   issueCode: (token: string, id: string) => call<{ code: string }>(`/jobs/${id}/issue-code`, { method: 'POST', token }),
+  // ---- Recipient-unavailable resolution ----
+  startWaiting: (token: string, id: string) =>
+    call<{ status: string; waitStartedAt: number }>(`/jobs/${id}/start-waiting`, { method: 'POST', token }),
+  chargeWaiting: (token: string, id: string) =>
+    call<{ waitingFeeMinor: number; paymentLink: string; flwTxRef: string }>(`/jobs/${id}/charge-waiting`, { method: 'POST', token }),
+  payWaiting: (token: string, id: string) =>
+    call<{ waitingFeeMinor: number; paymentLink: string; flwTxRef: string }>(`/jobs/${id}/pay-waiting`, { method: 'POST', token }),
+  confirmWaitingPayment: (token: string, id: string, transactionId: string) =>
+    call<{ funded: boolean }>(`/jobs/${id}/confirm-waiting-payment`, { method: 'POST', token, body: JSON.stringify({ transactionId }) }),
+  initiateReturn: (token: string, id: string, returnUrl?: string) =>
+    call<Job & { paymentLink?: string }>(`/jobs/${id}/return`, { method: 'POST', token, body: JSON.stringify(returnUrl ? { returnUrl } : {}) }),
+  // ---- Rider <-> customer chat ----
+  messages: (token: string, id: string) => call<ChatMessage[]>(`/jobs/${id}/messages`, { token }),
+  sendMessage: (token: string, id: string, body: string) =>
+    call<ChatMessage>(`/jobs/${id}/messages`, { method: 'POST', token, body: JSON.stringify({ body }) }),
   submitKyc: (token: string, inputs: { ninVerified: boolean; bvnVerified: boolean; idDocUploaded: boolean; selfieMatched: boolean; addressProvided: boolean }) =>
     call<{ status: string }>(`/riders/kyc`, { method: 'POST', token, body: JSON.stringify(inputs) }),
   openDispute: (token: string, id: string, counterEvidence = false) =>
     call<{ id: string; status: string; tier: string; resolution?: string }>(`/jobs/${id}/disputes`, { method: 'POST', token, body: JSON.stringify({ counterEvidence }) }),
   wallet: (token: string) => call<{ releasedMinor: number; currency: 'NGN'; jobsCount: number; activeCount: number }>(`/wallet`, { token }),
+  banks: (token: string) => call<{ code: string; name: string }[]>(`/me/account/banks`, { token }),
   getAccount: (token: string) =>
     call<{ bankCode: string; accountName: string; accountNumberMasked: string; type: 'refund' | 'payout' } | null>(`/me/account`, { token }),
   resolveAccount: (token: string, body: { bankCode: string; accountNumber: string }) =>

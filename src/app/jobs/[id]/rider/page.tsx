@@ -6,6 +6,7 @@ import { api, type Job } from '@/lib/api';
 import { getToken, getUserId } from '@/lib/session';
 import { connectSocket } from '@/lib/live';
 import { useToast } from '@/components/ui/Toast';
+import { ChatPanel } from '@/components/ChatPanel';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Geo = 'checking' | 'on' | 'off' | 'denied';
@@ -22,16 +23,29 @@ export default function RiderJob() {
   const [job, setJob] = useState<Job | null>(null);
   const [policy, setPolicy] = useState<Fallback>('WAIT');
   const [code, setCode] = useState('');
-  const [outcome, setOutcome] = useState<'paid' | 'failed' | null>(null);
-  const [feeMinor, setFeeMinor] = useState<number | null>(null);
+  const [outcome, setOutcome] = useState<'paid' | null>(null);
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [geo, setGeo] = useState<Geo>('checking');
   const [showRelease, setShowRelease] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [now, setNow] = useState(Date.now());
   const sockRef = useRef<any>(null);
   const { show, node: toast } = useToast();
   const done = outcome !== null;
   const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   const step = FLOW.indexOf(status as (typeof FLOW)[number]);
+
+  // Live waiting meter (mirrors the server: 10-min free grace, then ₦50/min capped ₦1,000).
+  const waitStartedAt = job?.waitStartedAt;
+  const elapsedS = waitStartedAt ? Math.max(0, Math.floor((now - waitStartedAt) / 1000)) : 0;
+  const graceLeftS = Math.max(0, 600 - elapsedS);
+  const accruedMinor = elapsedS > 600 ? Math.min(Math.ceil((elapsedS - 600) / 60) * 5_000, 100_000) : 0;
+  const waitingPaid = !!job?.waitingTxId;
+  useEffect(() => {
+    if (status !== 'WAITING' && status !== 'AWAITING_RESOLUTION') return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [status]);
 
   // Load the real job once to sync status and read the customer's "receiver unavailable" policy.
   useEffect(() => {
@@ -106,12 +120,15 @@ export default function RiderJob() {
     try { const r = await api.confirmCode(getToken(), id, code); setStatus(r.status); setOutcome('paid'); }
     catch (e) { show((e as Error).message); }
   };
-  const reportUnavailable = async () => {
-    try {
-      const r = await api.failedAttempt(getToken(), id);
-      setStatus(r.status); setFeeMinor(r.attemptFeeMinor); setOutcome('failed');
-    } catch (e) { show((e as Error).message); }
+  const beginWaiting = async () => {
+    try { const r = await api.startWaiting(getToken(), id); setStatus(r.status); setJob((j) => (j ? { ...j, waitStartedAt: r.waitStartedAt } : j)); }
+    catch (e) { show((e as Error).message); }
   };
+  const requestWaitingFee = async () => {
+    try { const r = await api.chargeWaiting(getToken(), id); window.open(r.paymentLink, '_blank'); show('Waiting fee sent to the customer to pay', 'success'); }
+    catch (e) { show((e as Error).message); }
+  };
+  const refreshJob = async () => { try { setJob(await api.getJob(getToken(), id)); } catch { /* noop */ } };
   // Hand an accepted job back to the pool (before pickup only) so another rider is matched.
   const release = async () => {
     try { await api.releaseJob(getToken(), id); show('Job released — back to the pool', 'success'); setTimeout(() => (location.href = '/rider'), 800); }
@@ -185,20 +202,41 @@ export default function RiderJob() {
       )}
 
       {done ? (
-        outcome === 'paid' ? (
-          <div className="mono" style={{ color: 'var(--success)', fontWeight: 700 }}>PAID ✓ — released to your wallet</div>
-        ) : (
-          <div className="rf-card">
-            <div className="mono" style={{ color: 'var(--warning)', fontWeight: 700, marginBottom: 6 }}>DELIVERY FAILED — RECEIVER UNAVAILABLE</div>
-            <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>
-              {policy === 'RETURN' ? 'Please return the parcel to the sender. ' : ''}
-              {feeMinor !== null ? `${naira(feeMinor)} (attempt + any waiting fee) was paid to you; ` : 'Your attempt fee has been paid; '}
-              the rest was refunded to the customer.
-            </p>
-          </div>
-        )
+        <div className="mono" style={{ color: 'var(--success)', fontWeight: 700 }}>PAID ✓ — released to your wallet</div>
       ) : status === 'EN_ROUTE_DROP' ? (
         <Button onClick={arrive}>I&apos;ve arrived (verify GPS)</Button>
+      ) : status === 'WAITING' || status === 'AWAITING_RESOLUTION' ? (
+        <>
+          <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 12 }}>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 6 }}>
+              {graceLeftS > 0 ? 'FREE WAITING' : 'METERED WAITING'}
+            </div>
+            <div className="mono" style={{ fontSize: 26, fontWeight: 800 }}>
+              {String(Math.floor(elapsedS / 60)).padStart(2, '0')}:{String(elapsedS % 60).padStart(2, '0')}
+            </div>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 0', lineHeight: 1.45 }}>
+              {graceLeftS > 0
+                ? `First 10 minutes are free — ${Math.ceil(graceLeftS / 60)} min left. After that, ask the customer to cover the wait.`
+                : waitingPaid
+                  ? 'Waiting fee paid ✓ — you can hand over once the recipient enters the code.'
+                  : `Waiting fee so far: ${naira(accruedMinor)} (₦50/min after the free 10). The customer must pay it before you hand over.`}
+            </p>
+            {graceLeftS === 0 && !waitingPaid && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <Button onClick={requestWaitingFee}>Request waiting fee</Button>
+                <Button variant="ghost" onClick={refreshJob}>I&apos;ve been paid — refresh</Button>
+              </div>
+            )}
+          </div>
+          <div className="rf-card" style={{ marginBottom: 12 }}>
+            <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>{codeLabel}</label>
+            <input className="rf-input mono" style={{ margin: '8px 0 12px', letterSpacing: '.4em', textAlign: 'center', fontSize: 22 }}
+              value={code} onChange={(e) => setCode(e.target.value)} maxLength={4} inputMode="numeric" />
+            <Button onClick={confirm}>Confirm &amp; get paid</Button>
+          </div>
+          <Button variant="ghost" onClick={() => setShowChat((v) => !v)}>{showChat ? 'Hide messages' : 'Message the customer'}</Button>
+          {showChat && <div style={{ marginTop: 12 }}><ChatPanel jobId={id} /></div>}
+        </>
       ) : status === 'ARRIVED' ? (
         <>
           <div className="rf-card" style={{ marginBottom: 12 }}>
@@ -218,13 +256,13 @@ export default function RiderJob() {
             <div className="rf-card">
               <b style={{ fontSize: 14 }}>Receiver unavailable</b>
               <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
-                {policy === 'WAIT' && 'The customer chose “wait”: please wait up to 10 minutes (a waiting fee may apply). If they receive it, use the code above instead.'}
-                {policy === 'DELEGATE' && 'The customer allows a proxy: anyone present can receive it with the code above. Only report failed if no one at all can accept it.'}
-                {policy === 'RETURN' && 'The customer chose “return”: if no one can receive it, return the parcel to the sender.'}
+                Start the wait — the first 10 minutes are free. After that you can ask the customer to
+                cover the wait, or they can choose to have the package returned. You&apos;re paid in full either way.
               </p>
-              <Button variant="ghost" onClick={reportUnavailable}>
-                {policy === 'RETURN' ? 'Return to sender (end delivery)' : 'Report failed attempt'}
-              </Button>
+              <Button onClick={beginWaiting}>Start waiting (first 10 min free)</Button>
+              <div style={{ height: 8 }} />
+              <Button variant="ghost" onClick={() => setShowChat((v) => !v)}>{showChat ? 'Hide messages' : 'Message the customer'}</Button>
+              {showChat && <div style={{ marginTop: 12 }}><ChatPanel jobId={id} /></div>}
             </div>
           )}
         </>

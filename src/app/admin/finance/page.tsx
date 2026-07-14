@@ -21,6 +21,7 @@ export default function AdminFinancePage() {
     { label: 'Held in escrow', value: naira(data.totals.held) },
     { label: 'Released to riders', value: naira(data.totals.released) },
     { label: 'Refunded', value: naira(data.totals.refunded) },
+    { label: 'Platform revenue', value: naira(data.totals.platformRevenue) },
   ] : [];
 
   return (

@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { LiveMap, type LatLng } from '@/components/LiveMap';
 import { BankAccountForm } from '@/components/BankAccountForm';
+import { ChatPanel } from '@/components/ChatPanel';
 import { api, type Job, type RiderSummary } from '@/lib/api';
 import { getToken, getUserId } from '@/lib/session';
 import { connectSocket, fetchRoute } from '@/lib/live';
@@ -53,6 +54,18 @@ export default function TrackPage() {
     const s = new URLSearchParams(window.location.search).get('status');
     return s === 'cancelled' || s === 'failed';
   });
+
+  const [showChat, setShowChat] = useState(false);
+  const needsResolution = !!job && (job.status === 'WAITING' || job.status === 'AWAITING_RESOLUTION');
+  const waitingDue = !!job?.waitingFeeMinor && !job?.waitingTxId;
+  const payWaiting = async () => {
+    try { const r = await api.payWaiting(getToken(), id); window.open(r.paymentLink, '_blank'); }
+    catch (e) { setErr((e as Error).message); }
+  };
+  const returnToMe = async () => {
+    try { const r = await api.initiateReturn(getToken(), id); if (r.paymentLink) window.open(r.paymentLink, '_blank'); }
+    catch (e) { setErr((e as Error).message); }
+  };
 
   const revealCode = async () => {
     try { const r = await api.issueCode(getToken(), id); setDeliveryCode(r.code); }
@@ -196,7 +209,18 @@ export default function TrackPage() {
         <div className="rf-card" style={{ marginBottom: 12 }}>
           <Row label="Status" value={l.text} />
           <Row label="Type" value={job.type} />
+          {job.returnReserveMinor ? (
+            <>
+              <Row label="Delivery fare" value={naira(job.amountMinor - job.returnReserveMinor)} />
+              <Row label="Return deposit (refundable)" value={naira(job.returnReserveMinor)} />
+            </>
+          ) : null}
           <Row label="Amount held in escrow" value={naira(job.amountMinor)} strong />
+          {job.returnReserveMinor ? (
+            <p style={{ fontSize: 11.5, color: 'var(--ink-2)', margin: '4px 0 0', lineHeight: 1.4 }}>
+              Your {naira(job.returnReserveMinor)} return deposit is refunded in full once the delivery is completed.
+            </p>
+          ) : null}
           <Row label="Job ID" value={job.id.slice(0, 8) + '…'} mono />
         </div>
       )}
@@ -250,6 +274,30 @@ export default function TrackPage() {
           ) : (
             <Button variant="ghost" onClick={revealCode}>Reveal delivery code</Button>
           )}
+        </div>
+      )}
+
+      {needsResolution && (
+        <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 12 }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--warning)', letterSpacing: '.06em', marginBottom: 6 }}>RECIPIENT UNAVAILABLE</div>
+          <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: '0 0 10px' }}>
+            {waitingDue
+              ? `Your rider waited past the free 10 minutes. Pay the waiting fee (${naira(job!.waitingFeeMinor!)}) so they can hand over — or have it returned to you.`
+              : 'Your rider is at the drop-off but no one has collected. Keep them waiting (a small fee applies after the free 10 minutes) or have the package returned to you at a reduced fee.'}
+          </p>
+          <Button onClick={payWaiting}>{waitingDue ? `Pay waiting fee ${naira(job!.waitingFeeMinor!)}` : 'Keep waiting & pay the fee'}</Button>
+          <div style={{ height: 8 }} />
+          <Button variant="ghost" onClick={returnToMe}>Return the package to me</Button>
+          <div style={{ height: 8 }} />
+          <Button variant="ghost" onClick={() => setShowChat((v) => !v)}>{showChat ? 'Hide messages' : 'Message your rider'}</Button>
+          {showChat && <div style={{ marginTop: 12 }}><ChatPanel jobId={id} /></div>}
+        </div>
+      )}
+
+      {hasRider && !needsResolution && (
+        <div style={{ marginBottom: 12 }}>
+          <Button variant="ghost" onClick={() => setShowChat((v) => !v)}>{showChat ? 'Hide messages' : 'Message your rider'}</Button>
+          {showChat && <div style={{ marginTop: 12 }}><ChatPanel jobId={id} /></div>}
         </div>
       )}
 
