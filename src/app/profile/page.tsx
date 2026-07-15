@@ -38,6 +38,18 @@ export default function ProfilePage() {
     window.location.href = '/';
   };
 
+  const [deleting, setDeleting] = useState(false);
+  const deleteAccount = async () => {
+    if (deleting) return;
+    if (!window.confirm('Delete your account? This erases your name, email and photo and signs you out everywhere. This cannot be undone. (Records required by law are kept, without identifying you.)')) return;
+    setDeleting(true);
+    try {
+      await api.deleteAccount(getToken());
+      clearToken();
+      window.location.href = '/';
+    } catch { setDeleting(false); }
+  };
+
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>
       <h1 style={{ fontSize: 22, margin: '4px 0 16px', letterSpacing: '-0.02em' }}>Profile</h1>
@@ -77,6 +89,19 @@ export default function ProfilePage() {
           You stay signed in on this device until you log out here.
         </p>
         <Button variant="ghost" onClick={logout}>Log out</Button>
+      </div>
+
+      <div className="rf-card" style={{ marginBottom: 16, borderColor: 'var(--danger)' }}>
+        <p className="mono" style={{ fontSize: 11, color: 'var(--danger)', margin: '0 0 6px', letterSpacing: '.06em' }}>DELETE ACCOUNT</p>
+        <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '0 0 12px', lineHeight: 1.45 }}>
+          Permanently erase your personal data (name, email, photo) and sign out everywhere. Records the
+          law requires us to keep are retained without identifying you.{' '}
+          <a href="/delete-account" style={{ color: 'var(--ink)' }}>Learn more</a>.
+        </p>
+        <button onClick={deleteAccount} disabled={deleting}
+          style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 16px', cursor: deleting ? 'default' : 'pointer', fontSize: 14, fontWeight: 600 }}>
+          {deleting ? 'Deleting…' : 'Delete my account'}
+        </button>
       </div>
 
       <BottomNav />

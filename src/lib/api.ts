@@ -174,6 +174,7 @@ export const api = {
   avatarUploadUrl: (token: string, contentType: string, sizeBytes: number) => call<{ uploadUrl: string }>(`/me/avatar/upload-url`, { method: 'POST', token, body: JSON.stringify({ contentType, sizeBytes }) }),
   myAvatar: (token: string) => call<{ photoUrl: string | null }>(`/me/avatar`, { token }),
   me: (token: string) => call<{ id: string; phone: string | null }>(`/me`, { token }),
+  deleteAccount: (token: string) => call<{ deleted: boolean }>(`/me`, { method: 'DELETE', token }),
   pendingRatings: (token: string) => call<PendingRating[]>(`/jobs/pending-ratings`, { token }),
   rateJob: (token: string, id: string, body: { stars: number; comment?: string }) =>
     call<{ id: string }>(`/jobs/${id}/rating`, { method: 'POST', token, body: JSON.stringify(body) }),
