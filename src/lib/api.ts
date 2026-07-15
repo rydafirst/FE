@@ -79,10 +79,10 @@ async function call<T>(path: string, opts: RequestInit & { token?: string } = {}
 }
 
 export const api = {
-  requestOtp: (phone: string, email?: string) =>
+  requestOtp: (phone: string, email?: string, name?: string) =>
     call<{ status: string }>(`/auth/otp/request`, {
       method: 'POST',
-      body: JSON.stringify(email ? { phone, email } : { phone }),
+      body: JSON.stringify({ phone, ...(email ? { email } : {}), ...(name ? { name } : {}) }),
     }),
   verifyOtp: (phone: string, code: string, role: 'CUSTOMER' | 'RIDER' = 'CUSTOMER') =>
     call<{ accessToken: string; refreshToken: string }>(`/auth/otp/verify`, {
@@ -143,6 +143,8 @@ export const api = {
   messages: (token: string, id: string) => call<ChatMessage[]>(`/jobs/${id}/messages`, { token }),
   sendMessage: (token: string, id: string, body: string) =>
     call<ChatMessage>(`/jobs/${id}/messages`, { method: 'POST', token, body: JSON.stringify({ body }) }),
+  reportMessage: (token: string, id: string, messageId: string, reason?: string) =>
+    call<{ id: string }>(`/jobs/${id}/messages/${messageId}/report`, { method: 'POST', token, body: JSON.stringify(reason ? { reason } : {}) }),
   submitKyc: (token: string, inputs: { ninVerified: boolean; bvnVerified: boolean; idDocUploaded: boolean; selfieMatched: boolean; addressProvided: boolean }) =>
     call<{ status: string }>(`/riders/kyc`, { method: 'POST', token, body: JSON.stringify(inputs) }),
   openDispute: (token: string, id: string, counterEvidence = false) =>

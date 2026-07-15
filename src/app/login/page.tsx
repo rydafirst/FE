@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import { getUserRole, isLoggedIn, setToken } from '@/lib/session';
 
 type Role = 'CUSTOMER' | 'RIDER';
+type Mode = 'signin' | 'signup';
 const RESEND_COOLDOWN = 30; // seconds between code requests (UX guard on top of the server rate limit)
 
 export default function LoginPage() {
@@ -16,8 +18,10 @@ export default function LoginPage() {
     }
   }, []);
 
+  const [mode, setMode] = useState<Mode>('signin');
   const [phase, setPhase] = useState<'phone' | 'code'>('phone');
   const [role, setRole] = useState<Role>('CUSTOMER');
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -33,10 +37,21 @@ export default function LoginPage() {
     return () => clearTimeout(t);
   }, [cooldown]);
 
+  const isSignup = mode === 'signup';
+
+  function switchMode(next: Mode) {
+    if (next === mode) return;
+    setMode(next);
+    setPhase('phone'); setErr(null); setNote(null); setCode('');
+  }
+
   async function sendOtp() {
-    setErr(null); setNote(null); setBusy(true);
+    setErr(null); setNote(null);
+    // On sign-up we must capture a name so the customer/rider has an identity in the app.
+    if (isSignup && name.trim().length < 2) { setErr('Please enter your name'); return; }
+    setBusy(true);
     try {
-      await api.requestOtp(phone, email);
+      await api.requestOtp(phone, email, isSignup ? name.trim() : undefined);
       setPhase('code');
       setCooldown(RESEND_COOLDOWN);
     } catch (e) { setErr((e as Error).message); }
@@ -47,7 +62,7 @@ export default function LoginPage() {
     if (cooldown > 0 || busy) return;
     setErr(null); setNote(null); setBusy(true);
     try {
-      await api.requestOtp(phone, email);
+      await api.requestOtp(phone, email, isSignup ? name.trim() : undefined);
       setNote(`New code sent to ${email}`);
       setCooldown(RESEND_COOLDOWN);
     } catch (e) { setErr((e as Error).message); }
@@ -76,6 +91,18 @@ export default function LoginPage() {
       <p className="mono" style={{ color: 'var(--ink-2)', letterSpacing: '.06em', marginTop: 0 }}>RIDERS FIRST</p>
       <div style={{ height: 24 }} />
 
+      {/* Sign in vs create a new account */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {(['signin', 'signup'] as Mode[]).map((m) => (
+          <button key={m} onClick={() => switchMode(m)} className="mono"
+            style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 12, letterSpacing: '.06em',
+              border: `1px solid ${mode === m ? 'var(--ink)' : 'var(--line)'}`, background: 'var(--bg)',
+              color: mode === m ? 'var(--ink)' : 'var(--mid)' }}>
+            {m === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT'}
+          </button>
+        ))}
+      </div>
+
       {/* Who's signing in — customer or rider */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         {(['CUSTOMER', 'RIDER'] as Role[]).map((r) => (
@@ -90,16 +117,32 @@ export default function LoginPage() {
 
       {phase === 'phone' ? (
         <>
+          {isSignup && (
+            <>
+              <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>FULL NAME</label>
+              <input className="rf-input" style={{ margin: '8px 0 16px' }} value={name}
+                onChange={(e) => setName(e.target.value)} placeholder="e.g. Chidi Okafor" autoComplete="name" />
+            </>
+          )}
           <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>PHONE NUMBER</label>
           <input className="rf-input" style={{ margin: '8px 0 16px' }} value={phone}
-            onChange={(e) => setPhone(e.target.value)} placeholder="+234…" inputMode="tel" />
+            onChange={(e) => setPhone(e.target.value)} placeholder="+234…" inputMode="tel" autoComplete="tel" />
           <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>EMAIL</label>
           <input className="rf-input" style={{ margin: '8px 0 6px' }} value={email}
-            onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" inputMode="email" type="email" />
+            onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" inputMode="email" type="email" autoComplete="email" />
           <p className="mono" style={{ fontSize: 10, color: 'var(--mid)', margin: '0 0 16px' }}>
             WE&apos;LL EMAIL YOUR CODE FOR NOW
           </p>
-          <Button onClick={sendOtp} disabled={busy}>{busy ? 'Sending…' : 'Send code'}</Button>
+          <Button onClick={sendOtp} disabled={busy}>{busy ? 'Sending…' : isSignup ? 'Create account' : 'Send code'}</Button>
+
+          {isSignup && (
+            <p style={{ fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: '14px 0 0', textAlign: 'center' }}>
+              By creating an account you agree to our{' '}
+              <Link href="/terms" style={{ color: 'var(--ink)', textDecoration: 'underline' }}>Terms of Use</Link>{' '}
+              and{' '}
+              <Link href="/privacy" style={{ color: 'var(--ink)', textDecoration: 'underline' }}>Privacy Policy</Link>.
+            </p>
+          )}
         </>
       ) : (
         <>
