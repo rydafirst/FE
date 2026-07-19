@@ -1,20 +1,26 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { getUserRole, isLoggedIn } from '@/lib/session';
 
-const TABS = [
-  { href: '/admin', label: 'Riders' },
+/** Admin section navigation, rendered as a left sidebar by the admin layout. */
+export const NAV_ITEMS: { href: string; label: string }[] = [
+  { href: '/admin', label: 'Dashboard' },
+  { href: '/admin/riders', label: 'Riders' },
   { href: '/admin/deliveries', label: 'Deliveries' },
   { href: '/admin/finance', label: 'Finance' },
   { href: '/admin/disputes', label: 'Disputes' },
   { href: '/admin/settings', label: 'Settings' },
 ];
 
+/** True when `href` is the active section for the current path (exact for /admin, prefix otherwise). */
+export function isActive(href: string, path: string): boolean {
+  return href === '/admin' ? path === '/admin' : path.startsWith(href);
+}
+
 /**
- * Admin shell: gates the page to ADMIN, renders the section nav. Returns `ready` so pages only
- * fetch once access is confirmed. `notAdmin` lets a page show an access message.
+ * Gates a page to ADMIN and reports readiness. Returns `ready` so pages fetch only once access is
+ * confirmed; `notAdmin` lets a page show an access message. Redirects to /login when signed out.
  */
 export function useAdminGuard() {
   const router = useRouter();
@@ -26,30 +32,4 @@ export function useAdminGuard() {
     setReady(true);
   }, [router]);
   return { ready, notAdmin };
-}
-
-export function AdminNav() {
-  const path = usePathname();
-  return (
-    <header style={{ marginBottom: 18 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-        <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
-          <span style={{ color: 'var(--ink)' }}>Ryda</span><span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
-        </b>
-        <span className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.08em' }}>ADMIN</span>
-      </div>
-      <nav style={{ display: 'flex', gap: 6, overflowX: 'auto', borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
-        {TABS.map((t) => {
-          const on = t.href === '/admin' ? path === '/admin' : path.startsWith(t.href);
-          return (
-            <Link key={t.href} href={t.href} className="mono"
-              style={{ fontSize: 11, letterSpacing: '.06em', whiteSpace: 'nowrap', padding: '6px 12px', borderRadius: 999, textDecoration: 'none',
-                border: `1px solid ${on ? 'var(--ink)' : 'var(--line)'}`, background: on ? 'var(--ink)' : 'var(--bg)', color: on ? '#fff' : 'var(--ink-2)' }}>
-              {t.label.toUpperCase()}
-            </Link>
-          );
-        })}
-      </nav>
-    </header>
-  );
 }

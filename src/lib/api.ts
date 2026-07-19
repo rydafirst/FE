@@ -42,6 +42,7 @@ export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClea
 export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; jobs: { id: string; status: string; type: string }[] }
 export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string }
 export interface AdminFinance { totals: { held: number; released: number; refunded: number; platformRevenue: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
+export interface PendingPayout { id: string; amountMinor: number; createdAt: string; payoutError?: string; payoutRef?: string; dropoffArea?: string; riderName?: string }
 export interface AdminDispute { id: string; jobId: string; openedBy: string; status: string; tier: string; resolution?: string; createdAt: string; resolvedAt?: string }
 export interface AdminRiderProfile { track: string | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: string }
 export interface AdminRiderDetail { riderId: string; track: string | null; status: string; profile?: AdminRiderProfile; documents: AdminRiderDoc[] }
@@ -186,6 +187,9 @@ export const api = {
   adminOps: (token: string) => call<AdminOps>(`/admin/ops/jobs/active`, { token }),
   adminDeliveries: (token: string) => call<AdminDelivery[]>(`/admin/ops/deliveries`, { token }),
   adminFinance: (token: string) => call<AdminFinance>(`/admin/finance/reconciliation`, { token }),
+  adminPendingPayouts: (token: string) => call<PendingPayout[]>(`/admin/finance/payouts/pending`, { token }),
+  adminRetryPayout: (token: string, jobId: string) =>
+    call<{ payoutPending: boolean; payoutError?: string }>(`/admin/finance/payouts/${jobId}/retry`, { method: 'POST', token }),
   adminDisputes: (token: string) => call<AdminDispute[]>(`/admin/disputes`, { token }),
   adminResolveDispute: (token: string, id: string, resolution: 'RELEASE' | 'REFUND' | 'SPLIT', riderShareMinor?: number) =>
     call<{ status: string }>(`/admin/disputes/${id}/resolve`, { method: 'POST', token, body: JSON.stringify({ resolution, ...(riderShareMinor != null ? { riderShareMinor } : {}) }) }),

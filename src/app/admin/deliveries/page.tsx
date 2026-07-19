@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type AdminDelivery, type AdminOps } from '@/lib/api';
 import { getToken } from '@/lib/session';
-import { AdminNav, useAdminGuard } from '@/components/AdminNav';
+import { useAdminGuard } from '@/components/AdminNav';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 const ACTIVE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'];
@@ -45,8 +45,7 @@ export default function AdminDeliveriesPage() {
   const shown = rows?.filter((r) => filter === 'all' || categoryOf(r.status) === filter) ?? null;
 
   return (
-    <main style={{ padding: 20, maxWidth: 720, margin: '0 auto' }}>
-      <AdminNav />
+    <div>
       <h1 style={{ fontSize: 22, letterSpacing: '-0.02em', margin: '0 0 14px' }}>Deliveries</h1>
       {notAdmin && <p style={{ color: 'var(--danger)', fontSize: 13 }}>You need an admin account.</p>}
       {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
@@ -93,6 +92,6 @@ export default function AdminDeliveriesPage() {
           <span className="rf-pill" style={{ background: color(d.status), color: '#fff', fontSize: 10 }}>{d.status.replace(/_/g, ' ')}</span>
         </div>
       ))}
-    </main>
+    </div>
   );
 }

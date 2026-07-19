@@ -52,7 +52,7 @@ export default function AdminRiderPage() {
   if (!ready) return null;
 
   return (
-    <main style={{ padding: 20, maxWidth: 720, margin: '0 auto' }}>
+    <div>
       <a href="/admin" className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', textDecoration: 'none' }}>‹ BACK TO QUEUE</a>
       <h1 style={{ fontSize: 20, letterSpacing: '-0.02em', margin: '10px 0 4px' }}>
         Rider {riderId.slice(0, 8)}…
@@ -125,6 +125,6 @@ export default function AdminRiderPage() {
           )}
         </div>
       ))}
-    </main>
+    </div>
   );
 }

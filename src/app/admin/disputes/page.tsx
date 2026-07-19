@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type AdminDispute } from '@/lib/api';
 import { getToken } from '@/lib/session';
-import { AdminNav, useAdminGuard } from '@/components/AdminNav';
+import { useAdminGuard } from '@/components/AdminNav';
 
 const OPEN = ['OPEN', 'ESCALATED', 'UNDER_REVIEW'];
 
@@ -31,8 +31,7 @@ export default function AdminDisputesPage() {
   if (!ready) return null;
 
   return (
-    <main style={{ padding: 20, maxWidth: 720, margin: '0 auto' }}>
-      <AdminNav />
+    <div>
       <h1 style={{ fontSize: 22, letterSpacing: '-0.02em', margin: '0 0 14px' }}>Disputes</h1>
       {notAdmin && <p style={{ color: 'var(--danger)', fontSize: 13 }}>You need an admin account.</p>}
       {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
@@ -66,6 +65,6 @@ export default function AdminDisputesPage() {
           </div>
         );
       })}
-    </main>
+    </div>
   );
 }
