@@ -49,7 +49,7 @@ body {
 .rf-pulse { animation: rfPulse 1.6s ease-in-out infinite; }
 
 /* ---------------- Admin dashboard shell ---------------- */
-.admin-shell { min-height: 100vh; background: var(--bg-2); }
+.admin-shell { position: fixed; inset: 0; overflow-y: auto; background: var(--bg-2); }
 .admin-sidebar {
   position: fixed; top: 0; left: 0; bottom: 0; width: 236px; z-index: 40;
   background: var(--bg); border-right: 1px solid var(--line);
