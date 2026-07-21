@@ -26,17 +26,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <b style={{ fontSize: 15, letterSpacing: '-0.02em' }}>{current}</b>
+        <b style={{ fontSize: 'var(--text-body)', letterSpacing: '-0.02em' }}>{current}</b>
       </div>
 
       {open && <button className="admin-backdrop" aria-label="Close menu" onClick={() => setOpen(false)} />}
 
       <aside className={`admin-sidebar${open ? ' open' : ''}`}>
         <div className="admin-brand">
-          <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+          <b style={{ fontSize: 'var(--text-subtitle)', letterSpacing: '-0.02em' }}>
             <span style={{ color: 'var(--ink)' }}>Ryda</span><span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
           </b>
-          <span className="mono" style={{ fontSize: 9, color: 'var(--ink-2)', letterSpacing: '.1em' }}>ADMIN</span>
+          <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.1em' }}>ADMIN</span>
         </div>
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {NAV_ITEMS.map((i) => (

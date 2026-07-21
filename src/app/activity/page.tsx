@@ -56,24 +56,24 @@ export default function ActivityPage() {
 
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>
-      <h1 style={{ fontSize: 22, margin: '4px 0 12px', letterSpacing: '-0.02em' }}>Activity</h1>
+      <h1 style={{ fontSize: 'var(--text-heading)', margin: '4px 0 12px', letterSpacing: '-0.02em' }}>Activity</h1>
 
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 14 }}>
         {FILTERS.map((f) => (
           <button key={f.key} onClick={() => setFilter(f.key)} className="mono"
-            style={{ padding: '6px 14px', borderRadius: 999, fontSize: 11, whiteSpace: 'nowrap', cursor: 'pointer',
+            style={{ padding: '6px 14px', borderRadius: 999, fontSize: 'var(--text-caption)', whiteSpace: 'nowrap', cursor: 'pointer',
               border: `1px solid ${filter === f.key ? 'var(--ink)' : 'var(--line)'}`,
-              background: filter === f.key ? 'var(--ink)' : 'var(--bg)', color: filter === f.key ? '#fff' : 'var(--ink-2)' }}>
+              background: filter === f.key ? 'var(--ink)' : 'var(--bg)', color: filter === f.key ? 'var(--on-dark)' : 'var(--ink-2)' }}>
             {f.label.toUpperCase()}
           </button>
         ))}
       </div>
 
-      {shown === null && <p className="mono" style={{ fontSize: 12, color: 'var(--mid)' }}>LOADING…</p>}
+      {shown === null && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
       {shown?.length === 0 && (
         <div className="rf-card" style={{ textAlign: 'center', color: 'var(--ink-2)' }}>
-          <p style={{ margin: '4px 0 6px', fontSize: 14 }}>Nothing here yet.</p>
-          <span className="mono" style={{ fontSize: 10.5, color: 'var(--mid)' }}>{isRider ? 'ACCEPT A JOB FROM YOUR DASHBOARD' : 'BOOK A DELIVERY TO GET STARTED'}</span>
+          <p style={{ margin: '4px 0 6px', fontSize: 'var(--text-body)' }}>Nothing here yet.</p>
+          <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>{isRider ? 'ACCEPT A JOB FROM YOUR DASHBOARD' : 'BOOK A DELIVERY TO GET STARTED'}</span>
         </div>
       )}
 
@@ -89,15 +89,15 @@ export default function ActivityPage() {
               </svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <b style={{ fontSize: 14, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <b style={{ fontSize: 'var(--text-body)', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {j.dropoffArea || j.dropoffAddress || 'Delivery'}
               </b>
-              <div className="mono" style={{ fontSize: 10.5, color: 'var(--mid)', marginTop: 3 }}>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 3 }}>
                 {new Date(j.createdAt).toLocaleString('en-NG', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
               </div>
-              <b className="mono" style={{ fontSize: 13, marginTop: 4, display: 'block' }}>{naira(j.amountMinor)}</b>
+              <b className="mono" style={{ fontSize: 'var(--text-small)', marginTop: 4, display: 'block' }}>{naira(j.amountMinor)}</b>
             </div>
-            <span className="rf-pill" style={{ background: b.color, color: '#fff', fontSize: 10 }}>{b.text.toUpperCase()}</span>
+            <span className="rf-pill" style={{ background: b.color, color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>{b.text.toUpperCase()}</span>
           </div>
         );
       })}

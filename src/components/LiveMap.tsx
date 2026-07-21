@@ -16,7 +16,7 @@ interface Props {
 }
 
 // Small monochrome dot markers so the map stays on-brand (no default blue pins).
-const dot = (L: any, color: string, ring = '#fff') =>
+const dot = (L: any, color: string, ring = 'var(--on-dark)') =>
   L.divIcon({
     className: '',
     html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid ${ring};box-shadow:0 0 0 1px rgba(0,0,0,.15)"></div>`,
@@ -58,27 +58,27 @@ export function LiveMap({ pickup, dropoff, rider, trail, route, height = 260 }: 
       if (m[key]) m[key].setLatLng([pt.lat, pt.lng]);
       else m[key] = L.marker([pt.lat, pt.lng], { icon: dot(L, color), title: label }).addTo(map);
     };
-    set('pickup', pickup, '#111111', 'Pickup');
-    set('dropoff', dropoff, '#111111', 'Drop-off');
-    set('rider', rider, '#ff5a1f', 'Rider'); // the single accent, used only for the live rider
+    set('pickup', pickup, 'var(--ink)', 'Pickup');
+    set('dropoff', dropoff, 'var(--ink)', 'Drop-off');
+    set('rider', rider, 'var(--primary)', 'Rider'); // the single accent, used only for the live rider
 
     // Planned route: road-following line when we have one, else a straight pickup->dropoff hint.
     if (route && route.length >= 2) {
       const pts = route.map((p) => [p.lat, p.lng]);
       if (m.route) m.route.setLatLngs(pts);
-      else m.route = L.polyline(pts, { color: '#111', weight: 3, opacity: 0.35 }).addTo(map);
+      else m.route = L.polyline(pts, { color: 'var(--ink)', weight: 3, opacity: 0.35 }).addTo(map);
       if (m.line) { m.line.remove(); m.line = undefined; } // drop the straight fallback
     } else if (pickup && dropoff) {
       const pts = [[pickup.lat, pickup.lng], [dropoff.lat, dropoff.lng]];
       if (m.line) m.line.setLatLngs(pts);
-      else m.line = L.polyline(pts, { color: '#111', weight: 2, opacity: 0.25, dashArray: '4 6' }).addTo(map);
+      else m.line = L.polyline(pts, { color: 'var(--ink)', weight: 2, opacity: 0.25, dashArray: '4 6' }).addTo(map);
     }
 
     // Breadcrumb: the actual path the rider has travelled so far (solid orange).
     if (trail && trail.length >= 2) {
       const pts = trail.map((p) => [p.lat, p.lng]);
       if (m.trail) m.trail.setLatLngs(pts);
-      else m.trail = L.polyline(pts, { color: '#ff5a1f', weight: 3.5, opacity: 0.9 }).addTo(map);
+      else m.trail = L.polyline(pts, { color: 'var(--primary)', weight: 3.5, opacity: 0.9 }).addTo(map);
     }
 
     // Keep everything in view.

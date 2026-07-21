@@ -175,12 +175,12 @@ export default function RiderJob() {
       {/* Location sharing — required so the customer can track the rider. */}
       {!done && geo !== 'on' && geo !== 'checking' && (
         <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 16 }}>
-          <b style={{ fontSize: 15 }}>Turn on location</b>
-          <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45, margin: '6px 0 12px' }}>
+          <b style={{ fontSize: 'var(--text-body)' }}>Turn on location</b>
+          <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', lineHeight: 1.45, margin: '6px 0 12px' }}>
             Share your location so the customer can see you moving and so you can confirm arrival at the drop-off.
           </p>
           {geo === 'denied' ? (
-            <p className="mono" style={{ fontSize: 11, color: 'var(--danger)', margin: 0 }}>
+            <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--danger)', margin: 0 }}>
               LOCATION IS BLOCKED FOR THIS SITE. ENABLE IT IN YOUR BROWSER SETTINGS, THEN RELOAD.
             </p>
           ) : (
@@ -189,7 +189,7 @@ export default function RiderJob() {
         </div>
       )}
       {!done && geo === 'on' && (
-        <div className="mono" style={{ fontSize: 10.5, color: 'var(--success)', letterSpacing: '.06em', marginBottom: 16 }}>
+        <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--success)', letterSpacing: '.06em', marginBottom: 16 }}>
           ● SHARING YOUR LIVE LOCATION
         </div>
       )}
@@ -197,7 +197,7 @@ export default function RiderJob() {
       {/* Delivery details the rider needs to complete the drop. */}
       {!done && job && (
         <div className="rf-card" style={{ marginBottom: 16 }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 10 }}>DELIVERY DETAILS</div>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 10 }}>DELIVERY DETAILS</div>
 
           {(customer?.photoUrl || customer?.name || job.customerName) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -205,13 +205,13 @@ export default function RiderJob() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={customer.photoUrl} alt="" style={{ width: 40, height: 40, borderRadius: 20, objectFit: 'cover', background: 'var(--bg-2)' }} />
               ) : (
-                <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--ink)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">
+                <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--ink)', color: 'var(--on-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">
                   {(customer?.name || job.customerName || 'C').trim().charAt(0).toUpperCase()}
                 </div>
               )}
               <div style={{ flex: 1 }}>
-                <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>CUSTOMER</div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{customer?.name || job.customerName || 'Customer'}</div>
+                <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>CUSTOMER</div>
+                <div style={{ fontSize: 'var(--text-body)', fontWeight: 600 }}>{customer?.name || job.customerName || 'Customer'}</div>
               </div>
               {/* Reach the SENDER — the recipient listed below is a different person. */}
               {customer?.phone && (
@@ -226,11 +226,11 @@ export default function RiderJob() {
           {job.recipient && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{job.recipient.name}</div>
-                <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>{job.recipient.phone}</div>
+                <div style={{ fontSize: 'var(--text-body)', fontWeight: 600 }}>{job.recipient.name}</div>
+                <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{job.recipient.phone}</div>
               </div>
               <a href={`tel:${job.recipient.phone}`} className="mono"
-                style={{ fontSize: 11, letterSpacing: '.06em', textDecoration: 'none', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 6, padding: '6px 12px' }}>
+                style={{ fontSize: 'var(--text-caption)', letterSpacing: '.06em', textDecoration: 'none', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 6, padding: '6px 12px' }}>
                 CALL
               </a>
             </div>
@@ -254,13 +254,13 @@ export default function RiderJob() {
       ) : status === 'WAITING' || status === 'AWAITING_RESOLUTION' ? (
         <>
           <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 12 }}>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 6 }}>
+            <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 6 }}>
               {graceLeftS > 0 ? 'FREE WAITING' : 'METERED WAITING'}
             </div>
-            <div className="mono" style={{ fontSize: 26, fontWeight: 800 }}>
+            <div className="mono" style={{ fontSize: 'var(--text-title)', fontWeight: 800 }}>
               {String(Math.floor(elapsedS / 60)).padStart(2, '0')}:{String(elapsedS % 60).padStart(2, '0')}
             </div>
-            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 0', lineHeight: 1.45 }}>
+            <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '6px 0 0', lineHeight: 1.45 }}>
               {graceLeftS > 0
                 ? `First 10 minutes are free — ${Math.ceil(graceLeftS / 60)} min left. After that, ask the customer to cover the wait.`
                 : waitingPaid
@@ -275,8 +275,8 @@ export default function RiderJob() {
             )}
           </div>
           <div className="rf-card" style={{ marginBottom: 12 }}>
-            <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>{codeLabel}</label>
-            <input className="rf-input mono" style={{ margin: '8px 0 12px', letterSpacing: '.4em', textAlign: 'center', fontSize: 22 }}
+            <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{codeLabel}</label>
+            <input className="rf-input mono" style={{ margin: '8px 0 12px', letterSpacing: '.4em', textAlign: 'center', fontSize: 'var(--text-heading)' }}
               value={code} onChange={(e) => setCode(e.target.value)} maxLength={4} inputMode="numeric" />
             <Button onClick={confirm} disabled={confirming}>{confirming ? 'Confirming…' : 'Confirm & get paid'}</Button>
           </div>
@@ -286,8 +286,8 @@ export default function RiderJob() {
       ) : status === 'ARRIVED' ? (
         <>
           <div className="rf-card" style={{ marginBottom: 12 }}>
-            <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>{codeLabel}</label>
-            <input className="rf-input mono" style={{ margin: '8px 0 12px', letterSpacing: '.4em', textAlign: 'center', fontSize: 22 }}
+            <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{codeLabel}</label>
+            <input className="rf-input mono" style={{ margin: '8px 0 12px', letterSpacing: '.4em', textAlign: 'center', fontSize: 'var(--text-heading)' }}
               value={code} onChange={(e) => setCode(e.target.value)} maxLength={4} inputMode="numeric" />
             <Button onClick={confirm} disabled={confirming}>{confirming ? 'Confirming…' : 'Confirm & get paid'}</Button>
           </div>
@@ -295,13 +295,13 @@ export default function RiderJob() {
           {/* Receiver-unavailable path, driven by the customer's chosen policy. */}
           {!showUnavailable ? (
             <button onClick={() => setShowUnavailable(true)} className="mono"
-              style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+              style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
               RECEIVER NOT AVAILABLE? →
             </button>
           ) : (
             <div className="rf-card">
-              <b style={{ fontSize: 14 }}>Receiver unavailable</b>
-              <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
+              <b style={{ fontSize: 'var(--text-body)' }}>Receiver unavailable</b>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
                 Start the wait — the first 10 minutes are free. After that you can ask the customer to
                 cover the wait, or they can choose to have the package returned. You&apos;re paid in full either way.
               </p>
@@ -326,15 +326,15 @@ export default function RiderJob() {
       {!done && releasable && (
         showRelease ? (
           <div className="rf-card" style={{ marginTop: 16 }}>
-            <b style={{ fontSize: 14 }}>Release this job?</b>
-            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
+            <b style={{ fontSize: 'var(--text-body)' }}>Release this job?</b>
+            <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
               It goes back to the pool for another rider — only possible before pickup, and no money moves. Releasing too many jobs can limit the offers you get.
             </p>
             <Button variant="ghost" onClick={release}>Release to another rider</Button>
           </div>
         ) : (
           <button onClick={() => setShowRelease(true)} className="mono"
-            style={{ display: 'block', width: '100%', textAlign: 'center', background: 'none', border: 'none', padding: '16px 4px 4px', cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+            style={{ display: 'block', width: '100%', textAlign: 'center', background: 'none', border: 'none', padding: '16px 4px 4px', cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
             CAN&apos;T CONTINUE? RELEASE THIS JOB →
           </button>
         )
@@ -347,8 +347,8 @@ export default function RiderJob() {
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ marginBottom: 8 }}>
-      <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 13.5, marginTop: 2 }}>{value}</div>
+      <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 'var(--text-small)', marginTop: 2 }}>{value}</div>
     </div>
   );
 }
@@ -358,7 +358,7 @@ function NavLink({ label, pt }: { label: string; pt: { lat: number; lng: number 
   const href = `https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}`;
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className="mono"
-      style={{ flex: 1, textAlign: 'center', fontSize: 10.5, letterSpacing: '.05em', textDecoration: 'none',
+      style={{ flex: 1, textAlign: 'center', fontSize: 'var(--text-caption)', letterSpacing: '.05em', textDecoration: 'none',
         color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 6, padding: '8px 6px' }}>
       {label.toUpperCase()}
     </a>

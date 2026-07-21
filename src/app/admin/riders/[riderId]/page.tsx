@@ -53,12 +53,12 @@ export default function AdminRiderPage() {
 
   return (
     <div>
-      <a href="/admin" className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', textDecoration: 'none' }}>‹ BACK TO QUEUE</a>
-      <h1 style={{ fontSize: 20, letterSpacing: '-0.02em', margin: '10px 0 4px' }}>
+      <a href="/admin" className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textDecoration: 'none' }}>‹ BACK TO QUEUE</a>
+      <h1 style={{ fontSize: 'var(--text-heading)', letterSpacing: '-0.02em', margin: '10px 0 4px' }}>
         Rider {riderId.slice(0, 8)}…
       </h1>
       {data && (
-        <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', marginBottom: 16 }}>
+        <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 16 }}>
           {(data.track ?? 'NO VEHICLE')} · {data.status}
         </div>
       )}
@@ -66,31 +66,31 @@ export default function AdminRiderPage() {
       {/* Identity + vehicle the rider entered — verify the name against the Gov ID document below. */}
       {data?.profile && (
         <div className="rf-card" style={{ marginBottom: 16 }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', marginBottom: 8 }}>RIDER DETAILS</div>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 8 }}>RIDER DETAILS</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <b style={{ fontSize: 15 }}>{data.profile.legalName ?? '— no name —'}</b>
-              <div className="mono" style={{ fontSize: 11, color: 'var(--mid)', marginTop: 2 }}>
+              <b style={{ fontSize: 'var(--text-body)' }}>{data.profile.legalName ?? '— no name —'}</b>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 2 }}>
                 {[data.profile.vehiclePlate, data.profile.vehicleColor].filter(Boolean).join(' · ') || 'no vehicle details'}
               </div>
             </div>
             <button onClick={() => verifyName(!data.profile!.nameVerified)} disabled={busy === 'name'} className="rf-btn"
-              style={{ background: data.profile.nameVerified ? 'var(--bg)' : 'var(--ink)', color: data.profile.nameVerified ? 'var(--ink-2)' : '#fff', border: '1px solid var(--line)', fontSize: 12 }}>
+              style={{ background: data.profile.nameVerified ? 'var(--bg)' : 'var(--ink)', color: data.profile.nameVerified ? 'var(--ink-2)' : 'var(--on-dark)', border: '1px solid var(--line)', fontSize: 'var(--text-caption)' }}>
               {data.profile.nameVerified ? 'Verified ✓ (undo)' : 'Verify name'}
             </button>
           </div>
         </div>
       )}
 
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
-      {data === null && !err && <p className="mono" style={{ fontSize: 12, color: 'var(--mid)' }}>LOADING…</p>}
-      {data?.documents.length === 0 && <p style={{ color: 'var(--ink-2)', fontSize: 14 }}>No documents uploaded yet.</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
+      {data === null && !err && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
+      {data?.documents.length === 0 && <p style={{ color: 'var(--ink-2)', fontSize: 'var(--text-body)' }}>No documents uploaded yet.</p>}
 
       {data?.documents.map((doc) => (
         <div key={doc.id} className="rf-card" style={{ marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <b style={{ fontSize: 14 }}>{doc.label}</b>
-            <span className="rf-pill" style={{ background: DOC_STATUS[doc.status] ?? 'var(--ink-2)', color: '#fff', fontSize: 10 }}>{doc.status}</span>
+            <b style={{ fontSize: 'var(--text-body)' }}>{doc.label}</b>
+            <span className="rf-pill" style={{ background: DOC_STATUS[doc.status] ?? 'var(--ink-2)', color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>{doc.status}</span>
           </div>
 
           {/* Preview via short-lived signed URL. Falls back to a link if the image can't render. */}
@@ -103,18 +103,18 @@ export default function AdminRiderPage() {
           </a>
 
           {doc.expiresAt && (
-            <div className="mono" style={{ fontSize: 10.5, color: 'var(--mid)', marginTop: 8 }}>
+            <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 8 }}>
               EXPIRES {new Date(doc.expiresAt).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
             </div>
           )}
           {doc.rejectionReason && doc.status === 'REJECTED' && (
-            <div style={{ fontSize: 12.5, color: 'var(--danger)', marginTop: 8 }}>Rejected: {doc.rejectionReason}</div>
+            <div style={{ fontSize: 'var(--text-small)', color: 'var(--danger)', marginTop: 8 }}>Rejected: {doc.rejectionReason}</div>
           )}
 
           {doc.status !== 'APPROVED' && (
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button onClick={() => approve(doc)} disabled={busy === doc.id} className="rf-btn"
-                style={{ flex: 1, background: 'var(--ink)', color: '#fff', opacity: busy === doc.id ? 0.6 : 1 }}>
+                style={{ flex: 1, background: 'var(--ink)', color: 'var(--on-dark)', opacity: busy === doc.id ? 0.6 : 1 }}>
                 {busy === doc.id ? '…' : 'Approve'}
               </button>
               <button onClick={() => reject(doc)} disabled={busy === doc.id} className="rf-btn"

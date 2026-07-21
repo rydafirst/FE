@@ -23,12 +23,12 @@ export function useToast() {
       width: 'calc(100% - 40px)', maxWidth: 440,
     }}>
       <div onClick={() => setMsg(null)} style={{
-        background: 'var(--ink)', color: '#fff', borderRadius: 10, padding: '12px 16px',
+        background: 'var(--ink)', color: 'var(--on-dark)', borderRadius: 10, padding: '12px 16px',
         display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer',
         boxShadow: '0 8px 28px rgba(0,0,0,0.22)',
       }}>
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0 }} />
-        <span style={{ fontSize: 13.5, lineHeight: 1.35 }}>{msg.text}</span>
+        <span style={{ fontSize: 'var(--text-small)', lineHeight: 1.35 }}>{msg.text}</span>
       </div>
     </div>
   ) : null;

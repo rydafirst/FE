@@ -87,30 +87,30 @@ export default function DocumentsPage() {
 
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>
-      <h1 style={{ fontSize: 22, margin: '4px 0 16px', letterSpacing: '-0.02em' }}>Documents &amp; verification</h1>
+      <h1 style={{ fontSize: 'var(--text-heading)', margin: '4px 0 16px', letterSpacing: '-0.02em' }}>Documents &amp; verification</h1>
       <input ref={fileRef} type="file" accept={ACCEPT} onChange={onFile} style={{ display: 'none' }} />
 
       {data && (
         <div className="rf-card" style={{ marginBottom: 16, border: `1px solid ${data.onboarding === 'APPROVED' ? 'var(--success)' : 'var(--line)'}` }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>DOCUMENT STATUS</div>
-          <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{ONBOARDING_MSG[data.onboarding]}</div>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>DOCUMENT STATUS</div>
+          <div style={{ fontSize: 'var(--text-body)', fontWeight: 700, marginTop: 6 }}>{ONBOARDING_MSG[data.onboarding]}</div>
         </div>
       )}
 
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
-      {data === null && !err && <p className="mono" style={{ fontSize: 12, color: 'var(--mid)' }}>LOADING…</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
+      {data === null && !err && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
 
       {data && !data.track && (
         <>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', marginBottom: 8 }}>WHAT DO YOU DELIVER WITH?</div>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 8 }}>WHAT DO YOU DELIVER WITH?</div>
           {TRACKS.map((tr) => (
             <button key={tr.value} onClick={() => chooseTrack(tr.value)} className="rf-card"
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', textAlign: 'left', marginBottom: 10, cursor: 'pointer', background: 'var(--bg)' }}>
               <span>
-                <span style={{ fontSize: 15, fontWeight: 700, display: 'block' }}>{tr.label}</span>
-                <span style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{tr.hint}</span>
+                <span style={{ fontSize: 'var(--text-body)', fontWeight: 700, display: 'block' }}>{tr.label}</span>
+                <span style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)' }}>{tr.hint}</span>
               </span>
-              <span style={{ color: 'var(--ink-2)', fontSize: 20 }}>›</span>
+              <span style={{ color: 'var(--ink-2)', fontSize: 'var(--text-heading)' }}>›</span>
             </button>
           ))}
         </>
@@ -126,17 +126,17 @@ export default function DocumentsPage() {
           <div key={item.type} onClick={() => onRowClick(item)} className="rf-card"
             style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: clickable ? 'pointer' : 'default' }}>
             <div style={{ paddingRight: 10 }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>{item.label}</div>
+              <div style={{ fontSize: 'var(--text-body)', fontWeight: 600 }}>{item.label}</div>
               {item.rejectionReason && item.status === 'REJECTED' && (
-                <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 3 }}>{item.rejectionReason}</div>
+                <div style={{ fontSize: 'var(--text-caption)', color: 'var(--danger)', marginTop: 3 }}>{item.rejectionReason}</div>
               )}
               {item.expires && item.expiresAt && (
-                <div className="mono" style={{ fontSize: 10, color: 'var(--mid)', marginTop: 3 }}>
+                <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 3 }}>
                   EXPIRES {new Date(item.expiresAt).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </div>
               )}
             </div>
-            <span className="rf-pill" style={{ background: isBusy ? 'var(--info)' : st.color, color: '#fff', fontSize: 10 }}>{isBusy ? 'UPLOADING' : st.text.toUpperCase()}</span>
+            <span className="rf-pill" style={{ background: isBusy ? 'var(--info)' : st.color, color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>{isBusy ? 'UPLOADING' : st.text.toUpperCase()}</span>
           </div>
         );
       })}
@@ -180,32 +180,32 @@ function RiderDetails() {
   return (
     <div className="rf-card" style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>YOUR DETAILS (SHOWN TO CUSTOMERS)</span>
+        <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>YOUR DETAILS (SHOWN TO CUSTOMERS)</span>
         {legalName.trim() && (
-          <span className="rf-pill" style={{ background: verified ? 'var(--success)' : 'var(--warning)', color: '#fff', fontSize: 10 }}>
+          <span className="rf-pill" style={{ background: verified ? 'var(--success)' : 'var(--warning)', color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>
             {verified ? 'NAME VERIFIED' : 'PENDING CHECK'}
           </span>
         )}
       </div>
-      <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>FULL NAME (AS ON YOUR ID)</label>
+      <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>FULL NAME (AS ON YOUR ID)</label>
       <input className="rf-input" value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder="e.g. Tolu Olonibua" style={{ marginBottom: 10 }} />
-      <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>VEHICLE PLATE NUMBER</label>
+      <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>VEHICLE PLATE NUMBER</label>
       <input className="rf-input" value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="e.g. ABC 123 DE" style={{ marginBottom: 10 }} />
-      <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>VEHICLE COLOUR</label>
+      <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>VEHICLE COLOUR</label>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         {VEHICLE_COLORS.map((c) => (
           <button key={c} onClick={() => setColor(c)} className="mono"
-            style={{ padding: '6px 12px', borderRadius: 999, fontSize: 11, cursor: 'pointer',
+            style={{ padding: '6px 12px', borderRadius: 999, fontSize: 'var(--text-caption)', cursor: 'pointer',
               border: `1px solid ${color === c ? 'var(--ink)' : 'var(--line)'}`,
-              background: color === c ? 'var(--ink)' : 'var(--bg)', color: color === c ? '#fff' : 'var(--ink-2)' }}>
+              background: color === c ? 'var(--ink)' : 'var(--bg)', color: color === c ? 'var(--on-dark)' : 'var(--ink-2)' }}>
             {c}
           </button>
         ))}
       </div>
-      <button onClick={save} disabled={saving} className="rf-btn" style={{ width: '100%', background: 'var(--ink)', color: '#fff', opacity: saving ? 0.6 : 1 }}>
+      <button onClick={save} disabled={saving} className="rf-btn" style={{ width: '100%', background: 'var(--ink)', color: 'var(--on-dark)', opacity: saving ? 0.6 : 1 }}>
         {saving ? 'Saving…' : 'Save details'}
       </button>
-      {msg && <p style={{ fontSize: 12.5, color: msg === 'Saved' ? 'var(--success)' : 'var(--danger)', marginTop: 8, textAlign: 'center' }}>{msg}</p>}
+      {msg && <p style={{ fontSize: 'var(--text-small)', color: msg === 'Saved' ? 'var(--success)' : 'var(--danger)', marginTop: 8, textAlign: 'center' }}>{msg}</p>}
     </div>
   );
 }

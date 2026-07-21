@@ -28,10 +28,10 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, letterSpacing: '-0.02em', margin: '0 0 14px' }}>Settings</h1>
-      {notAdmin && <p style={{ color: 'var(--danger)', fontSize: 13 }}>You need an admin account.</p>}
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
-      {!s && !err && !notAdmin && <p className="mono" style={{ fontSize: 12, color: 'var(--mid)' }}>LOADING…</p>}
+      <h1 style={{ fontSize: 'var(--text-heading)', letterSpacing: '-0.02em', margin: '0 0 14px' }}>Settings</h1>
+      {notAdmin && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>You need an admin account.</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
+      {!s && !err && !notAdmin && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
 
       {s && (
         <>
@@ -43,21 +43,21 @@ export default function AdminSettingsPage() {
             onChange={(v) => save({ requireGuarantor: v })} />
 
           <div className="rf-card" style={{ marginBottom: 12 }}>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', marginBottom: 8 }}>LAUNCH CITY {s.overridden.launchCity ? '· OVERRIDDEN' : '· FROM ENV'}</div>
+            <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 8 }}>LAUNCH CITY {s.overridden.launchCity ? '· OVERRIDDEN' : '· FROM ENV'}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {CITIES.map((c) => (
                 <button key={c} onClick={() => save({ launchCity: c })} disabled={busy} className="mono"
-                  style={{ padding: '6px 12px', borderRadius: 999, fontSize: 11, cursor: 'pointer',
+                  style={{ padding: '6px 12px', borderRadius: 999, fontSize: 'var(--text-caption)', cursor: 'pointer',
                     border: `1px solid ${s.launchCity === c ? 'var(--ink)' : 'var(--line)'}`,
-                    background: s.launchCity === c ? 'var(--ink)' : 'var(--bg)', color: s.launchCity === c ? '#fff' : 'var(--ink-2)' }}>
+                    background: s.launchCity === c ? 'var(--ink)' : 'var(--bg)', color: s.launchCity === c ? 'var(--on-dark)' : 'var(--ink-2)' }}>
                   {c.replace(/_/g, ' ')}
                 </button>
               ))}
             </div>
           </div>
 
-          {msg && <p style={{ fontSize: 12.5, color: 'var(--success)' }}>{msg}</p>}
-          <p style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 8 }}>
+          {msg && <p style={{ fontSize: 'var(--text-small)', color: 'var(--success)' }}>{msg}</p>}
+          <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginTop: 8 }}>
             Changes take effect immediately and override the deployed environment defaults.
           </p>
         </>
@@ -72,14 +72,14 @@ function Toggle({ label, hint, value, overridden, busy, onChange }: {
   return (
     <div className="rf-card" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
       <div>
-        <b style={{ fontSize: 14 }}>{label}</b>
-        <div style={{ fontSize: 12.5, color: 'var(--ink-2)', marginTop: 3 }}>{hint}</div>
-        {overridden && <div className="mono" style={{ fontSize: 10, color: 'var(--mid)', marginTop: 3 }}>OVERRIDDEN</div>}
+        <b style={{ fontSize: 'var(--text-body)' }}>{label}</b>
+        <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', marginTop: 3 }}>{hint}</div>
+        {overridden && <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 3 }}>OVERRIDDEN</div>}
       </div>
       <button onClick={() => onChange(!value)} disabled={busy} aria-pressed={value}
         style={{ width: 52, height: 30, borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
           background: value ? 'var(--ink)' : 'var(--line)', position: 'relative', transition: 'background .15s' }}>
-        <span style={{ position: 'absolute', top: 3, left: value ? 25 : 3, width: 24, height: 24, borderRadius: '50%', background: '#fff', transition: 'left .15s' }} />
+        <span style={{ position: 'absolute', top: 3, left: value ? 25 : 3, width: 24, height: 24, borderRadius: '50%', background: 'var(--on-dark)', transition: 'left .15s' }} />
       </button>
     </div>
   );

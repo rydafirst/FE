@@ -5,6 +5,14 @@
   --line:#DADADA; --line-2:#EDEDED; --bg:#FFFFFF; --bg-2:#FAFAFA;
   --primary:#F97316; --primary-pressed:#E4610C; --primary-soft:#FEEEE0; --primary-ink:#FFFFFF;
   --success:#16A34A; --info:#2563EB; --warning:#A16207; --danger:#DC2626;
+  /* Type scale. Mirrors mobile/src/theme.ts `size`. Grown after testers reported the interface was
+     hard to read; nothing shrank and the smallest step grew most. Components reference these rather
+     than hard-coding px, so legibility is one edit here instead of hundreds across the app. */
+  --text-caption:12.5px; --text-small:14px; --text-body:16px; --text-subtitle:19px;
+  --text-heading:22px; --text-title:26px; --text-display:38px;
+  /* Text/icons on a dark or saturated surface (filled pills, banners, avatars). Not --bg, which
+     means a background, and not --primary-ink, which means specifically on-primary. */
+  --on-dark:#FFFFFF;
   --radius-sm:4px; --radius-md:6px; --radius-lg:8px; --radius-pill:999px;
   --font-sans:'Space Grotesk', system-ui, sans-serif;
   /* Space Mono has no ₦ glyph, so amounts rendered in mono fell back to a box or a stray '#'.
@@ -27,7 +35,7 @@ body {
 .rf-btn {
   width: 100%; border: none; border-radius: var(--radius-lg);
   padding: 12px 16px; font-family: var(--font-mono); font-weight: 700;
-  font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+  font-size: var(--text-small); letter-spacing: .06em; text-transform: uppercase;
   background: var(--primary); color: var(--primary-ink); cursor: pointer;
 }
 .rf-btn:active { background: var(--primary-pressed); }
@@ -39,22 +47,22 @@ body {
 .rf-chip {
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink);
-  padding: 8px 12px; font-size: 12.5px; letter-spacing: .06em; cursor: pointer; white-space: nowrap;
+  padding: 8px 12px; font-size: var(--text-caption); letter-spacing: .06em; cursor: pointer; white-space: nowrap;
 }
 .rf-chip:hover { background: var(--bg-2); }
 
 .rf-input {
   width: 100%; border: 1px solid var(--line); border-radius: var(--radius-md);
-  padding: 12px 14px; font-family: var(--font-sans); font-size: 16px; color: var(--ink); background: var(--bg);
+  padding: 12px 14px; font-family: var(--font-sans); font-size: var(--text-body); color: var(--ink); background: var(--bg);
 }
 .rf-input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 
-.rf-pill { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; letter-spacing: .05em;
+.rf-pill { font-family: var(--font-mono); font-size: var(--text-caption); font-weight: 700; letter-spacing: .05em;
   padding: 4px 10px; border-radius: var(--radius-pill); }
-.rf-pill--paid { background: var(--success); color: #fff; }
-.rf-pill--transit { background: var(--info); color: #fff; }
-.rf-pill--waiting { background: var(--warning); color: #fff; }
-.rf-pill--dispute { background: var(--danger); color: #fff; }
+.rf-pill--paid { background: var(--success); color: var(--on-dark); }
+.rf-pill--transit { background: var(--info); color: var(--on-dark); }
+.rf-pill--waiting { background: var(--warning); color: var(--on-dark); }
+.rf-pill--dispute { background: var(--danger); color: var(--on-dark); }
 
 @keyframes rfPulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
 .rf-pulse { animation: rfPulse 1.6s ease-in-out infinite; }
@@ -70,10 +78,10 @@ body {
 .admin-brand { display: flex; align-items: baseline; justify-content: space-between; padding: 4px 8px 16px; }
 .admin-navlink {
   display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px;
-  text-decoration: none; color: var(--ink-2); font-size: 15px; font-weight: 500; letter-spacing: -0.01em;
+  text-decoration: none; color: var(--ink-2); font-size: var(--text-body); font-weight: 500; letter-spacing: -0.01em;
 }
 .admin-navlink:hover { background: var(--bg-2); color: var(--ink); }
-.admin-navlink.active { background: var(--ink); color: #fff; }
+.admin-navlink.active { background: var(--ink); color: var(--on-dark); }
 .admin-navlink .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .55; }
 .admin-content { margin-left: 236px; padding: 28px 32px; max-width: 1100px; }
 .admin-topbar { display: none; }

@@ -114,7 +114,7 @@ export default function HomePage() {
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+        <b style={{ fontSize: 'var(--text-subtitle)', letterSpacing: '-0.02em' }}>
           <span style={{ color: 'var(--ink)' }}>Ryda</span><span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
         </b>
         <NotificationBell />
@@ -124,9 +124,9 @@ export default function HomePage() {
       {/* Block a second order while one is still awaiting payment. */}
       {pending && (
         <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 16 }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--warning)', letterSpacing: '.08em', marginBottom: 6 }}>ORDER AWAITING PAYMENT</div>
-          <b style={{ fontSize: 15 }}>Finish your last order first</b>
-          <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45, margin: '6px 0 12px' }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--warning)', letterSpacing: '.08em', marginBottom: 6 }}>ORDER AWAITING PAYMENT</div>
+          <b style={{ fontSize: 'var(--text-body)' }}>Finish your last order first</b>
+          <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', lineHeight: 1.45, margin: '6px 0 12px' }}>
             You have an unpaid order of {naira(pending.amountMinor)}. Complete or cancel it before booking a new one.
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -139,7 +139,7 @@ export default function HomePage() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {(['DELIVERY', 'RIDE'] as JobType[]).map((t) => (
           <button key={t} onClick={() => { setType(t); setQuote(null); }} className="mono"
-            style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 12, letterSpacing: '.06em',
+            style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-caption)', letterSpacing: '.06em',
               border: `1px solid ${type === t ? 'var(--ink)' : 'var(--line)'}`, background: 'var(--bg)',
               color: type === t ? 'var(--ink)' : 'var(--mid)' }}>{t}</button>
         ))}
@@ -148,10 +148,10 @@ export default function HomePage() {
       <MapPreview pickup={pickup} dropoff={dropoff} />
       {showLocPrompt && (
         <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 20 }}>📍</span>
+          <span style={{ fontSize: 'var(--text-heading)' }}>📍</span>
           <div style={{ flex: 1 }}>
-            <b style={{ fontSize: 14 }}>Turn on location</b>
-            <div style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>Autofill your pickup from where you are.</div>
+            <b style={{ fontSize: 'var(--text-body)' }}>Turn on location</b>
+            <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)' }}>Autofill your pickup from where you are.</div>
           </div>
           <Button onClick={() => { setShowLocPrompt(false); setLocateSignal((n) => n + 1); }}>Enable</Button>
         </div>
@@ -178,7 +178,7 @@ export default function HomePage() {
               {FALLBACK_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.title}</option>)}
             </select>
             <button onClick={() => setShowFallback(true)} className="mono"
-              style={{ background: 'none', border: 'none', padding: '6px 0 0', cursor: 'pointer', fontSize: 10, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+              style={{ background: 'none', border: 'none', padding: '6px 0 0', cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
               WHAT DO THESE MEAN? →
             </button>
           </Field>
@@ -187,7 +187,7 @@ export default function HomePage() {
 
       <div style={{ height: 8 }} />
       <Button onClick={getQuote} disabled={busy || !!pending}>{busy ? 'Working…' : pending ? 'Finish your pending order first' : 'Get quote'}</Button>
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
 
       {quote && (() => {
         // "Return it to me" pre-charges a refundable 75% deposit so the rider can be paid to bring
@@ -203,13 +203,13 @@ export default function HomePage() {
             <div style={{ borderTop: '1px solid var(--line)', margin: '8px 0' }} />
             <Row label="Total" value={naira(grandTotal)} strong />
             {returnDeposit > 0 && (
-              <p style={{ fontSize: 12, color: 'var(--ink-2)', margin: '6px 0 0', lineHeight: 1.45 }}>
+              <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '6px 0 0', lineHeight: 1.45 }}>
                 Includes a {naira(returnDeposit)} return deposit — fully refunded if your delivery is completed, or used to pay the rider if the parcel is returned to you.
               </p>
             )}
             <div style={{ height: 12 }} />
             <Button onClick={pay} disabled={busy}>Pay &amp; hold in escrow</Button>
-            <p className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', textAlign: 'center', marginBottom: 0 }}>
+            <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center', marginBottom: 0 }}>
               HELD SAFELY UNTIL DELIVERY IS CONFIRMED
             </p>
           </div>
@@ -226,8 +226,8 @@ export default function HomePage() {
             width: '100%', maxWidth: 480, background: 'var(--bg)', borderTopLeftRadius: 16, borderTopRightRadius: 16,
             padding: 20, maxHeight: '86vh', overflowY: 'auto',
           }}>
-            <b style={{ fontSize: 17 }}>If your receiver isn’t available</b>
-            <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '4px 0 14px' }}>
+            <b style={{ fontSize: 'var(--text-subtitle)' }}>If your receiver isn’t available</b>
+            <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '4px 0 14px' }}>
               Pick what the rider should do. You can change this any time before paying.
             </p>
 
@@ -244,9 +244,9 @@ export default function HomePage() {
                       width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
                       border: `4px solid ${active ? 'var(--primary)' : 'var(--line)'}`,
                     }} />
-                    <b style={{ fontSize: 14 }}>{o.title}</b>
+                    <b style={{ fontSize: 'var(--text-body)' }}>{o.title}</b>
                   </div>
-                  <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '0 0 0 24px', lineHeight: 1.45 }}>{o.desc}</p>
+                  <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 0 24px', lineHeight: 1.45 }}>{o.desc}</p>
                 </button>
               );
             })}
@@ -255,7 +255,7 @@ export default function HomePage() {
             <Button onClick={confirmFallback}>Continue</Button>
             <button onClick={confirmFallback} className="mono" style={{
               display: 'block', width: '100%', background: 'none', border: 'none', padding: '12px 0 2px',
-              cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)',
+              cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)',
             }}>
               SKIP — USE “{FALLBACK_OPTIONS.find((o) => o.value === fallback)?.title.toUpperCase()}”
             </button>
@@ -271,7 +271,7 @@ export default function HomePage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ flex: 1, marginBottom: 12 }}>
-      <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>{label}</label>
+      <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>{label}</label>
       {children}
     </div>
   );
@@ -279,8 +279,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-      <span style={{ color: 'var(--ink-2)', fontSize: 13 }}>{label}</span>
-      <span className="mono" style={{ fontWeight: strong ? 700 : 400, fontSize: strong ? 15 : 13 }}>{value}</span>
+      <span style={{ color: 'var(--ink-2)', fontSize: 'var(--text-small)' }}>{label}</span>
+      <span className="mono" style={{ fontWeight: strong ? 700 : 400, fontSize: strong ? 'var(--text-body)' : 'var(--text-small)' }}>{value}</span>
     </div>
   );
 }

@@ -5,10 +5,10 @@ export default function Landing() {
   return (
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: 24 }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <b style={{ fontSize: 20, letterSpacing: '-0.02em' }}>
+        <b style={{ fontSize: 'var(--text-heading)', letterSpacing: '-0.02em' }}>
           <span style={{ color: 'var(--ink)' }}>Ryda</span><span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
         </b>
-        <Link href="/login" className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', textDecoration: 'none', letterSpacing: '.06em' }}>
+        <Link href="/login" className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textDecoration: 'none', letterSpacing: '.06em' }}>
           SIGN IN →
         </Link>
       </header>
@@ -16,13 +16,13 @@ export default function Landing() {
       <section style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
         <CourierIllustration />
 
-        <p className="mono" style={{ fontSize: 11, color: 'var(--primary)', letterSpacing: '.14em', margin: '20px 0 0' }}>
+        <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--primary)', letterSpacing: '.14em', margin: '20px 0 0' }}>
           WE ARE FOR RIDERS
         </p>
-        <h1 style={{ fontSize: 30, lineHeight: 1.15, letterSpacing: '-0.03em', margin: '4px 0 0' }}>
+        <h1 style={{ fontSize: 'var(--text-display)', lineHeight: 1.15, letterSpacing: '-0.03em', margin: '4px 0 0' }}>
           Send anything across town, paid only on delivery.
         </h1>
-        <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.5, margin: '10px 0 0' }}>
+        <p style={{ fontSize: 'var(--text-body)', color: 'var(--ink-2)', lineHeight: 1.5, margin: '10px 0 0' }}>
           Your money is held safely in escrow and released to the rider the moment your delivery is
           confirmed — so no one can be cheated. Track every trip live, from pickup to your door.
         </p>
@@ -33,7 +33,7 @@ export default function Landing() {
           <button className="rf-btn">Get started</button>
         </Link>
         <Link href="/login" className="mono"
-          style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink)', textDecoration: 'none', letterSpacing: '.06em', padding: '4px 0' }}>
+          style={{ textAlign: 'center', fontSize: 'var(--text-caption)', color: 'var(--ink)', textDecoration: 'none', letterSpacing: '.06em', padding: '4px 0' }}>
           I WANT TO RIDE &amp; EARN →
         </Link>
       </footer>

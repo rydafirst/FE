@@ -73,10 +73,10 @@ export function BottomNav() {
     <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, zIndex: 50 }}>
       {activeJob && (
         <Link href={isRider ? `/jobs/${activeJob.id}/rider` : `/jobs/${activeJob.id}/track`}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--ink)', color: '#fff', padding: '11px 16px', textDecoration: 'none' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--ink)', color: 'var(--on-dark)', padding: '11px 16px', textDecoration: 'none' }}>
           <span className="rf-pulse" style={{ width: 9, height: 9, borderRadius: 5, background: 'var(--primary)', flexShrink: 0 }} />
-          <span style={{ flex: 1, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bannerLabel(activeJob.status, isRider)}</span>
-          <span className="mono" style={{ fontSize: 11, letterSpacing: '.06em' }}>VIEW ›</span>
+          <span style={{ flex: 1, fontSize: 'var(--text-small)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bannerLabel(activeJob.status, isRider)}</span>
+          <span className="mono" style={{ fontSize: 'var(--text-caption)', letterSpacing: '.06em' }}>VIEW ›</span>
         </Link>
       )}
       <nav style={{ display: 'flex', borderTop: '1px solid var(--line)', background: 'var(--bg)' }}>
@@ -93,7 +93,7 @@ export function BottomNav() {
               stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               {t.icon}
             </svg>
-            <span className="mono" style={{ fontSize: 9.5, letterSpacing: '.08em' }}>{t.label.toUpperCase()}</span>
+            <span className="mono" style={{ fontSize: 'var(--text-caption)', letterSpacing: '.08em' }}>{t.label.toUpperCase()}</span>
           </Link>
         );
       })}

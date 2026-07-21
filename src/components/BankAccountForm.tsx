@@ -47,11 +47,11 @@ export function BankAccountForm({ type, onSaved }: { type: 'refund' | 'payout'; 
         {banks.map((b) => <option key={b.code} value={b.code} style={{ color: 'var(--ink)' }}>{b.name}</option>)}
       </select>
       <input className="rf-input" style={{ marginBottom: 8 }} placeholder="Account number (10 digits)" inputMode="numeric" maxLength={10} value={accountNumber} onChange={(e) => onNumber(e.target.value)} />
-      {resolving && <div className="mono" style={{ fontSize: 11, color: 'var(--mid)', marginBottom: 8 }}>CHECKING ACCOUNT…</div>}
-      {name && <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>{name}</div>}
+      {resolving && <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginBottom: 8 }}>CHECKING ACCOUNT…</div>}
+      {name && <div style={{ fontSize: 'var(--text-body)', fontWeight: 700, marginBottom: 8 }}>{name}</div>}
       <Button variant="ghost" onClick={save} disabled={!name || saving}>{saving ? 'Saving…' : 'Save account'}</Button>
-      {err && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '6px 0 0' }}>{err}</p>}
-      <div className="mono" style={{ fontSize: 10, color: 'var(--mid)', marginTop: 8 }}>NAME CONFIRMED WITH YOUR BANK · STORED ENCRYPTED</div>
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-caption)', margin: '6px 0 0' }}>{err}</p>}
+      <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 8 }}>NAME CONFIRMED WITH YOUR BANK · STORED ENCRYPTED</div>
     </div>
   );
 }

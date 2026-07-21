@@ -57,12 +57,12 @@ export function ChatPanel({ jobId }: { jobId: string }) {
   if (!accepted) {
     return (
       <div className="rf-card" style={{ marginBottom: 12 }}>
-        <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 8 }}>COMMUNITY GUIDELINES</div>
-        <div style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink)', marginBottom: 8 }}>
+        <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 8 }}>COMMUNITY GUIDELINES</div>
+        <div style={{ fontSize: 'var(--text-body)', lineHeight: 1.5, color: 'var(--ink)', marginBottom: 8 }}>
           Rydafirst has zero tolerance for abusive, harassing, hateful, or otherwise objectionable content and
           behaviour. Keep messages respectful and related to the delivery.
         </div>
-        <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink-2)', marginBottom: 12 }}>
+        <div style={{ fontSize: 'var(--text-small)', lineHeight: 1.5, color: 'var(--ink-2)', marginBottom: 12 }}>
           You can report any message using the flag next to it. Reports are reviewed within 24 hours and offending
           users are removed. By continuing you agree to these terms.
         </div>
@@ -73,16 +73,16 @@ export function ChatPanel({ jobId }: { jobId: string }) {
 
   return (
     <div className="rf-card" style={{ marginBottom: 12 }}>
-      <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 8 }}>MESSAGES</div>
-      {note && <div style={{ fontSize: 12.5, color: 'var(--ink-2)', marginBottom: 8 }}>{note}</div>}
+      <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 8 }}>MESSAGES</div>
+      {note && <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', marginBottom: 8 }}>{note}</div>}
       <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-        {messages.length === 0 && <div style={{ color: 'var(--ink-2)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>No messages yet.</div>}
+        {messages.length === 0 && <div style={{ color: 'var(--ink-2)', fontSize: 'var(--text-small)', textAlign: 'center', padding: '16px 0' }}>No messages yet.</div>}
         {messages.map((m) => {
           const mine = m.senderId === me;
           return (
             <div key={m.id} style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '80%', display: 'flex', alignItems: 'flex-end', gap: 6 }}>
-              <div style={{ background: mine ? 'var(--ink)' : 'var(--bg-2)', color: mine ? '#fff' : 'var(--ink)',
-                border: mine ? 'none' : '1px solid var(--line)', borderRadius: 12, padding: '8px 12px', fontSize: 14, lineHeight: 1.4 }}>
+              <div style={{ background: mine ? 'var(--ink)' : 'var(--bg-2)', color: mine ? 'var(--on-dark)' : 'var(--ink)',
+                border: mine ? 'none' : '1px solid var(--line)', borderRadius: 12, padding: '8px 12px', fontSize: 'var(--text-body)', lineHeight: 1.4 }}>
                 {m.body}
               </div>
               {!mine && (
@@ -91,7 +91,7 @@ export function ChatPanel({ jobId }: { jobId: string }) {
                   onClick={() => report(m)}
                   title="Report message"
                   aria-label="Report message"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontSize: 13, padding: 2, lineHeight: 1 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontSize: 'var(--text-small)', padding: 2, lineHeight: 1 }}
                 >
                   ⚑
                 </button>

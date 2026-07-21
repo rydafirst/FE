@@ -155,11 +155,11 @@ export default function TrackPage() {
     return (
       <main style={{ padding: 20, minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div className="rf-card" style={{ textAlign: 'center' }}>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--warning)', letterSpacing: '.08em', marginBottom: 8 }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--warning)', letterSpacing: '.08em', marginBottom: 8 }}>
             {expired ? 'ORDER EXPIRED' : 'PAYMENT NOT COMPLETED'}
           </div>
-          <b style={{ fontSize: 18 }}>You weren’t charged</b>
-          <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: '8px 0 16px' }}>
+          <b style={{ fontSize: 'var(--text-subtitle)' }}>You weren’t charged</b>
+          <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', lineHeight: 1.5, margin: '8px 0 16px' }}>
             {expired
               ? 'This order timed out before payment was completed, so it was cancelled and nothing was held in escrow.'
               : 'The payment was cancelled, so no rider was requested and nothing was held in escrow.'}
@@ -167,7 +167,7 @@ export default function TrackPage() {
           </p>
           <Button onClick={() => (location.href = '/home')}>Back to booking</Button>
           <button onClick={() => (location.href = '/activity')} className="mono"
-            style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+            style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
             VIEW MY ACTIVITY →
           </button>
         </div>
@@ -194,13 +194,13 @@ export default function TrackPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={() => (location.href = '/activity')} aria-label="Back to activity"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, lineHeight: 1, color: 'var(--ink)', padding: 0 }}>←</button>
-          <b style={{ fontSize: 16 }}>Your delivery</b>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-heading)', lineHeight: 1, color: 'var(--ink)', padding: 0 }}>←</button>
+          <b style={{ fontSize: 'var(--text-subtitle)' }}>Your delivery</b>
         </div>
-        <span className="rf-pill" style={{ background: l.color, color: '#fff' }}>{l.text.toUpperCase()}</span>
+        <span className="rf-pill" style={{ background: l.color, color: 'var(--on-dark)' }}>{l.text.toUpperCase()}</span>
       </div>
 
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
 
       {/* Real status timeline */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
@@ -221,7 +221,7 @@ export default function TrackPage() {
           ) : null}
           <Row label="Amount held in escrow" value={naira(job.amountMinor)} strong />
           {job.returnReserveMinor ? (
-            <p style={{ fontSize: 11.5, color: 'var(--ink-2)', margin: '4px 0 0', lineHeight: 1.4 }}>
+            <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '4px 0 0', lineHeight: 1.4 }}>
               Your {naira(job.returnReserveMinor)} return deposit is refunded in full once the delivery is completed.
             </p>
           ) : null}
@@ -233,7 +233,7 @@ export default function TrackPage() {
         <div style={{ marginBottom: 12 }}>
           <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} trail={hasRider ? trail : undefined} route={route} height={360} />
           {hasRider && !riderPos && (
-            <p className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)', textAlign: 'center', marginTop: 6 }}>
+            <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center', marginTop: 6 }}>
               WAITING FOR RIDER LOCATION…
             </p>
           )}
@@ -252,14 +252,14 @@ export default function TrackPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={rider.photoUrl} alt="" style={{ width: 40, height: 40, borderRadius: 20, objectFit: 'cover', background: 'var(--bg-2)' }} />
           ) : (
-            <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--ink)', color: '#fff',
+            <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--ink)', color: 'var(--on-dark)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} className="mono">
               {(rider?.name ?? 'R').trim().charAt(0).toUpperCase()}
             </div>
           )}
           <div style={{ flex: 1 }}>
             <b>{rider?.name ?? 'Assigned rider'}{rider?.nameVerified ? ' ✓' : ''}{rider?.ratingCount ? `  ★ ${rider.rating?.toFixed(1)}` : ''}</b>
-            <div className="mono" style={{ fontSize: 11, color: 'var(--mid)' }}>
+            <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>
               {rider ? vehicleLabel(rider.vehicleType) : 'ASSIGNED'}
               {rider?.vehicleColor ? ` · ${rider.vehicleColor.charAt(0) + rider.vehicleColor.slice(1).toLowerCase()}` : ''}
               {rider?.vehiclePlate ? ` · ${rider.vehiclePlate}` : ''}
@@ -273,7 +273,7 @@ export default function TrackPage() {
         </div>
       ) : (
         <div className="rf-card" style={{ marginBottom: 12, textAlign: 'center', color: 'var(--ink-2)' }}>
-          <div className="mono" style={{ fontSize: 12 }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)' }}>
             {job?.status === 'SEARCHING' ? 'FINDING A RIDER NEARBY…' : job?.status === 'CREATED' ? 'WAITING FOR PAYMENT…' : 'NO RIDER ASSIGNED YET'}
           </div>
         </div>
@@ -285,9 +285,9 @@ export default function TrackPage() {
         <div className="rf-card" style={{ marginBottom: 12, textAlign: 'center' }}>
           {deliveryCode ? (
             <>
-              <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>DELIVERY CODE</div>
-              <div className="mono" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '.3em', margin: '6px 0' }}>{deliveryCode}</div>
-              <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-2)' }}>GIVE THIS TO YOUR RIDER ON ARRIVAL</div>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>DELIVERY CODE</div>
+              <div className="mono" style={{ fontSize: 'var(--text-display)', fontWeight: 700, letterSpacing: '.3em', margin: '6px 0' }}>{deliveryCode}</div>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>GIVE THIS TO YOUR RIDER ON ARRIVAL</div>
             </>
           ) : (
             <Button variant="ghost" onClick={revealCode}>Reveal delivery code</Button>
@@ -297,8 +297,8 @@ export default function TrackPage() {
 
       {needsResolution && (
         <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 12 }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--warning)', letterSpacing: '.06em', marginBottom: 6 }}>RECIPIENT UNAVAILABLE</div>
-          <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: '0 0 10px' }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--warning)', letterSpacing: '.06em', marginBottom: 6 }}>RECIPIENT UNAVAILABLE</div>
+          <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', lineHeight: 1.5, margin: '0 0 10px' }}>
             {waitingDue
               ? `Your rider waited past the free 10 minutes. Pay the waiting fee (${naira(job!.waitingFeeMinor!)}) so they can hand over — or have it returned to you.`
               : 'Your rider is at the drop-off but no one has collected. Keep them waiting (a small fee applies after the free 10 minutes) or have the package returned to you at a reduced fee.'}
@@ -322,20 +322,20 @@ export default function TrackPage() {
       {job && CANCELLABLE.includes(job.status) && (
         showCancel ? (
           <div className="rf-card" style={{ marginBottom: 12 }}>
-            <b style={{ fontSize: 14 }}>Cancel this order?</b>
-            <p style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
+            <b style={{ fontSize: 'var(--text-body)' }}>Cancel this order?</b>
+            <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '6px 0 12px', lineHeight: 1.45 }}>
               {job.status === 'CREATED'
                 ? 'This order isn’t paid yet, so nothing will be charged.'
                 : `You’ll be refunded ${naira(job.amountMinor)} to your original payment method. You can add a bank account below as a backup — it’s optional.`}
             </p>
             {job.status !== 'CREATED' && !refAcct && (
               <div style={{ marginBottom: 12 }}>
-                <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 6 }}>BACKUP REFUND ACCOUNT (OPTIONAL)</div>
+                <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 6 }}>BACKUP REFUND ACCOUNT (OPTIONAL)</div>
                 <BankAccountForm type="refund" onSaved={setRefAcct} />
               </div>
             )}
             {job.status !== 'CREATED' && refAcct && (
-              <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', marginBottom: 12 }}>BACKUP ACCOUNT ON FILE · {refAcct.accountNumberMasked}</div>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 12 }}>BACKUP ACCOUNT ON FILE · {refAcct.accountNumberMasked}</div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="ghost" onClick={cancelOrder}>Yes, cancel</Button>
@@ -344,7 +344,7 @@ export default function TrackPage() {
           </div>
         ) : (
           <button onClick={() => setShowCancel(true)} className="mono"
-            style={{ display: 'block', width: '100%', textAlign: 'center', background: 'none', border: 'none', padding: '4px', cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--danger)', marginBottom: 12 }}>
+            style={{ display: 'block', width: '100%', textAlign: 'center', background: 'none', border: 'none', padding: '4px', cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--danger)', marginBottom: 12 }}>
             CANCEL THIS ORDER →
           </button>
         )
@@ -361,8 +361,8 @@ export default function TrackPage() {
 function Row({ label, value, strong, mono }: { label: string; value: string; strong?: boolean; mono?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-      <span style={{ color: 'var(--ink-2)', fontSize: 13 }}>{label}</span>
-      <span className={mono ? 'mono' : ''} style={{ fontWeight: strong ? 700 : 400, fontSize: strong ? 15 : 13 }}>{value}</span>
+      <span style={{ color: 'var(--ink-2)', fontSize: 'var(--text-small)' }}>{label}</span>
+      <span className={mono ? 'mono' : ''} style={{ fontWeight: strong ? 700 : 400, fontSize: strong ? 'var(--text-body)' : 'var(--text-small)' }}>{value}</span>
     </div>
   );
 }

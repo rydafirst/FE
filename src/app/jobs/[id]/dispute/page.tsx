@@ -31,11 +31,11 @@ export default function Dispute() {
   return (
     <main style={{ padding: 20 }}>
       <button onClick={back} className="mono" aria-label="Back"
-        style={{ background: 'none', border: 'none', padding: '4px 0 12px', cursor: 'pointer', fontSize: 12, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+        style={{ background: 'none', border: 'none', padding: '4px 0 12px', cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
         ← BACK
       </button>
       <h2 style={{ marginBottom: 4 }}>Open a dispute</h2>
-      <p style={{ color: 'var(--ink-2)', fontSize: 13 }}>Funds freeze immediately. Clear-cut cases resolve automatically; the rest go to a reviewer.</p>
+      <p style={{ color: 'var(--ink-2)', fontSize: 'var(--text-small)' }}>Funds freeze immediately. Clear-cut cases resolve automatically; the rest go to a reviewer.</p>
       <label style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '12px 0' }}>
         <input type="checkbox" checked={counter} onChange={(e) => setCounter(e.target.checked)} />
         <span>I have evidence that contradicts the record</span>

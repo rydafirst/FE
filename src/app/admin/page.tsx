@@ -51,7 +51,7 @@ export default function AdminDashboardPage() {
   }, [ready, notAdmin, load]);
 
   if (!ready) return null;
-  if (notAdmin) return <p style={{ color: 'var(--danger)', fontSize: 13 }}>You need an admin account.</p>;
+  if (notAdmin) return <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>You need an admin account.</p>;
 
   const openDisputes = disputes.filter((d) => d.status !== 'RESOLVED').length;
   const queuePending = queue.filter((q) => q.status === 'UNDER_REVIEW').length;
@@ -68,8 +68,8 @@ export default function AdminDashboardPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        <h1 style={{ fontSize: 24, letterSpacing: '-0.02em', margin: 0 }}>Dashboard</h1>
-        <span className="mono" style={{ fontSize: 10.5, color: 'var(--mid)' }}>
+        <h1 style={{ fontSize: 'var(--text-title)', letterSpacing: '-0.02em', margin: 0 }}>Dashboard</h1>
+        <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>
           <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', marginRight: 6 }} />
           LIVE{updated ? ` · UPDATED ${ago(updated.toISOString())}` : ''}
         </span>
@@ -79,8 +79,8 @@ export default function AdminDashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
         {stats.map((s) => (
           <Link key={s.label} href={s.href} className="rf-card" style={{ textDecoration: 'none', color: 'inherit', padding: '16px 18px', borderColor: s.alert ? 'var(--danger)' : undefined }}>
-            <div className="mono" style={{ fontSize: 10, color: s.alert ? 'var(--danger)' : 'var(--ink-2)', letterSpacing: '.05em' }}>{s.label.toUpperCase()}</div>
-            <div style={{ fontSize: 26, fontWeight: 700, marginTop: 6, letterSpacing: '-0.02em' }}>{s.value}</div>
+            <div className="mono" style={{ fontSize: 'var(--text-caption)', color: s.alert ? 'var(--danger)' : 'var(--ink-2)', letterSpacing: '.05em' }}>{s.label.toUpperCase()}</div>
+            <div style={{ fontSize: 'var(--text-title)', fontWeight: 700, marginTop: 6, letterSpacing: '-0.02em' }}>{s.value}</div>
           </Link>
         ))}
       </div>
@@ -89,21 +89,21 @@ export default function AdminDashboardPage() {
         {/* Live activity feed */}
         <div className="rf-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <b style={{ fontSize: 15 }}>Live activity</b>
-            <span className="mono" style={{ fontSize: 10, color: 'var(--mid)' }}>LATEST BOOKINGS &amp; DELIVERIES</span>
+            <b style={{ fontSize: 'var(--text-body)' }}>Live activity</b>
+            <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LATEST BOOKINGS &amp; DELIVERIES</span>
           </div>
-          {deliveries === null && <p className="mono" style={{ fontSize: 11, color: 'var(--mid)' }}>LOADING…</p>}
-          {deliveries?.length === 0 && <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>No activity yet.</p>}
+          {deliveries === null && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
+          {deliveries?.length === 0 && <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: 0 }}>No activity yet.</p>}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {deliveries?.slice(0, 12).map((d) => (
               <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: '1px solid var(--line-2)' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: 'var(--text-small)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {d.type === 'RIDE' ? 'Ride' : 'Delivery'} · {d.pickupArea ?? '—'} → {d.dropoffArea ?? '—'}
                   </div>
-                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--mid)', marginTop: 2 }}>{naira(d.amountMinor)} · {ago(d.createdAt)}</div>
+                  <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 2 }}>{naira(d.amountMinor)} · {ago(d.createdAt)}</div>
                 </div>
-                <span className="rf-pill" style={{ background: statusColor(d.status), color: '#fff', fontSize: 9.5, whiteSpace: 'nowrap' }}>{d.status.replace(/_/g, ' ')}</span>
+                <span className="rf-pill" style={{ background: statusColor(d.status), color: 'var(--on-dark)', fontSize: 'var(--text-caption)', whiteSpace: 'nowrap' }}>{d.status.replace(/_/g, ' ')}</span>
               </div>
             ))}
           </div>
@@ -112,16 +112,16 @@ export default function AdminDashboardPage() {
         {/* Active-by-status + shortcuts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="rf-card">
-            <b style={{ fontSize: 15 }}>In progress right now</b>
+            <b style={{ fontSize: 'var(--text-body)' }}>In progress right now</b>
             <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {ops && Object.keys(ops.summary.byStatus).length === 0 && <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>Nothing active.</p>}
+              {ops && Object.keys(ops.summary.byStatus).length === 0 && <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: 0 }}>Nothing active.</p>}
               {ops && Object.entries(ops.summary.byStatus).map(([status, n]) => (
                 <div key={status} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>{status.replace(/_/g, ' ')}</span>
-                  <b style={{ fontSize: 14 }}>{n}</b>
+                  <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{status.replace(/_/g, ' ')}</span>
+                  <b style={{ fontSize: 'var(--text-body)' }}>{n}</b>
                 </div>
               ))}
-              {!ops && <p className="mono" style={{ fontSize: 11, color: 'var(--mid)' }}>LOADING…</p>}
+              {!ops && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
             </div>
           </div>
         </div>

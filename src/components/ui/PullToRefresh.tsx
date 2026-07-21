@@ -37,7 +37,7 @@ export function PullToRefresh({ onRefresh, children }: { onRefresh: () => Promis
         height: pull, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: settling ? 'height .22s ease' : 'none',
       }}>
-        <span className="mono" style={{ fontSize: 10, color: 'var(--mid)', letterSpacing: '.08em' }}>
+        <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', letterSpacing: '.08em' }}>
           {refreshing ? 'REFRESHING…' : pull >= 45 ? 'RELEASE TO REFRESH' : pull > 0 ? 'PULL TO REFRESH' : ''}
         </span>
       </div>

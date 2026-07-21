@@ -84,7 +84,7 @@ export default function LoginPage() {
 
   return (
     <main style={{ padding: 24, display: 'flex', flexDirection: 'column', minHeight: '100vh', justifyContent: 'center' }}>
-      <h1 style={{ fontSize: 32, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+      <h1 style={{ fontSize: 'var(--text-display)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
         <span style={{ fontWeight: 700, color: 'var(--ink)' }}>Ryda</span>
         <span style={{ fontWeight: 400, color: 'var(--ink-2)' }}>first</span>
       </h1>
@@ -95,7 +95,7 @@ export default function LoginPage() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {(['signin', 'signup'] as Mode[]).map((m) => (
           <button key={m} onClick={() => switchMode(m)} className="mono"
-            style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 12, letterSpacing: '.06em',
+            style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-caption)', letterSpacing: '.06em',
               border: `1px solid ${mode === m ? 'var(--ink)' : 'var(--line)'}`, background: 'var(--bg)',
               color: mode === m ? 'var(--ink)' : 'var(--mid)' }}>
             {m === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT'}
@@ -107,7 +107,7 @@ export default function LoginPage() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         {(['CUSTOMER', 'RIDER'] as Role[]).map((r) => (
           <button key={r} onClick={() => setRole(r)} className="mono"
-            style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 12, letterSpacing: '.06em',
+            style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-caption)', letterSpacing: '.06em',
               border: `1px solid ${role === r ? 'var(--ink)' : 'var(--line)'}`, background: 'var(--bg)',
               color: role === r ? 'var(--ink)' : 'var(--mid)' }}>
             {r === 'CUSTOMER' ? 'I NEED A DELIVERY' : 'I AM A RIDER'}
@@ -119,24 +119,24 @@ export default function LoginPage() {
         <>
           {isSignup && (
             <>
-              <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>FULL NAME</label>
+              <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>FULL NAME</label>
               <input className="rf-input" style={{ margin: '8px 0 16px' }} value={name}
                 onChange={(e) => setName(e.target.value)} placeholder="e.g. Chidi Okafor" autoComplete="name" />
             </>
           )}
-          <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>PHONE NUMBER</label>
+          <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>PHONE NUMBER</label>
           <input className="rf-input" style={{ margin: '8px 0 16px' }} value={phone}
             onChange={(e) => setPhone(e.target.value)} placeholder="+234…" inputMode="tel" autoComplete="tel" />
-          <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>EMAIL</label>
+          <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>EMAIL</label>
           <input className="rf-input" style={{ margin: '8px 0 6px' }} value={email}
             onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" inputMode="email" type="email" autoComplete="email" />
-          <p className="mono" style={{ fontSize: 10, color: 'var(--mid)', margin: '0 0 16px' }}>
+          <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', margin: '0 0 16px' }}>
             WE&apos;LL EMAIL YOUR CODE FOR NOW
           </p>
           <Button onClick={sendOtp} disabled={busy}>{busy ? 'Sending…' : isSignup ? 'Create account' : 'Send code'}</Button>
 
           {isSignup && (
-            <p style={{ fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: '14px 0 0', textAlign: 'center' }}>
+            <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', lineHeight: 1.5, margin: '14px 0 0', textAlign: 'center' }}>
               By creating an account you agree to our{' '}
               <Link href="/terms" style={{ color: 'var(--ink)', textDecoration: 'underline' }}>Terms of Use</Link>{' '}
               and{' '}
@@ -146,16 +146,16 @@ export default function LoginPage() {
         </>
       ) : (
         <>
-          <label className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>ENTER 6-DIGIT CODE</label>
-          <input className="rf-input mono" style={{ margin: '8px 0 10px', letterSpacing: '.4em', textAlign: 'center', fontSize: 22 }}
+          <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>ENTER 6-DIGIT CODE</label>
+          <input className="rf-input mono" style={{ margin: '8px 0 10px', letterSpacing: '.4em', textAlign: 'center', fontSize: 'var(--text-heading)' }}
             value={code} onChange={(e) => setCode(e.target.value)} maxLength={6} inputMode="numeric" autoFocus />
 
           {/* Didn't get it? Resend, gated by a short cooldown. */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--mid)' }}>SENT TO {email.toUpperCase()}</span>
+            <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>SENT TO {email.toUpperCase()}</span>
             <button onClick={resend} disabled={cooldown > 0 || busy} className="mono"
               style={{ background: 'none', border: 'none', padding: 4, cursor: cooldown > 0 || busy ? 'default' : 'pointer',
-                fontSize: 11, letterSpacing: '.06em', color: cooldown > 0 || busy ? 'var(--mid)' : 'var(--ink)' }}>
+                fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: cooldown > 0 || busy ? 'var(--mid)' : 'var(--ink)' }}>
               {cooldown > 0 ? `RESEND IN ${cooldown}S` : 'RESEND CODE'}
             </button>
           </div>
@@ -163,14 +163,14 @@ export default function LoginPage() {
           <Button onClick={verify} disabled={busy}>{busy ? 'Working…' : `Verify as ${role === 'RIDER' ? 'rider' : 'customer'}`}</Button>
 
           <button onClick={() => { setPhase('phone'); setCode(''); setErr(null); setNote(null); }} className="mono"
-            style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 11, letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+            style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
             ← USE A DIFFERENT EMAIL
           </button>
         </>
       )}
 
-      {note && <p style={{ color: 'var(--success)', fontSize: 13, marginBottom: 0 }}>{note}</p>}
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 0 }}>{err}</p>}
+      {note && <p style={{ color: 'var(--success)', fontSize: 'var(--text-small)', marginBottom: 0 }}>{note}</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)', marginBottom: 0 }}>{err}</p>}
     </main>
   );
 }

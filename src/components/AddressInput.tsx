@@ -66,11 +66,11 @@ export function AddressInput({ label, placeholder, onSelect, autoLocate }: {
   return (
     <div className="rf-card" style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <span className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>{label}</span>
-        <button onClick={useMyLocation} className="mono" style={{ fontSize: 10, background: 'none', border: '1px solid var(--line)', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', color: 'var(--ink)' }}>USE MY LOCATION</button>
+        <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>{label}</span>
+        <button onClick={useMyLocation} className="mono" style={{ fontSize: 'var(--text-caption)', background: 'none', border: '1px solid var(--line)', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', color: 'var(--ink)' }}>USE MY LOCATION</button>
       </div>
       <input ref={inputRef} className="rf-input" placeholder={placeholder ?? (ready ? 'Search address…' : 'Loading…')} />
-      {error && <p style={{ color: 'var(--danger)', fontSize: 11, margin: '6px 0 0' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-caption)', margin: '6px 0 0' }}>{error}</p>}
     </div>
   );
 }

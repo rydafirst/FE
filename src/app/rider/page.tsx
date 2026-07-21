@@ -91,7 +91,7 @@ export default function RiderHome() {
     <main style={{ padding: 20, paddingBottom: 96 }}>
       <PullToRefresh onRefresh={refreshAll}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+        <b style={{ fontSize: 'var(--text-subtitle)', letterSpacing: '-0.02em' }}>
           <span style={{ color: 'var(--ink)' }}>Ryda</span><span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
         </b>
         <NotificationBell />
@@ -99,20 +99,20 @@ export default function RiderHome() {
       {/* Resume an in-progress trip — visible on any browser/device signed into this account. */}
       {activeJob && (
         <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 16 }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.08em', marginBottom: 4 }}>YOU HAVE AN ACTIVE DELIVERY</div>
-          <b style={{ fontSize: 15 }}>{naira(activeJob.amountMinor)} · {activeJob.status.replace(/_/g, ' ').toLowerCase()}</b>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.08em', marginBottom: 4 }}>YOU HAVE AN ACTIVE DELIVERY</div>
+          <b style={{ fontSize: 'var(--text-body)' }}>{naira(activeJob.amountMinor)} · {activeJob.status.replace(/_/g, ' ').toLowerCase()}</b>
           <div style={{ height: 10 }} />
           <Button onClick={() => (location.href = `/jobs/${activeJob.id}/rider`)}>Resume delivery</Button>
         </div>
       )}
 
-      <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.06em' }}>EARNINGS TODAY</div>
-      <div className="mono" style={{ fontSize: 28, fontWeight: 700 }}>{earnings === null ? '—' : naira(earnings)}</div>
+      <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>EARNINGS TODAY</div>
+      <div className="mono" style={{ fontSize: 'var(--text-display)', fontWeight: 700 }}>{earnings === null ? '—' : naira(earnings)}</div>
 
       {noBank && (
         <div className="rf-card" style={{ border: '1px solid var(--primary)', margin: '12px 0' }}>
-          <div style={{ fontSize: 14, color: 'var(--ink)' }}>Add a payout bank account to start earning — it&apos;s where your delivery money is paid.</div>
-          <a href="/profile" className="mono" style={{ display: 'inline-block', marginTop: 8, fontSize: 12, color: 'var(--primary)', textDecoration: 'none', letterSpacing: '.06em' }}>
+          <div style={{ fontSize: 'var(--text-body)', color: 'var(--ink)' }}>Add a payout bank account to start earning — it&apos;s where your delivery money is paid.</div>
+          <a href="/profile" className="mono" style={{ display: 'inline-block', marginTop: 8, fontSize: 'var(--text-caption)', color: 'var(--primary)', textDecoration: 'none', letterSpacing: '.06em' }}>
             ADD YOUR BANK ACCOUNT →
           </a>
         </div>
@@ -121,39 +121,39 @@ export default function RiderHome() {
       {online ? (
         <div style={{ margin: '12px 0' }}>
           <JobsMap pins={jobs.map((j) => ({ id: j.id, lat: j.pickupApprox.lat, lng: j.pickupApprox.lng, label: naira(j.amountMinor) }))} />
-          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', textAlign: 'center', marginTop: 8, letterSpacing: '.06em' }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center', marginTop: 8, letterSpacing: '.06em' }}>
             {jobs.length ? `${jobs.length} JOB${jobs.length > 1 ? 'S' : ''} NEARBY` : 'ONLINE — WAITING FOR JOBS'}
           </div>
         </div>
       ) : (
-        <div style={{ height: 120, borderRadius: 6, background: 'var(--ink)', color: '#fff', display: 'flex',
+        <div style={{ height: 120, borderRadius: 6, background: 'var(--ink)', color: 'var(--on-dark)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', margin: '12px 0' }} className="mono">OFFLINE</div>
       )}
       <Button variant={online ? 'ghost' : 'primary'} onClick={toggleOnline} disabled={noBank}>{online ? 'Go offline' : 'Go online'}</Button>
 
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
 
       {/* Live dispatch feed */}
       {online && (
         <div style={{ marginTop: 16 }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 8 }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 8 }}>
             AVAILABLE JOBS
           </div>
           {jobs.length === 0 ? (
             <div className="rf-card" style={{ textAlign: 'center', color: 'var(--ink-2)' }}>
-              <div className="mono" style={{ fontSize: 12 }}>NO JOBS YET — YOU&apos;LL SEE THEM HERE</div>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)' }}>NO JOBS YET — YOU&apos;LL SEE THEM HERE</div>
             </div>
           ) : (
             jobs.map((j) => (
               <div key={j.id} className="rf-card" style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span className="mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>{j.type}</span>
-                  <b className="mono" style={{ fontSize: 16 }}>{naira(j.amountMinor)}</b>
+                  <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{j.type}</span>
+                  <b className="mono" style={{ fontSize: 'var(--text-subtitle)' }}>{naira(j.amountMinor)}</b>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--ink)', margin: '6px 0 8px' }}>
+                <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink)', margin: '6px 0 8px' }}>
                   {j.pickupArea || 'Nearby'} <span style={{ color: 'var(--mid)' }}>→</span> {j.dropoffArea || 'Nearby'}
                 </div>
-                <div className="mono" style={{ fontSize: 10.5, letterSpacing: '.04em', margin: '0 0 10px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div className="mono" style={{ fontSize: 'var(--text-caption)', letterSpacing: '.04em', margin: '0 0 10px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   {j.toPickupMeters !== undefined && (
                     <span style={{ color: 'var(--ink)' }}>{(Math.round(j.toPickupMeters / 100) / 10).toFixed(1)} KM · ~{j.toPickupEtaMin} MIN AWAY</span>
                   )}

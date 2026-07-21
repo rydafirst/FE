@@ -32,11 +32,11 @@ export default function AdminDisputesPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, letterSpacing: '-0.02em', margin: '0 0 14px' }}>Disputes</h1>
-      {notAdmin && <p style={{ color: 'var(--danger)', fontSize: 13 }}>You need an admin account.</p>}
-      {err && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{err}</p>}
-      {!rows && !err && !notAdmin && <p className="mono" style={{ fontSize: 12, color: 'var(--mid)' }}>LOADING…</p>}
-      {rows?.length === 0 && <p style={{ color: 'var(--ink-2)', fontSize: 14 }}>No disputes.</p>}
+      <h1 style={{ fontSize: 'var(--text-heading)', letterSpacing: '-0.02em', margin: '0 0 14px' }}>Disputes</h1>
+      {notAdmin && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>You need an admin account.</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
+      {!rows && !err && !notAdmin && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
+      {rows?.length === 0 && <p style={{ color: 'var(--ink-2)', fontSize: 'var(--text-body)' }}>No disputes.</p>}
 
       {rows?.map((d) => {
         const open = OPEN.includes(d.status);
@@ -44,19 +44,19 @@ export default function AdminDisputesPage() {
           <div key={d.id} className="rf-card" style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div className="mono" style={{ fontSize: 12.5 }}>Job {d.jobId.slice(0, 8)}…</div>
-                <div className="mono" style={{ fontSize: 10.5, color: 'var(--mid)', marginTop: 3 }}>
+                <div className="mono" style={{ fontSize: 'var(--text-small)' }}>Job {d.jobId.slice(0, 8)}…</div>
+                <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 3 }}>
                   {d.tier.toUpperCase()} · {new Date(d.createdAt).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })}
                   {d.resolution ? ` · ${d.resolution}` : ''}
                 </div>
               </div>
-              <span className="rf-pill" style={{ background: open ? 'var(--warning)' : 'var(--success)', color: '#fff', fontSize: 10 }}>{d.status.replace(/_/g, ' ')}</span>
+              <span className="rf-pill" style={{ background: open ? 'var(--warning)' : 'var(--success)', color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>{d.status.replace(/_/g, ' ')}</span>
             </div>
             {open && (
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 {(['RELEASE', 'REFUND', 'SPLIT'] as const).map((r) => (
                   <button key={r} onClick={() => resolve(d, r)} disabled={busy === d.id} className="rf-btn"
-                    style={{ flex: 1, fontSize: 12, background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)' }}>
+                    style={{ flex: 1, fontSize: 'var(--text-caption)', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)' }}>
                     {r[0] + r.slice(1).toLowerCase()}
                   </button>
                 ))}

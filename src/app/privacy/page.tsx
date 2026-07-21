@@ -11,22 +11,22 @@ export default function PrivacyPolicy() {
   return (
     <main style={{ minHeight: '100vh', padding: '28px 22px 56px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-        <b style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+        <b style={{ fontSize: 'var(--text-subtitle)', letterSpacing: '-0.02em' }}>
           <span style={{ color: 'var(--ink)' }}>Ryda</span>
           <span style={{ color: 'var(--ink-2)', fontWeight: 400 }}>first</span>
         </b>
-        <Link href="/" className="mono" style={{ fontSize: 11, color: 'var(--ink-2)', textDecoration: 'none', letterSpacing: '.06em' }}>
+        <Link href="/" className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textDecoration: 'none', letterSpacing: '.06em' }}>
           ← HOME
         </Link>
       </header>
 
-      <p className="mono" style={{ fontSize: 11, color: 'var(--primary)', letterSpacing: '.14em', margin: 0 }}>
+      <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--primary)', letterSpacing: '.14em', margin: 0 }}>
         PRIVACY POLICY
       </p>
-      <h1 style={{ fontSize: 26, lineHeight: 1.2, letterSpacing: '-0.03em', margin: '6px 0 4px' }}>
+      <h1 style={{ fontSize: 'var(--text-title)', lineHeight: 1.2, letterSpacing: '-0.03em', margin: '6px 0 4px' }}>
         Your data, handled with care.
       </h1>
-      <p className="mono" style={{ fontSize: 11, color: 'var(--mid)', letterSpacing: '.05em', margin: '0 0 24px' }}>
+      <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', letterSpacing: '.05em', margin: '0 0 24px' }}>
         LAST UPDATED: JULY 2026
       </p>
 
@@ -110,7 +110,7 @@ export default function PrivacyPolicy() {
         </a>.
       </Section>
 
-      <p className="mono" style={{ fontSize: 10.5, color: 'var(--mid)', letterSpacing: '.05em', marginTop: 32 }}>
+      <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', letterSpacing: '.05em', marginTop: 32 }}>
         © 2026 RYDAFIRST. ALL RIGHTS RESERVED.
       </p>
     </main>
@@ -120,8 +120,8 @@ export default function PrivacyPolicy() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section style={{ marginBottom: 22 }}>
-      <h2 style={{ fontSize: 16, letterSpacing: '-0.01em', margin: '0 0 8px' }}>{title}</h2>
-      <div style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>{children}</div>
+      <h2 style={{ fontSize: 'var(--text-subtitle)', letterSpacing: '-0.01em', margin: '0 0 8px' }}>{title}</h2>
+      <div style={{ fontSize: 'var(--text-body)', lineHeight: 1.6, color: 'var(--ink-2)' }}>{children}</div>
     </section>
   );
 }

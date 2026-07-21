@@ -35,13 +35,13 @@ export default function NotificationsPage() {
 
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>
-      <h1 style={{ fontSize: 22, margin: '4px 0 16px', letterSpacing: '-0.02em' }}>Notifications</h1>
+      <h1 style={{ fontSize: 'var(--text-heading)', margin: '4px 0 16px', letterSpacing: '-0.02em' }}>Notifications</h1>
 
-      {items === null && <p className="mono" style={{ fontSize: 12, color: 'var(--mid)' }}>LOADING…</p>}
+      {items === null && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
       {items?.length === 0 && (
         <div className="rf-card" style={{ textAlign: 'center', color: 'var(--ink-2)' }}>
-          <p style={{ margin: '4px 0 6px', fontSize: 14 }}>No notifications yet.</p>
-          <span className="mono" style={{ fontSize: 10.5, color: 'var(--mid)', letterSpacing: '.06em' }}>UPDATES ABOUT YOUR ORDERS APPEAR HERE</span>
+          <p style={{ margin: '4px 0 6px', fontSize: 'var(--text-body)' }}>No notifications yet.</p>
+          <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', letterSpacing: '.06em' }}>UPDATES ABOUT YOUR ORDERS APPEAR HERE</span>
         </div>
       )}
 
@@ -60,11 +60,11 @@ export default function NotificationsPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                 {!n.read && <span style={{ width: 8, height: 8, borderRadius: 4, background: 'var(--primary)', flexShrink: 0 }} />}
-                <b style={{ fontSize: 14.5 }}>{n.title}</b>
+                <b style={{ fontSize: 'var(--text-body)' }}>{n.title}</b>
               </div>
-              <span className="mono" style={{ fontSize: 10, color: 'var(--mid)', flexShrink: 0 }}>{ago(n.createdAt)}</span>
+              <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', flexShrink: 0 }}>{ago(n.createdAt)}</span>
             </div>
-            <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '6px 0 0', lineHeight: 1.45 }}>{n.body}</p>
+            <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '6px 0 0', lineHeight: 1.45 }}>{n.body}</p>
           </div>
         );
       })}

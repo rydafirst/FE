@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { loadGoogleMaps } from '@/lib/google-maps';
 import type { Place } from './AddressInput';
+import { tokens } from '@/lib/tokens';
 
 export function MapPreview({ pickup, dropoff }: { pickup: Place | null; dropoff: Place | null }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -24,7 +25,10 @@ export function MapPreview({ pickup, dropoff }: { pickup: Place | null; dropoff:
         const pos = { lat: p.lat, lng: p.lng };
         markers.current.push(new g.maps.Marker({
           position: pos, map: mapRef.current,
-          label: { text: dark ? 'A' : 'B', color: '#fff', fontFamily: 'monospace', fontSize: '11px' },
+          // Literal values, NOT CSS custom properties: this is a Google Maps MarkerLabel, which is
+          // rendered outside the DOM's style cascade and will not resolve var(). Sourced from the
+          // token mirror so it still tracks the design system.
+          label: { text: dark ? 'A' : 'B', color: tokens.onDark, fontFamily: 'monospace', fontSize: `${tokens.size.caption}px` },
         }));
         bounds.extend(pos);
       }
