@@ -1,4 +1,9 @@
-// Mirrors ../../contracts/design-tokens.ts and docs/design-system.md
+// Literal mirror of the CSS custom properties in app/globals.css.
+//
+// globals.css is the source of truth: components should use var(--ink), var(--text-body) etc.
+// This file exists ONLY for the few places that cannot resolve CSS variables — currently the
+// Google Maps MarkerLabel in MapPreview, which is rendered outside the DOM's style cascade.
+// If you are reaching for this in ordinary JSX, use the CSS variable instead.
 export const tokens = {
   color: {
     ink: '#111111', ink2: '#565656', mid: '#A8A8A8',
