@@ -57,7 +57,9 @@ export interface DocChecklist { track: VehicleTrack | null; onboarding: DocOnboa
 export type VehicleColor = 'BLACK' | 'WHITE' | 'SILVER' | 'GREY' | 'RED' | 'BLUE' | 'GREEN' | 'GOLD' | 'OTHER';
 export const VEHICLE_COLORS: VehicleColor[] = ['BLACK', 'WHITE', 'SILVER', 'GREY', 'RED', 'BLUE', 'GREEN', 'GOLD', 'OTHER'];
 export interface RiderProfile { track: VehicleTrack | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: VehicleColor }
-export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string }
+// `phone` is present only while the job is in flight, and only for the counterparty. `phoneMasked`
+// says whether it is a proxy number — dial whatever is given and don't cache it.
+export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string; phone?: string; phoneMasked?: boolean }
 export interface PendingRating { jobId: string; amountMinor: number; createdAt: string; dropoffArea?: string; riderName?: string }
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
@@ -171,7 +173,7 @@ export const api = {
   updateRiderProfile: (token: string, body: { legalName?: string; vehiclePlate?: string; vehicleColor?: VehicleColor }) =>
     call<RiderProfile>(`/me/documents/profile`, { method: 'PUT', token, body: JSON.stringify(body) }),
   jobRider: (token: string, id: string) => call<{ rider: RiderSummary | null }>(`/jobs/${id}/rider`, { token }),
-  jobCustomer: (token: string, id: string) => call<{ name?: string; photoUrl?: string }>(`/jobs/${id}/customer`, { token }),
+  jobCustomer: (token: string, id: string) => call<{ name?: string; photoUrl?: string; phone?: string; phoneMasked?: boolean }>(`/jobs/${id}/customer`, { token }),
   avatarUploadUrl: (token: string, contentType: string, sizeBytes: number) => call<{ uploadUrl: string }>(`/me/avatar/upload-url`, { method: 'POST', token, body: JSON.stringify({ contentType, sizeBytes }) }),
   myAvatar: (token: string) => call<{ photoUrl: string | null }>(`/me/avatar`, { token }),
   me: (token: string) => call<{ id: string; phone: string | null }>(`/me`, { token }),

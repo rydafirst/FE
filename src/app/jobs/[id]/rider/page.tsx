@@ -24,12 +24,13 @@ export default function RiderJob() {
   const [policy, setPolicy] = useState<Fallback>('WAIT');
   const [code, setCode] = useState('');
   const [outcome, setOutcome] = useState<'paid' | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [geo, setGeo] = useState<Geo>('checking');
   const [showRelease, setShowRelease] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const [customer, setCustomer] = useState<{ name?: string; photoUrl?: string } | null>(null);
+  const [customer, setCustomer] = useState<{ name?: string; photoUrl?: string; phone?: string; phoneMasked?: boolean } | null>(null);
   const sockRef = useRef<any>(null);
   const { show, node: toast } = useToast();
   const done = outcome !== null;
@@ -118,9 +119,30 @@ export default function RiderJob() {
       catch (e) { show((e as Error).message); } // server rejects if outside geofence
     }, () => show('Location permission needed to verify arrival'));
   };
+  /**
+   * Submit the receiver's code. The server confirms the delivery before the response reaches us, so
+   * a timeout here does not mean it failed — re-read the job and treat a landed delivery as success
+   * rather than showing "Invalid code" on a trip that actually completed.
+   */
   const confirm = async () => {
-    try { const r = await api.confirmCode(getToken(), id, code); setStatus(r.status); setOutcome('paid'); }
-    catch (e) { show((e as Error).message); }
+    if (confirming) return; // a second click would race the first and burn a code attempt
+    setConfirming(true);
+    try {
+      const r = await api.confirmCode(getToken(), id, code);
+      setStatus(r.status);
+      setOutcome('paid');
+    } catch (e) {
+      const landed = await api.getJob(getToken(), id).catch(() => null);
+      if (landed && (landed.status === 'COMPLETED' || landed.status === 'RELEASED')) {
+        setJob(landed);
+        setStatus(landed.status);
+        setOutcome('paid');
+        return;
+      }
+      show((e as Error).message);
+    } finally {
+      setConfirming(false);
+    }
   };
   const beginWaiting = async () => {
     try { const r = await api.startWaiting(getToken(), id); setStatus(r.status); setJob((j) => (j ? { ...j, waitStartedAt: r.waitStartedAt } : j)); }
@@ -187,10 +209,15 @@ export default function RiderJob() {
                   {(customer?.name || job.customerName || 'C').trim().charAt(0).toUpperCase()}
                 </div>
               )}
-              <div>
+              <div style={{ flex: 1 }}>
                 <div className="mono" style={{ fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.06em' }}>CUSTOMER</div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{customer?.name || job.customerName || 'Customer'}</div>
               </div>
+              {/* Reach the SENDER — the recipient listed below is a different person. */}
+              {customer?.phone && (
+                <a href={`tel:${customer.phone}`} className="mono rf-chip" style={{ textDecoration: 'none' }}>CALL</a>
+              )}
+              <button type="button" className="mono rf-chip" onClick={() => setShowChat(true)}>MESSAGE</button>
             </div>
           )}
           {job.pickupAddress && <Detail label="Pickup" value={job.pickupAddress} />}
@@ -251,7 +278,7 @@ export default function RiderJob() {
             <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>{codeLabel}</label>
             <input className="rf-input mono" style={{ margin: '8px 0 12px', letterSpacing: '.4em', textAlign: 'center', fontSize: 22 }}
               value={code} onChange={(e) => setCode(e.target.value)} maxLength={4} inputMode="numeric" />
-            <Button onClick={confirm}>Confirm &amp; get paid</Button>
+            <Button onClick={confirm} disabled={confirming}>{confirming ? 'Confirming…' : 'Confirm & get paid'}</Button>
           </div>
           <Button variant="ghost" onClick={() => setShowChat((v) => !v)}>{showChat ? 'Hide messages' : 'Message the customer'}</Button>
           {showChat && <div style={{ marginTop: 12 }}><ChatPanel jobId={id} /></div>}
@@ -262,7 +289,7 @@ export default function RiderJob() {
             <label className="mono" style={{ fontSize: 10, color: 'var(--ink-2)' }}>{codeLabel}</label>
             <input className="rf-input mono" style={{ margin: '8px 0 12px', letterSpacing: '.4em', textAlign: 'center', fontSize: 22 }}
               value={code} onChange={(e) => setCode(e.target.value)} maxLength={4} inputMode="numeric" />
-            <Button onClick={confirm}>Confirm &amp; get paid</Button>
+            <Button onClick={confirm} disabled={confirming}>{confirming ? 'Confirming…' : 'Confirm & get paid'}</Button>
           </div>
 
           {/* Receiver-unavailable path, driven by the customer's chosen policy. */}

@@ -10,7 +10,9 @@ export const tokens = {
     sans: "'Space Grotesk', system-ui, sans-serif",
     mono: "'Space Mono', ui-monospace, Menlo, monospace",
   },
-  size: { display: 34, title: 21, subtitle: 17, body: 15, caption: 11, data: 15, dataLg: 21 },
+  // Mirrors mobile/src/theme.ts. Grown for legibility after tester feedback that the interface
+  // was hard to read; nothing shrank, and the smallest step (caption) grew most.
+  size: { display: 34, title: 26, subtitle: 19, body: 16, small: 14, caption: 12.5, data: 16, dataLg: 26 },
   space: { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
   radius: { sm: 4, md: 6, lg: 8, pill: 999 },
   shadow: { float: '0 8px 24px rgba(0,0,0,0.10)' },

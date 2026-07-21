@@ -7,7 +7,10 @@
   --success:#16A34A; --info:#2563EB; --warning:#A16207; --danger:#DC2626;
   --radius-sm:4px; --radius-md:6px; --radius-lg:8px; --radius-pill:999px;
   --font-sans:'Space Grotesk', system-ui, sans-serif;
-  --font-mono:'Space Mono', ui-monospace, Menlo, monospace;
+  /* Space Mono has no ₦ glyph, so amounts rendered in mono fell back to a box or a stray '#'.
+     Naming a font that does carry ₦ ahead of the fallbacks fixes it without changing the typeface
+     for anything else — the browser only reaches past Space Mono for the characters it lacks. */
+  --font-mono:'Space Mono', 'DejaVu Sans Mono', 'Noto Sans Mono', ui-monospace, Menlo, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -24,7 +27,7 @@ body {
 .rf-btn {
   width: 100%; border: none; border-radius: var(--radius-lg);
   padding: 12px 16px; font-family: var(--font-mono); font-weight: 700;
-  font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+  font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
   background: var(--primary); color: var(--primary-ink); cursor: pointer;
 }
 .rf-btn:active { background: var(--primary-pressed); }
@@ -32,13 +35,21 @@ body {
 
 .rf-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 16px; }
 
+/* Small bordered action next to a person's name (call, message). Mirrors the mobile `chip` style. */
+.rf-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink);
+  padding: 8px 12px; font-size: 12.5px; letter-spacing: .06em; cursor: pointer; white-space: nowrap;
+}
+.rf-chip:hover { background: var(--bg-2); }
+
 .rf-input {
   width: 100%; border: 1px solid var(--line); border-radius: var(--radius-md);
-  padding: 12px 14px; font-family: var(--font-sans); font-size: 15px; color: var(--ink); background: var(--bg);
+  padding: 12px 14px; font-family: var(--font-sans); font-size: 16px; color: var(--ink); background: var(--bg);
 }
 .rf-input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 
-.rf-pill { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: .05em;
+.rf-pill { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; letter-spacing: .05em;
   padding: 4px 10px; border-radius: var(--radius-pill); }
 .rf-pill--paid { background: var(--success); color: #fff; }
 .rf-pill--transit { background: var(--info); color: #fff; }
@@ -59,7 +70,7 @@ body {
 .admin-brand { display: flex; align-items: baseline; justify-content: space-between; padding: 4px 8px 16px; }
 .admin-navlink {
   display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px;
-  text-decoration: none; color: var(--ink-2); font-size: 14px; font-weight: 500; letter-spacing: -0.01em;
+  text-decoration: none; color: var(--ink-2); font-size: 15px; font-weight: 500; letter-spacing: -0.01em;
 }
 .admin-navlink:hover { background: var(--bg-2); color: var(--ink); }
 .admin-navlink.active { background: var(--ink); color: #fff; }

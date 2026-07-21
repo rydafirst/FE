@@ -265,6 +265,11 @@ export default function TrackPage() {
               {rider?.vehiclePlate ? ` · ${rider.vehiclePlate}` : ''}
             </div>
           </div>
+          {/* Present only while the delivery is live — the server stops returning the number once
+              the job ends, so this disappears without a client-side rule. */}
+          {rider?.phone && (
+            <a href={`tel:${rider.phone}`} className="mono rf-chip" style={{ textDecoration: 'none' }}>CALL</a>
+          )}
         </div>
       ) : (
         <div className="rf-card" style={{ marginBottom: 12, textAlign: 'center', color: 'var(--ink-2)' }}>
