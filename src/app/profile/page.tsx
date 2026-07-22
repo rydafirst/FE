@@ -12,6 +12,11 @@ export default function ProfilePage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Declared with the other hooks — NOT after the `if (!ready) return null` below. A hook placed
+  // after that early return runs only once auth resolves, so React sees the hook count jump between
+  // renders and throws #300 ("rendered more hooks than during the previous render"), white-screening
+  // the page. This is the crash testers hit on every profile open.
+  const [deleting, setDeleting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => { if (ready) api.myAvatar(getToken()).then((a) => setPhotoUrl(a.photoUrl)).catch(() => {}); }, [ready]);
   useEffect(() => { if (ready) api.me(getToken()).then((m) => setPhone(m.phone)).catch(() => {}); }, [ready]);
@@ -38,7 +43,6 @@ export default function ProfilePage() {
     window.location.href = '/';
   };
 
-  const [deleting, setDeleting] = useState(false);
   const deleteAccount = async () => {
     if (deleting) return;
     if (!window.confirm('Delete your account? This erases your name, email and photo and signs you out everywhere. This cannot be undone. (Records required by law are kept, without identifying you.)')) return;

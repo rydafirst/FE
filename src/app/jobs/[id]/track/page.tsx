@@ -149,6 +149,20 @@ export default function TrackPage() {
     return () => { closed = true; if (sock) sock.disconnect(); };
   }, [id]);
 
+  const hasRider = !!job && ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'].includes(job.status);
+
+  // Assigned rider's public details. These two hooks MUST sit above the early return below: a hook
+  // declared after a conditional return runs on some renders and not others (here, only when the job
+  // is NOT cancelled), so the hook count changes between renders and React throws #300, white-
+  // screening the page. This is the crash on the track screen when a job is/goes CANCELLED.
+  const [rider, setRider] = useState<RiderSummary | null>(null);
+  useEffect(() => {
+    if (!hasRider) { setRider(null); return; }
+    let stop = false;
+    api.jobRider(getToken(), id).then((r) => { if (!stop) setRider(r.rider); }).catch(() => {});
+    return () => { stop = true; };
+  }, [hasRider, id]);
+
   // Payment cancelled / order expired: no trip, no charge. Send the customer back to booking.
   if (cancelled || job?.status === 'CANCELLED') {
     const expired = !cancelled && job?.status === 'CANCELLED';
@@ -177,16 +191,6 @@ export default function TrackPage() {
 
   const step = job ? FLOW.indexOf(job.status) : -1;
   const l = job ? label(job.status) : { text: 'Loading…', color: 'var(--ink-2)' };
-  const hasRider = !!job && ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'].includes(job.status);
-
-  // Load the assigned rider's public details (name + vehicle) once one is assigned.
-  const [rider, setRider] = useState<RiderSummary | null>(null);
-  useEffect(() => {
-    if (!hasRider) { setRider(null); return; }
-    let stop = false;
-    api.jobRider(getToken(), id).then((r) => { if (!stop) setRider(r.rider); }).catch(() => {});
-    return () => { stop = true; };
-  }, [hasRider, id]);
   const vehicleLabel = (tk: string | null) => tk === 'BIKE' ? 'Motorcycle' : tk === 'CAR' ? 'Car / Van' : tk === 'KEKE' ? 'Keke' : 'Vehicle';
 
   return (
