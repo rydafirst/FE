@@ -13,6 +13,10 @@ export default function AdminFinancePage() {
   const [retrying, setRetrying] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // Diagnostic: force-retry a specific job's payout and show the exact provider response/error.
+  const [diagId, setDiagId] = useState('');
+  const [diagBusy, setDiagBusy] = useState(false);
+  const [diagResult, setDiagResult] = useState<string | null>(null);
 
   const loadPayouts = useCallback(() => {
     api.adminPendingPayouts(getToken()).then(setPayouts).catch(() => setPayouts([]));
@@ -31,6 +35,23 @@ export default function AdminFinancePage() {
       setNote(res.payoutPending ? `Still pending${res.payoutError ? `: ${res.payoutError}` : ''}` : 'Payout sent to the rider ✓');
       loadPayouts();
     } catch (e) { setErr((e as Error).message); } finally { setRetrying(null); }
+  };
+
+  const runDiagnostic = async () => {
+    const id = diagId.trim();
+    if (!id) return;
+    setDiagBusy(true); setDiagResult(null);
+    try {
+      const res = await api.adminRetryPayout(getToken(), id, true); // force: re-drive even if not flagged pending
+      setDiagResult(
+        res.payoutPending
+          ? `STILL PENDING — provider said: ${res.payoutError ?? '(no error text returned)'}`
+          : 'SENT ✓ — the provider accepted this payout (or it had already succeeded).',
+      );
+      loadPayouts();
+    } catch (e) {
+      setDiagResult(`REQUEST FAILED: ${(e as Error).message}`);
+    } finally { setDiagBusy(false); }
   };
 
   if (!ready) return null;
@@ -102,6 +123,30 @@ export default function AdminFinancePage() {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      <div className="rf-card" style={{ marginTop: 16 }}>
+        <b style={{ fontSize: 'var(--text-body)' }}>Diagnose a payout by Job ID</b>
+        <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '4px 0 10px' }}>
+          Force a re-attempt of a specific job&apos;s payout — even if it isn&apos;t in the list above — and see exactly
+          what the payment provider returns. Safe to run: the transfer reuses a stable reference and can never double-pay.
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input
+            value={diagId}
+            onChange={(e) => setDiagId(e.target.value)}
+            placeholder="Paste the Job ID (e.g. 3583947e-4ec9-…)"
+            className="mono"
+            style={{ flex: 1, minWidth: 220, border: '1px solid var(--line)', borderRadius: 8, padding: '8px 12px', fontSize: 'var(--text-small)' }}
+          />
+          <button onClick={runDiagnostic} disabled={diagBusy || !diagId.trim()}
+            style={{ background: 'var(--ink)', color: 'var(--on-dark)', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 'var(--text-small)', fontWeight: 600, cursor: diagBusy || !diagId.trim() ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
+            {diagBusy ? 'Running…' : 'Retry & show error'}
+          </button>
+        </div>
+        {diagResult && (
+          <pre style={{ marginTop: 10, padding: '10px 12px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 'var(--text-caption)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{diagResult}</pre>
         )}
       </div>
     </div>

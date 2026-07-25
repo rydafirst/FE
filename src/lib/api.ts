@@ -190,8 +190,8 @@ export const api = {
   adminDeliveries: (token: string) => call<AdminDelivery[]>(`/admin/ops/deliveries`, { token }),
   adminFinance: (token: string) => call<AdminFinance>(`/admin/finance/reconciliation`, { token }),
   adminPendingPayouts: (token: string) => call<PendingPayout[]>(`/admin/finance/payouts/pending`, { token }),
-  adminRetryPayout: (token: string, jobId: string) =>
-    call<{ payoutPending: boolean; payoutError?: string }>(`/admin/finance/payouts/${jobId}/retry`, { method: 'POST', token }),
+  adminRetryPayout: (token: string, jobId: string, force = false) =>
+    call<{ payoutPending: boolean; payoutError?: string }>(`/admin/finance/payouts/${jobId}/retry${force ? '?force=true' : ''}`, { method: 'POST', token }),
   adminDisputes: (token: string) => call<AdminDispute[]>(`/admin/disputes`, { token }),
   adminResolveDispute: (token: string, id: string, resolution: 'RELEASE' | 'REFUND' | 'SPLIT', riderShareMinor?: number) =>
     call<{ status: string }>(`/admin/disputes/${id}/resolve`, { method: 'POST', token, body: JSON.stringify({ resolution, ...(riderShareMinor != null ? { riderShareMinor } : {}) }) }),

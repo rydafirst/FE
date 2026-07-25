@@ -149,6 +149,12 @@ export default function TrackPage() {
     return () => { closed = true; if (sock) sock.disconnect(); };
   }, [id]);
 
+  // NOTE: we deliberately do NOT auto-cancel the order on a "cancelled"/"failed" redirect. A bank
+  // transfer can still land AFTER Flutterwave's page closes (the webhook funds it minutes later), and
+  // cancelling a CREATED order at that moment would strand an in-flight payment. Instead the order
+  // stays open: the webhook funds it if the money arrives, and the payment-window timeout cancels it
+  // (with feedback) if it never does. This screen just shows "payment not completed" as guidance.
+
   const hasRider = !!job && ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'].includes(job.status);
 
   // Assigned rider's public details. These two hooks MUST sit above the early return below: a hook
