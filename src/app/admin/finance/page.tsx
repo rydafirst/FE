@@ -54,6 +54,23 @@ export default function AdminFinancePage() {
     } finally { setDiagBusy(false); }
   };
 
+  // "Accepted" ≠ "arrived": read the transfer's real terminal status straight from the processor.
+  const checkStatus = async () => {
+    const id = diagId.trim();
+    if (!id) return;
+    setDiagBusy(true); setDiagResult(null);
+    try {
+      const s = await api.adminTransferStatus(getToken(), id);
+      setDiagResult(
+        `PROCESSOR STATUS: ${s.status}` +
+        (s.reason ? `\n${s.reason}` : '') +
+        (s.payoutRef ? `\nTransfer ref: ${s.payoutRef}` : ''),
+      );
+    } catch (e) {
+      setDiagResult(`STATUS CHECK FAILED: ${(e as Error).message}`);
+    } finally { setDiagBusy(false); }
+  };
+
   if (!ready) return null;
 
   const cards = data ? [
@@ -143,6 +160,10 @@ export default function AdminFinancePage() {
           <button onClick={runDiagnostic} disabled={diagBusy || !diagId.trim()}
             style={{ background: 'var(--ink)', color: 'var(--on-dark)', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 'var(--text-small)', fontWeight: 600, cursor: diagBusy || !diagId.trim() ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
             {diagBusy ? 'Running…' : 'Retry & show error'}
+          </button>
+          <button onClick={checkStatus} disabled={diagBusy || !diagId.trim()}
+            style={{ background: 'none', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 8, padding: '8px 16px', fontSize: 'var(--text-small)', fontWeight: 600, cursor: diagBusy || !diagId.trim() ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
+            Check transfer status
           </button>
         </div>
         {diagResult && (

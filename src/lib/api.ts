@@ -192,6 +192,8 @@ export const api = {
   adminPendingPayouts: (token: string) => call<PendingPayout[]>(`/admin/finance/payouts/pending`, { token }),
   adminRetryPayout: (token: string, jobId: string, force = false) =>
     call<{ payoutPending: boolean; payoutError?: string }>(`/admin/finance/payouts/${jobId}/retry${force ? '?force=true' : ''}`, { method: 'POST', token }),
+  adminTransferStatus: (token: string, jobId: string) =>
+    call<{ jobId: string; payoutRef?: string; status: string; reason?: string }>(`/admin/finance/payouts/${jobId}/transfer-status`, { token }),
   adminDisputes: (token: string) => call<AdminDispute[]>(`/admin/disputes`, { token }),
   adminResolveDispute: (token: string, id: string, resolution: 'RELEASE' | 'REFUND' | 'SPLIT', riderShareMinor?: number) =>
     call<{ status: string }>(`/admin/disputes/${id}/resolve`, { method: 'POST', token, body: JSON.stringify({ resolution, ...(riderShareMinor != null ? { riderShareMinor } : {}) }) }),
