@@ -71,6 +71,26 @@ export default function AdminFinancePage() {
     } finally { setDiagBusy(false); }
   };
 
+  const naira2 = (m?: number) => (typeof m === 'number' ? `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : '');
+  const resend = async () => {
+    const id = diagId.trim();
+    if (!id) return;
+    setDiagBusy(true); setDiagResult(null);
+    try {
+      const r = await api.adminResendPayout(getToken(), id);
+      const msg: Record<string, string> = {
+        RESENT: `RE-SENT ✓ — a fresh transfer for ${naira2(r.amountMinor)} was created. Check "Check transfer status" in a minute to confirm it settles.`,
+        ALREADY_SUCCESSFUL: 'NO ACTION — the existing transfer already SUCCEEDED. The rider has been paid.',
+        IN_FLIGHT: `NO ACTION — the transfer is still ${r.providerStatus}. Wait for it to settle before re-sending.`,
+        UNKNOWN_AMOUNT: 'CANNOT RE-SEND — the failed transfer amount could not be read. Needs manual review.',
+      };
+      setDiagResult(msg[r.outcome] ?? `${r.outcome} (${r.providerStatus})`);
+      loadPayouts();
+    } catch (e) {
+      setDiagResult(`RE-SEND FAILED: ${(e as Error).message}`);
+    } finally { setDiagBusy(false); }
+  };
+
   if (!ready) return null;
 
   const cards = data ? [
@@ -164,6 +184,10 @@ export default function AdminFinancePage() {
           <button onClick={checkStatus} disabled={diagBusy || !diagId.trim()}
             style={{ background: 'none', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 8, padding: '8px 16px', fontSize: 'var(--text-small)', fontWeight: 600, cursor: diagBusy || !diagId.trim() ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
             Check transfer status
+          </button>
+          <button onClick={resend} disabled={diagBusy || !diagId.trim()}
+            style={{ background: 'var(--success)', color: 'var(--on-dark)', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 'var(--text-small)', fontWeight: 600, cursor: diagBusy || !diagId.trim() ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
+            Re-send failed payout
           </button>
         </div>
         {diagResult && (
