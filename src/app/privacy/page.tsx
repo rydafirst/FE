@@ -9,7 +9,8 @@ export const metadata = {
 // App Store / Play Store "Privacy Policy URL". Plain prose, monochrome.
 export default function PrivacyPolicy() {
   return (
-    <main style={{ minHeight: '100vh', padding: '28px 22px 56px' }}>
+    <main style={{ minHeight: '100vh', width: '100vw', position: 'relative', left: '50%', right: '50%', marginLeft: '-50vw', marginRight: '-50vw', background: 'var(--bg)' }}>
+     <div style={{ maxWidth: 760, margin: '0 auto', padding: '28px 22px 56px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
         <b style={{ fontSize: 'var(--text-subtitle)', letterSpacing: '-0.02em' }}>
           <span style={{ color: 'var(--ink)' }}>Ryda</span>
@@ -104,15 +105,17 @@ export default function PrivacyPolicy() {
       </Section>
 
       <Section title="Contact us">
-        Questions about this policy or your data? Email us at{' '}
-        <a href="mailto:privacy@rydafirst.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>
-          privacy@rydafirst.com
-        </a>.
+        <P>Questions about this policy or your data? Reach Rydafirst Limited at:</P>
+        <P style={{ color: 'var(--ink)' }}>
+          138 Unity Zone 6, Olorunsogo, Ado Ekiti, Ekiti State, Nigeria<br />
+          <a href="tel:+2348149249926" style={{ color: 'var(--primary)', textDecoration: 'none' }}>+234 814 924 9926</a>
+        </P>
       </Section>
 
       <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', letterSpacing: '.05em', marginTop: 32 }}>
-        © 2026 RYDAFIRST. ALL RIGHTS RESERVED.
+        © 2026 RYDAFIRST LIMITED. ALL RIGHTS RESERVED.
       </p>
+     </div>
     </main>
   );
 }
@@ -126,8 +129,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function P({ children }: { children: React.ReactNode }) {
-  return <p style={{ margin: '0 0 10px' }}>{children}</p>;
+function P({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return <p style={{ margin: '0 0 10px', ...style }}>{children}</p>;
 }
 
 function B({ children }: { children: React.ReactNode }) {

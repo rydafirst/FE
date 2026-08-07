@@ -128,7 +128,9 @@ export default function Home() {
       <footer className="mkt-foot">
         <span className="mkt-brand" style={{ fontSize: 20 }}>ryd<span className="mkt-brand-y">a</span><span className="mkt-brand-first">first</span></span>
         <span className="mkt-foot-tag">WE ARE FOR RIDERS</span>
+        <span className="mkt-foot-contact">138 Unity Zone 6, Olorunsogo, Ado Ekiti, Ekiti State · <a href="tel:+2348149249926">+234 814 924 9926</a></span>
         <span className="mkt-foot-links">
+          <Link href="/about">About</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">Get the app</a>
@@ -213,6 +215,9 @@ const CSS = `
 .mkt-foot .mkt-brand{color:var(--on-dark);}
 .mkt-foot .mkt-brand-first{color:#9a9a9a;}
 .mkt-foot-tag{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:#8f8f8f;}
+.mkt-foot-contact{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.03em;color:#8f8f8f;}
+.mkt-foot-contact a{color:#c9c9c9;text-decoration:none;}
+.mkt-foot-contact a:hover{color:var(--on-dark);}
 .mkt-foot-links{margin-left:auto;display:flex;gap:22px;}
 .mkt-foot-links a{color:#c9c9c9;text-decoration:none;font-size:14px;}
 .mkt-foot-links a:hover{color:var(--on-dark);}

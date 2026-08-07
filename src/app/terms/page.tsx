@@ -6,7 +6,8 @@ export const metadata = { title: 'Terms of Use — Rydafirst' };
 // the operative dispute/escrow rules mirror the in-app behaviour.
 export default function TermsPage() {
   return (
-    <main style={{ padding: 24, lineHeight: 1.6, color: 'var(--ink)' }}>
+    <main style={{ minHeight: '100vh', width: '100vw', position: 'relative', left: '50%', right: '50%', marginLeft: '-50vw', marginRight: '-50vw', background: 'var(--bg)', lineHeight: 1.6, color: 'var(--ink)' }}>
+     <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 22px 56px' }}>
       <Link href="/login" className="mono" style={{ fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>← BACK</Link>
       <h1 style={{ fontSize: 'var(--text-title)', margin: '16px 0 4px' }}>Terms of Use</h1>
       <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: 0 }}>LAST UPDATED 14 JULY 2026</p>
@@ -49,8 +50,10 @@ export default function TermsPage() {
         affected delivery.</p>
 
       <h2 style={{ fontSize: 'var(--text-subtitle)', marginTop: 20 }}>8. Changes and contact</h2>
-      <p>We may update these terms and will post the updated version here. Questions? Contact us at
-        support@rydafirst.com.</p>
+      <p>We may update these terms and will post the updated version here. Questions? Contact Rydafirst
+        Limited at 138 Unity Zone 6, Olorunsogo, Ado Ekiti, Ekiti State, Nigeria, or call{' '}
+        <a href="tel:+2348149249926" style={{ color: 'var(--primary)', textDecoration: 'none' }}>+234 814 924 9926</a>.</p>
+     </div>
     </main>
   );
 }
