@@ -3,6 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
+/**
+ * Rydafirst public homepage — the "ryda" poster campaign as a website.
+ *
+ * Design system for type/colour (Space Grotesk / Space Mono, --ink, --primary; orange only on the
+ * primary action + live states). The background is the brand's woven-linen texture
+ * (/brand/background.png) and the page is image-led: the escrow story is told with the generated
+ * poster illustrations (/brand/poster-*.png). Breaks out of the app's 480px mobile shell.
+ */
 const APP_STORE_URL = 'https://apps.apple.com/app/rydafirst/id6789930826';
 
 function AppleIcon() {
@@ -13,29 +21,14 @@ function AppleIcon() {
   );
 }
 
-/**
- * Rydafirst public homepage.
- *
- * Design system first: white background (--bg) with a barely-warm --bg-warm for section separation,
- * type is Space Grotesk / Space Mono, and orange (--primary) appears only on the primary action +
- * live states — the monochrome-first rule the whole product follows. No paper/canvas wash: the
- * flyer's hand-painted "cartoon" texture belongs in the illustrations (generated art), not the page
- * background, so the site never reads as a generic AI template.
- *
- * It breaks out of the app's 480px mobile shell (the product lives at that width; the marketing site
- * is full-bleed) and links visitors into the product + the App Store.
- */
 export default function Home() {
   const revealRoot = useRef<HTMLDivElement>(null);
-
-  // Gentle scroll-reveal for anything tagged data-reveal. Progressive enhancement — if the observer
-  // never runs, the content is simply already visible (opacity handled by the .is-in default).
   useEffect(() => {
     const els = revealRoot.current?.querySelectorAll('[data-reveal]');
     if (!els?.length) return;
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }),
-      { threshold: 0.18 },
+      { threshold: 0.15 },
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
@@ -44,21 +37,22 @@ export default function Home() {
   return (
     <div className="mkt-root" ref={revealRoot}>
       <style>{CSS}</style>
+      <div className="mkt-tex" aria-hidden />
 
-      {/* ---------------- Nav ---------------- */}
+      {/* Nav */}
       <header className="mkt-nav">
         <Link href="/" className="mkt-brand" aria-label="Rydafirst home">
           ryd<span className="mkt-brand-y">a</span><span className="mkt-brand-first">first</span>
         </Link>
         <nav className="mkt-nav-links">
           <a href="#how">How it works</a>
-          <a href="#trust">Why escrow</a>
+          <a href="#trust">The guarantee</a>
           <a href="#riders">For riders</a>
         </nav>
         <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-nav-cta">Get the app</a>
       </header>
 
-      {/* ---------------- Hero ---------------- */}
+      {/* Hero */}
       <section className="mkt-hero">
         <div className="mkt-hero-copy">
           <p className="mkt-eyebrow up-1">GUARANTEED-PAYMENT DELIVERY · NIGERIA</p>
@@ -70,55 +64,64 @@ export default function Home() {
             confirmed — so senders never prepay into a void, and riders are never cheated after doing
             the work. Track every trip live, pickup to door.
           </p>
-
           <div className="mkt-cta-row up-4">
             <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary"><AppleIcon />Download on the App Store</a>
             <Link href="/login" className="mkt-btn mkt-btn--ghost">Open web app →</Link>
           </div>
-
           <ul className="mkt-chips up-5" aria-label="What you get">
             <li><span className="mkt-dot" /> Escrow-protected</li>
             <li><span className="mkt-dot" /> Live GPS tracking</li>
             <li><span className="mkt-dot" /> Paid on delivery</li>
           </ul>
         </div>
-
-        <div className="mkt-hero-art up-3" aria-hidden>
-          <TrackingArt />
+        <div className="mkt-hero-art up-3">
+          <img src="/brand/hero.png" alt="A hand paying with a phone, money flowing into a wallet beside a parcel — held safe until delivery" className="mkt-hero-img" />
         </div>
       </section>
 
-      {/* ---------------- Trust / the "why" ---------------- */}
-      <section className="mkt-why" id="trust">
-        <div className="mkt-why-inner" data-reveal>
-          <p className="mkt-eyebrow" style={{ color: 'var(--primary)' }}>WHY WE BUILT THIS</p>
-          <p className="mkt-why-lead">
-            A rider finishes the job — then hears <span className="mkt-quote">“I&apos;ll pay you later.”</span>
-            {' '}A sender is asked to prepay a stranger and fears the parcel just disappears. Someone always
-            holds the upper hand. Rydafirst removes the standoff: the money is guaranteed by the system,
-            not by trust.
-          </p>
-          <div className="mkt-why-grid">
-            {WHY.map((w) => (
-              <div className="mkt-why-card" key={w.t} data-reveal>
-                <div className="mkt-why-ic">{w.icon}</div>
-                <h3>{w.t}</h3>
-                <p>{w.d}</p>
+      {/* How it works */}
+      <section className="mkt-steps" id="how">
+        <div className="mkt-steps-inner">
+          <p className="mkt-eyebrow" style={{ color: 'var(--primary)' }}>HOW IT WORKS</p>
+          <h2 className="mkt-steps-h">Four steps, zero trust required.</h2>
+          <div className="mkt-steps-grid">
+            {STEPS.map((s, i) => (
+              <div className="mkt-step" key={s.t} data-reveal>
+                <span className="mkt-step-n">{String(i + 1).padStart(2, '0')}</span>
+                <h3>{s.t}</h3>
+                <p>{s.d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ---------------- Closing band ---------------- */}
-      <section className="mkt-band" id="riders" data-reveal>
-        <div>
-          <h2 className="mkt-band-h">Built rider-first.</h2>
-          <p className="mkt-band-sub">Every other platform treats the rider as replaceable. Here, your payment is guaranteed by design.</p>
+      {/* The guarantee — poster campaign */}
+      <section className="mkt-campaign" id="trust">
+        <div className="mkt-campaign-inner">
+          <p className="mkt-eyebrow" style={{ color: 'var(--primary)' }}>THE GUARANTEE</p>
+          <h2 className="mkt-campaign-h">Protected at every step.</h2>
+          <p className="mkt-campaign-sub">Pay, deliver, refund — the whole flow is guaranteed by the system, not by trust.</p>
+          <div className="mkt-poster-grid">
+            {POSTERS.map((p) => (
+              <figure className="mkt-poster" key={p.src} data-reveal>
+                <img src={p.src} alt={p.alt} />
+              </figure>
+            ))}
+          </div>
         </div>
-        <div className="mkt-band-cta">
-          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary"><AppleIcon />Download on the App Store</a>
-          <Link href="/login" className="mkt-btn mkt-btn--dark">Open web app</Link>
+      </section>
+
+      {/* For riders */}
+      <section className="mkt-riders" id="riders">
+        <div className="mkt-riders-band" data-reveal>
+          <p className="mkt-eyebrow">FOR RIDERS</p>
+          <h2 className="mkt-riders-h">Do the work, get paid. <span className="mkt-accent">Guaranteed.</span></h2>
+          <p className="mkt-riders-sub">
+            Your payment is locked in escrow before you ever pick up, and released the moment delivery
+            is confirmed. Fair pay if a trip fails through no fault of yours. No more “I’ll pay you later.”
+          </p>
+          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary" style={{ marginTop: 26 }}><AppleIcon />Become a rider</a>
         </div>
       </section>
 
@@ -135,97 +138,27 @@ export default function Home() {
   );
 }
 
-const WHY = [
-  { t: 'Held in escrow', d: 'The fare is locked with a licensed provider the second you pay — nobody can touch it mid-trip.', icon: <ShieldIcon /> },
-  { t: 'Released on proof', d: 'A recipient code + GPS-verified arrival releases the money. No code, no release — no argument.', icon: <CheckIcon /> },
-  { t: 'Auto-refunded on failure', d: 'If a delivery fails, the money returns to your account automatically. The system decides, not a stranger.', icon: <RefundIcon /> },
+const STEPS = [
+  { t: 'Book & pay', d: 'Set pickup and drop-off, get a clear fare, and pay it into escrow — not to the rider.' },
+  { t: 'Rider accepts', d: 'A nearby rider is matched and heads to your pickup. You see who they are and their vehicle.' },
+  { t: 'Track live', d: 'Follow every stage on the map — en route, picked up, arriving — pickup to door.' },
+  { t: 'Confirm & release', d: 'The recipient gives their code, arrival is GPS-verified, and the money releases. Done.' },
 ];
 
-/* ============================ Hero artwork ============================ */
-/* A live-tracking card + floating escrow badge, in our flat monochrome-with-one-orange style.
-   Echoes the flyer's map + shield motifs without reusing its illustration. The route flows and a
-   courier dot travels it — the "smooth web animation" on the page. */
-function TrackingArt() {
-  return (
-    <div className="mkt-art-wrap">
-      <svg viewBox="0 0 420 380" width="100%" role="img" aria-label="Live delivery tracking">
-        <defs>
-          <clipPath id="cardClip"><rect x="40" y="30" width="300" height="300" rx="22" /></clipPath>
-        </defs>
+const POSTERS = [
+  { src: '/brand/poster-1-pay.png', alt: 'You pay, we hold — your delivery payment stays safe in escrow.' },
+  { src: '/brand/poster-2-deliver.png', alt: 'Delivered, rider credited — payment is released after delivery is confirmed.' },
+  { src: '/brand/poster-3-refund.png', alt: 'No delivery, money returned — if the trip isn’t completed, the sender is refunded.' },
+];
 
-        {/* tracking card */}
-        <rect x="40" y="30" width="300" height="300" rx="22" fill="var(--bg)" stroke="var(--line)" strokeWidth="2" />
-        <g clipPath="url(#cardClip)">
-          {/* faint street grid */}
-          <g stroke="var(--line-2)" strokeWidth="6">
-            <line x1="40" y1="96" x2="340" y2="96" /><line x1="40" y1="170" x2="340" y2="170" />
-            <line x1="40" y1="244" x2="340" y2="244" /><line x1="120" y1="30" x2="120" y2="330" />
-            <line x1="212" y1="30" x2="212" y2="330" /><line x1="286" y1="30" x2="286" y2="330" />
-          </g>
-          {/* the route */}
-          <path id="route" d="M96 262 C 150 250, 150 150, 210 150 S 300 120, 300 92"
-            fill="none" stroke="var(--primary)" strokeWidth="5" strokeLinecap="round"
-            strokeDasharray="10 12" className="mkt-route" />
-          {/* travelling courier dot */}
-          <circle r="7" fill="var(--ink)" stroke="var(--bg)" strokeWidth="3">
-            <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto"
-              keyPoints="0;1" keyTimes="0;1" calcMode="linear"
-              path="M96 262 C 150 250, 150 150, 210 150 S 300 120, 300 92" />
-          </circle>
-        </g>
-
-        {/* pickup pin (orange, live) */}
-        <g transform="translate(96 262)">
-          <circle className="mkt-ping" r="16" fill="var(--primary)" opacity="0.18" />
-          <circle r="7" fill="var(--primary)" stroke="var(--bg)" strokeWidth="3" />
-        </g>
-        {/* drop pin (ink) */}
-        <g transform="translate(300 92)">
-          <path d="M0 -18 C 10 -18 16 -10 16 -2 C 16 8 0 20 0 20 C 0 20 -16 8 -16 -2 C -16 -10 -10 -18 0 -18 Z"
-            fill="var(--ink)" stroke="var(--bg)" strokeWidth="2" />
-          <circle cx="0" cy="-2" r="5" fill="var(--bg)" />
-        </g>
-
-        {/* ETA chip */}
-        <g className="mkt-float">
-          <rect x="60" y="286" width="150" height="34" rx="17" fill="var(--ink)" />
-          <circle cx="80" cy="303" r="4" fill="var(--primary)" className="rf-pulse" />
-          <text x="94" y="308" fill="var(--on-dark)" fontFamily="var(--font-mono)" fontSize="13" letterSpacing="0.5">4.8 KM · 7 MIN</text>
-        </g>
-
-        {/* floating escrow badge */}
-        <g className="mkt-float-2" transform="translate(300 250)">
-          <rect x="-70" y="-34" width="150" height="74" rx="16" fill="var(--bg-2)" stroke="var(--ink)" strokeWidth="2" />
-          <g transform="translate(-44 3)">
-            <path d="M0 -20 L20 -12 V2 C20 16 10 24 0 28 C-10 24 -20 16 -20 2 V-12 Z" fill="var(--ink)" />
-            <path d="M-8 2 l6 7 l11 -14" fill="none" stroke="var(--success)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-          </g>
-          <text x="-14" y="-4" fill="var(--ink)" fontFamily="var(--font-mono)" fontSize="11" fontWeight="700" letterSpacing="0.5">ESCROW</text>
-          <text x="-14" y="14" fill="var(--ink-2)" fontFamily="var(--font-sans)" fontSize="13" fontWeight="600">Held safe</text>
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function ShieldIcon() {
-  return (<svg viewBox="0 0 24 24" width="26" height="26" fill="none"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" fill="var(--ink)" /><path d="M8.5 12l2.3 2.5L15.5 9" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>);
-}
-function CheckIcon() {
-  return (<svg viewBox="0 0 24 24" width="26" height="26" fill="none"><circle cx="12" cy="12" r="9" fill="var(--ink)" /><path d="M8 12.5l2.5 2.5L16 9" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>);
-}
-function RefundIcon() {
-  return (<svg viewBox="0 0 24 24" width="26" height="26" fill="none"><path d="M5 12a7 7 0 1 1 2 5" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" /><path d="M5 8v4h4" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>);
-}
-
-/* ============================ Styles ============================ */
 const CSS = `
 .mkt-root{position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;width:100vw;
-  min-height:100vh;background:var(--bg);color:var(--ink);overflow-x:hidden;
-  font-family:var(--font-sans);}
+  min-height:100vh;background:var(--site-bg);color:var(--ink);overflow-x:hidden;font-family:var(--font-sans);}
+.mkt-tex{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.85;
+  background-image:url(/brand/background.png);background-repeat:repeat;background-size:900px;}
+.mkt-root>*:not(.mkt-tex){position:relative;z-index:1;}
 
-/* nav */
-.mkt-nav{display:flex;align-items:center;gap:24px;max-width:1160px;margin:0 auto;padding:22px 32px;}
+.mkt-nav{display:flex;align-items:center;gap:24px;max-width:1180px;margin:0 auto;padding:22px 32px;}
 .mkt-brand{font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--ink);text-decoration:none;}
 .mkt-brand-y{color:var(--primary);}
 .mkt-brand-first{color:var(--ink-2);font-weight:400;}
@@ -233,62 +166,50 @@ const CSS = `
 .mkt-nav-links a{color:var(--ink-2);text-decoration:none;font-size:15px;transition:color .18s;}
 .mkt-nav-links a:hover{color:var(--ink);}
 .mkt-nav-cta{font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--on-dark);background:var(--ink);text-decoration:none;padding:10px 16px;border-radius:var(--radius-pill);
-  transition:transform .18s, background .18s;}
+  color:var(--on-dark);background:var(--ink);text-decoration:none;padding:10px 16px;border-radius:var(--radius-pill);transition:transform .18s,background .18s;}
 .mkt-nav-cta:hover{background:#000;transform:translateY(-1px);}
 
-/* hero */
-.mkt-hero{max-width:1160px;margin:0 auto;padding:40px 32px 64px;display:grid;grid-template-columns:1.05fr .95fr;
-  gap:48px;align-items:center;}
+.mkt-hero{max-width:1180px;margin:0 auto;padding:40px 32px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;}
 .mkt-eyebrow{font-family:var(--font-mono);font-size:12.5px;font-weight:700;letter-spacing:.16em;color:var(--ink-2);margin:0 0 18px;}
 .mkt-h1{font-size:clamp(40px,6vw,76px);line-height:.98;letter-spacing:-.035em;font-weight:700;margin:0;color:var(--ink);}
 .mkt-accent{color:var(--primary);}
 .mkt-sub{font-size:clamp(16px,1.4vw,19px);line-height:1.55;color:var(--ink-2);max-width:30em;margin:22px 0 0;}
 .mkt-cta-row{display:flex;gap:14px;flex-wrap:wrap;margin:30px 0 0;}
-.mkt-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;
-  font-family:var(--font-mono);font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
-  padding:15px 26px;border-radius:var(--radius-pill);transition:transform .18s, background .18s, box-shadow .18s;}
+.mkt-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-family:var(--font-mono);font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:15px 26px;border-radius:var(--radius-pill);transition:transform .18s,background .18s;}
 .mkt-btn--primary{background:var(--primary);color:var(--primary-ink);box-shadow:0 10px 26px -12px var(--primary);}
 .mkt-btn--primary:hover{background:var(--primary-pressed);transform:translateY(-2px);}
 .mkt-btn--ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink);}
 .mkt-btn--ghost:hover{background:var(--ink);color:var(--on-dark);transform:translateY(-2px);}
-.mkt-btn--dark{background:var(--ink);color:var(--on-dark);}
-.mkt-btn--dark:hover{background:#000;transform:translateY(-2px);}
 .mkt-chips{display:flex;gap:22px;flex-wrap:wrap;list-style:none;padding:0;margin:28px 0 0;}
 .mkt-chips li{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12.5px;letter-spacing:.04em;color:var(--ink);text-transform:uppercase;}
 .mkt-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);}
-
-/* hero art */
 .mkt-hero-art{display:flex;justify-content:center;}
-.mkt-art-wrap{width:100%;max-width:440px;filter:drop-shadow(0 30px 50px rgba(20,20,20,.16));}
-.mkt-route{animation:mktDash 2.6s linear infinite;}
-@keyframes mktDash{to{stroke-dashoffset:-44;}}
-.mkt-ping{transform-origin:center;animation:mktPing 2s ease-out infinite;}
-@keyframes mktPing{0%{transform:scale(.6);opacity:.5;}100%{transform:scale(1.6);opacity:0;}}
-.mkt-float{animation:mktFloat 5s ease-in-out infinite;}
-.mkt-float-2{animation:mktFloat 6s ease-in-out infinite .4s;}
-@keyframes mktFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+.mkt-hero-img{width:100%;max-width:540px;height:auto;display:block;border-radius:16px;}
 
-/* why */
-.mkt-why{background:var(--bg-warm);border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);}
-.mkt-why-inner{max-width:1160px;margin:0 auto;padding:72px 32px;}
-.mkt-why-lead{font-size:clamp(22px,2.6vw,32px);line-height:1.32;letter-spacing:-.02em;color:var(--ink);max-width:20em;margin:0 0 44px;font-weight:500;}
-.mkt-quote{color:var(--primary);font-style:italic;}
-.mkt-why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.mkt-why-card{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:26px;}
-.mkt-why-ic{width:52px;height:52px;border-radius:14px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
-.mkt-why-card h3{font-size:19px;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink);}
-.mkt-why-card p{font-size:15px;line-height:1.55;color:var(--ink-2);margin:0;}
+.mkt-steps{max-width:1180px;margin:0 auto;padding:20px 32px 56px;}
+.mkt-steps-h{font-size:clamp(28px,3.4vw,44px);letter-spacing:-.025em;margin:6px 0 34px;color:var(--ink);}
+.mkt-steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
+.mkt-step{border-top:2px solid var(--ink);padding:16px 4px 0;}
+.mkt-step-n{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--primary);letter-spacing:.05em;}
+.mkt-step h3{font-size:19px;letter-spacing:-.01em;margin:10px 0 8px;color:var(--ink);}
+.mkt-step p{font-size:15px;line-height:1.55;color:var(--ink-2);margin:0;}
 
-/* band */
-.mkt-band{max-width:1160px;margin:0 auto;padding:72px 32px;display:flex;align-items:center;justify-content:space-between;gap:32px;flex-wrap:wrap;}
-.mkt-band-h{font-size:clamp(32px,4vw,52px);letter-spacing:-.03em;margin:0;color:var(--ink);}
-.mkt-band-sub{font-size:17px;color:var(--ink-2);max-width:26em;margin:12px 0 0;line-height:1.5;}
-.mkt-band-cta{display:flex;gap:14px;flex-wrap:wrap;}
+.mkt-campaign{border-top:1px solid rgba(70,54,32,.1);}
+.mkt-campaign-inner{max-width:1180px;margin:0 auto;padding:64px 32px 72px;}
+.mkt-campaign-h{font-size:clamp(30px,3.6vw,48px);letter-spacing:-.03em;margin:6px 0 8px;color:var(--ink);}
+.mkt-campaign-sub{font-size:17px;color:var(--ink-2);max-width:34em;margin:0 0 40px;line-height:1.5;}
+.mkt-poster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;}
+.mkt-poster{margin:0;border-radius:16px;overflow:hidden;box-shadow:0 18px 40px -20px rgba(20,20,20,.4);}
+.mkt-poster img{width:100%;height:auto;display:block;}
 
-/* footer */
-.mkt-foot{background:var(--ink);color:var(--on-dark);display:flex;align-items:center;gap:20px;flex-wrap:wrap;
-  padding:26px 32px;max-width:none;}
+.mkt-riders{background:var(--ink);color:var(--on-dark);}
+.mkt-riders-band{max-width:820px;margin:0 auto;padding:82px 32px;text-align:center;}
+.mkt-riders .mkt-eyebrow{color:var(--primary);}
+.mkt-riders-h{font-size:clamp(30px,4vw,52px);letter-spacing:-.03em;margin:8px 0 0;color:var(--on-dark);}
+.mkt-riders-h .mkt-accent{color:var(--primary);}
+.mkt-riders-sub{font-size:17px;line-height:1.55;color:#d8d3ca;max-width:34em;margin:18px auto 0;}
+
+.mkt-foot{background:#0b0b0b;color:var(--on-dark);display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:26px 32px;}
 .mkt-foot .mkt-brand{color:var(--on-dark);}
 .mkt-foot .mkt-brand-first{color:#9a9a9a;}
 .mkt-foot-tag{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:#8f8f8f;}
@@ -296,21 +217,24 @@ const CSS = `
 .mkt-foot-links a{color:#c9c9c9;text-decoration:none;font-size:14px;}
 .mkt-foot-links a:hover{color:var(--on-dark);}
 
-/* entrance */
 .up-1,.up-2,.up-3,.up-4,.up-5{opacity:0;transform:translateY(16px);animation:mktUp .7s cubic-bezier(.2,.7,.2,1) forwards;}
 .up-1{animation-delay:.05s}.up-2{animation-delay:.15s}.up-3{animation-delay:.28s}.up-4{animation-delay:.42s}.up-5{animation-delay:.54s}
 @keyframes mktUp{to{opacity:1;transform:none;}}
 [data-reveal]{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);}
 [data-reveal].is-in{opacity:1;transform:none;}
 
-@media (max-width:860px){
+@media (max-width:900px){
   .mkt-hero{grid-template-columns:1fr;padding-top:24px;}
-  .mkt-hero-art{order:-1;max-width:380px;margin:0 auto;}
+  .mkt-hero-art{order:-1;max-width:420px;margin:0 auto;}
   .mkt-nav-links{display:none;}
-  .mkt-why-grid{grid-template-columns:1fr;}
+  .mkt-steps-grid{grid-template-columns:1fr 1fr;}
+  .mkt-poster-grid{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:560px){
+  .mkt-steps-grid{grid-template-columns:1fr;}
+  .mkt-poster-grid{grid-template-columns:1fr;max-width:420px;margin:0 auto;}
 }
 @media (prefers-reduced-motion:reduce){
   .up-1,.up-2,.up-3,.up-4,.up-5,[data-reveal]{animation:none!important;opacity:1!important;transform:none!important;transition:none!important;}
-  .mkt-route,.mkt-ping,.mkt-float,.mkt-float-2{animation:none!important;}
 }
 `;

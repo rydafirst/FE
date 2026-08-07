@@ -5,10 +5,10 @@
   --line:#DADADA; --line-2:#EDEDED; --bg:#FFFFFF; --bg-2:#FAFAFA;
   --primary:#F97316; --primary-pressed:#E4610C; --primary-soft:#FEEEE0; --primary-ink:#FFFFFF;
   --success:#16A34A; --info:#2563EB; --warning:#A16207; --danger:#DC2626;
-  /* Marketing surface stays on the design system: white base, with a barely-there warm off-white
-     (white tilted toward --primary) for subtle section separation. No paper/canvas wash — the flyer's
-     texture belongs in the illustrations, not the page background. */
-  --bg-warm:#FFF6EF;
+  /* Public marketing surface, matched to the brand flyer: a warm ivory with a fine, even CANVAS
+     weave (structured/woven, not random grain), and a slightly deeper ivory for section separation.
+     The product itself keeps --bg / --bg-2. */
+  --site-bg:#F3F0E9; --site-bg-2:#ECE7DC;
   /* Type scale. Mirrors mobile/src/theme.ts `size`. Grown after testers reported the interface was
      hard to read; nothing shrank and the smallest step grew most. Components reference these rather
      than hard-coding px, so legibility is one edit here instead of hundreds across the app. */
