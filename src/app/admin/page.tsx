@@ -58,6 +58,7 @@ export default function AdminDashboardPage() {
 
   const stats = [
     { label: 'Active jobs now', value: ops ? ops.summary.activeTotal : '—', href: '/admin/deliveries' },
+    { label: 'Running late', value: ops ? ops.lateTotal : '—', href: '/admin/deliveries', alert: !!ops && ops.lateTotal > 0 },
     { label: 'Held in escrow', value: finance ? naira(finance.totals.held) : '—', href: '/admin/finance' },
     { label: 'Released to riders', value: finance ? naira(finance.totals.released) : '—', href: '/admin/finance' },
     { label: 'Payouts to retry', value: payouts.length, href: '/admin/finance', alert: payouts.length > 0 },

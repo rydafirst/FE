@@ -5,6 +5,10 @@
   --line:#DADADA; --line-2:#EDEDED; --bg:#FFFFFF; --bg-2:#FAFAFA;
   --primary:#F97316; --primary-pressed:#E4610C; --primary-soft:#FEEEE0; --primary-ink:#FFFFFF;
   --success:#16A34A; --info:#2563EB; --warning:#A16207; --danger:#DC2626;
+  /* Marketing surface. The ONLY thing borrowed from the brand flyer is its warm paper texture +
+     cream/black/orange pairing; type and accents stay on the tokens above. Used by the public site
+     (app/page.tsx); the product keeps --bg / --bg-2. */
+  --paper:#F1EBDE; --paper-2:#E8DFCC; --ink-deep:#141414;
   /* Type scale. Mirrors mobile/src/theme.ts `size`. Grown after testers reported the interface was
      hard to read; nothing shrank and the smallest step grew most. Components reference these rather
      than hard-coding px, so legibility is one edit here instead of hundreds across the app. */

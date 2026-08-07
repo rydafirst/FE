@@ -70,6 +70,11 @@ export default function TrackPage() {
     try { await api.notifyComing(getToken(), id); setErr(null); }
     catch (e) { setErr((e as Error).message); }
   };
+  // Proxy mode: ask the server to ring us and bridge to the rider (no number exposed).
+  const callRider = async () => {
+    try { await api.requestCall(getToken(), id); setErr(null); }
+    catch { setErr('Could not place the call — please try again'); }
+  };
 
   const revealCode = async () => {
     try { const r = await api.issueCode(getToken(), id); setDeliveryCode(r.code); }
@@ -275,11 +280,13 @@ export default function TrackPage() {
               {rider?.vehiclePlate ? ` · ${rider.vehiclePlate}` : ''}
             </div>
           </div>
-          {/* Present only while the delivery is live — the server stops returning the number once
-              the job ends, so this disappears without a client-side rule. */}
-          {rider?.phone && (
+          {/* Present only while the delivery is live — the server stops returning contact once the
+              job ends. Proxy mode requests a call (no number ever sent); direct mode uses tel:. */}
+          {rider?.callMode === 'proxy' ? (
+            <button type="button" onClick={callRider} className="mono rf-chip" style={{ cursor: 'pointer' }}>CALL</button>
+          ) : rider?.phone ? (
             <a href={`tel:${rider.phone}`} className="mono rf-chip" style={{ textDecoration: 'none' }}>CALL</a>
-          )}
+          ) : null}
         </div>
       ) : (
         <div className="rf-card" style={{ marginBottom: 12, textAlign: 'center', color: 'var(--ink-2)' }}>

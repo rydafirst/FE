@@ -39,7 +39,7 @@ export interface AdminRiderDoc {
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
 export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: string; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: boolean } }
-export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; jobs: { id: string; status: string; type: string }[] }
+export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; lateTotal: number; jobs: { id: string; status: string; type: string; late: boolean }[] }
 export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string }
 export interface AdminFinance { totals: { held: number; released: number; refunded: number; platformRevenue: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
 export interface PendingPayout { id: string; amountMinor: number; createdAt: string; payoutError?: string; payoutRef?: string; dropoffArea?: string; riderName?: string }
@@ -59,7 +59,9 @@ export const VEHICLE_COLORS: VehicleColor[] = ['BLACK', 'WHITE', 'SILVER', 'GREY
 export interface RiderProfile { track: VehicleTrack | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: VehicleColor }
 // `phone` is present only while the job is in flight, and only for the counterparty. `phoneMasked`
 // says whether it is a proxy number — dial whatever is given and don't cache it.
-export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string; phone?: string; phoneMasked?: boolean }
+// `callMode`: 'proxy' means masked in-app calling is live — request a call (server rings you) with no
+// number exposed; 'direct' means fall back to a tel: link with `phone`.
+export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct' }
 export interface PendingRating { jobId: string; amountMinor: number; createdAt: string; dropoffArea?: string; riderName?: string }
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
@@ -173,7 +175,9 @@ export const api = {
   updateRiderProfile: (token: string, body: { legalName?: string; vehiclePlate?: string; vehicleColor?: VehicleColor }) =>
     call<RiderProfile>(`/me/documents/profile`, { method: 'PUT', token, body: JSON.stringify(body) }),
   jobRider: (token: string, id: string) => call<{ rider: RiderSummary | null }>(`/jobs/${id}/rider`, { token }),
-  jobCustomer: (token: string, id: string) => call<{ name?: string; photoUrl?: string; phone?: string; phoneMasked?: boolean }>(`/jobs/${id}/customer`, { token }),
+  jobCustomer: (token: string, id: string) => call<{ name?: string; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct' }>(`/jobs/${id}/customer`, { token }),
+  // Masked in-app call: server rings the caller then bridges to the counterparty. No number returned.
+  requestCall: (token: string, id: string) => call<{ status: string }>(`/jobs/${id}/call`, { token, method: 'POST' }),
   avatarUploadUrl: (token: string, contentType: string, sizeBytes: number) => call<{ uploadUrl: string }>(`/me/avatar/upload-url`, { method: 'POST', token, body: JSON.stringify({ contentType, sizeBytes }) }),
   myAvatar: (token: string) => call<{ photoUrl: string | null }>(`/me/avatar`, { token }),
   me: (token: string) => call<{ id: string; phone: string | null }>(`/me`, { token }),
