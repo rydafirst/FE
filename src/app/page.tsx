@@ -75,7 +75,7 @@ export default function Home() {
           </ul>
         </div>
         <div className="mkt-hero-art up-3">
-          <img src="/brand/hero.png" alt="A hand paying with a phone, money flowing into a wallet beside a parcel — held safe until delivery" className="mkt-hero-img" />
+          <img src="/brand/hero.png" alt="A Rydafirst rider on a delivery motorbike" className="mkt-hero-img" />
         </div>
       </section>
 
