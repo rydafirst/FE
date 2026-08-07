@@ -3,16 +3,27 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
+const APP_STORE_URL = 'https://apps.apple.com/app/rydafirst/id6789930826';
+
+function AppleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden style={{ marginRight: 9, marginTop: -2 }}>
+      <path d="M16.4 12.7c0-2.2 1.8-3.3 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.6.8-3.3.8-.7 0-1.7-.8-2.8-.8-1.4 0-2.8.8-3.5 2.1-1.5 2.6-.4 6.5 1.1 8.6.7 1 1.5 2.2 2.6 2.2 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4-.1 0-2.1-.8-2.1-3.1zM14.3 5.6c.6-.7 1-1.7.9-2.6-.9 0-1.9.6-2.5 1.3-.5.6-1 1.6-.9 2.5 1 .1 1.9-.5 2.5-1.2z" />
+    </svg>
+  );
+}
+
 /**
  * Rydafirst public homepage.
  *
- * Design system first: type is Space Grotesk / Space Mono, colour is our token palette, and orange
- * (--primary) appears only on the primary action + live states — the monochrome-first rule the whole
- * product follows. The ONLY thing taken from the brand flyer is its warm paper texture and the
- * cream/black/orange pairing (see --paper in globals.css); none of the flyer's own type is used.
+ * Design system first: white background (--bg) with a barely-warm --bg-warm for section separation,
+ * type is Space Grotesk / Space Mono, and orange (--primary) appears only on the primary action +
+ * live states — the monochrome-first rule the whole product follows. No paper/canvas wash: the
+ * flyer's hand-painted "cartoon" texture belongs in the illustrations (generated art), not the page
+ * background, so the site never reads as a generic AI template.
  *
  * It breaks out of the app's 480px mobile shell (the product lives at that width; the marketing site
- * is full-bleed) and links visitors into the product.
+ * is full-bleed) and links visitors into the product + the App Store.
  */
 export default function Home() {
   const revealRoot = useRef<HTMLDivElement>(null);
@@ -33,7 +44,6 @@ export default function Home() {
   return (
     <div className="mkt-root" ref={revealRoot}>
       <style>{CSS}</style>
-      <div className="mkt-grain" aria-hidden />
 
       {/* ---------------- Nav ---------------- */}
       <header className="mkt-nav">
@@ -45,7 +55,7 @@ export default function Home() {
           <a href="#trust">Why escrow</a>
           <a href="#riders">For riders</a>
         </nav>
-        <Link href="/login" className="mkt-nav-cta">Open app</Link>
+        <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-nav-cta">Get the app</a>
       </header>
 
       {/* ---------------- Hero ---------------- */}
@@ -62,8 +72,8 @@ export default function Home() {
           </p>
 
           <div className="mkt-cta-row up-4">
-            <Link href="/login" className="mkt-btn mkt-btn--primary">Send a delivery</Link>
-            <Link href="/login" className="mkt-btn mkt-btn--ghost">Ride &amp; earn →</Link>
+            <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary"><AppleIcon />Download on the App Store</a>
+            <Link href="/login" className="mkt-btn mkt-btn--ghost">Open web app →</Link>
           </div>
 
           <ul className="mkt-chips up-5" aria-label="What you get">
@@ -107,8 +117,8 @@ export default function Home() {
           <p className="mkt-band-sub">Every other platform treats the rider as replaceable. Here, your payment is guaranteed by design.</p>
         </div>
         <div className="mkt-band-cta">
-          <Link href="/login" className="mkt-btn mkt-btn--primary">Send a delivery</Link>
-          <Link href="/login" className="mkt-btn mkt-btn--dark">Become a rider</Link>
+          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary"><AppleIcon />Download on the App Store</a>
+          <Link href="/login" className="mkt-btn mkt-btn--dark">Open web app</Link>
         </div>
       </section>
 
@@ -118,7 +128,7 @@ export default function Home() {
         <span className="mkt-foot-links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
-          <Link href="/login">Open app</Link>
+          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">Get the app</a>
         </span>
       </footer>
     </div>
@@ -185,7 +195,7 @@ function TrackingArt() {
 
         {/* floating escrow badge */}
         <g className="mkt-float-2" transform="translate(300 250)">
-          <rect x="-70" y="-34" width="150" height="74" rx="16" fill="var(--paper-2)" stroke="var(--ink)" strokeWidth="2" />
+          <rect x="-70" y="-34" width="150" height="74" rx="16" fill="var(--bg-2)" stroke="var(--ink)" strokeWidth="2" />
           <g transform="translate(-44 3)">
             <path d="M0 -20 L20 -12 V2 C20 16 10 24 0 28 C-10 24 -20 16 -20 2 V-12 Z" fill="var(--ink)" />
             <path d="M-8 2 l6 7 l11 -14" fill="none" stroke="var(--success)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
@@ -211,11 +221,8 @@ function RefundIcon() {
 /* ============================ Styles ============================ */
 const CSS = `
 .mkt-root{position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;width:100vw;
-  min-height:100vh;background:var(--paper);color:var(--ink);overflow-x:hidden;
+  min-height:100vh;background:var(--bg);color:var(--ink);overflow-x:hidden;
   font-family:var(--font-sans);}
-.mkt-grain{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;mix-blend-mode:multiply;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.28'/%3E%3C/svg%3E");}
-.mkt-root>*:not(.mkt-grain){position:relative;z-index:1;}
 
 /* nav */
 .mkt-nav{display:flex;align-items:center;gap:24px;max-width:1160px;margin:0 auto;padding:22px 32px;}
@@ -226,7 +233,7 @@ const CSS = `
 .mkt-nav-links a{color:var(--ink-2);text-decoration:none;font-size:15px;transition:color .18s;}
 .mkt-nav-links a:hover{color:var(--ink);}
 .mkt-nav-cta{font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--on-dark);background:var(--ink-deep);text-decoration:none;padding:10px 16px;border-radius:var(--radius-pill);
+  color:var(--on-dark);background:var(--ink);text-decoration:none;padding:10px 16px;border-radius:var(--radius-pill);
   transition:transform .18s, background .18s;}
 .mkt-nav-cta:hover{background:#000;transform:translateY(-1px);}
 
@@ -234,7 +241,7 @@ const CSS = `
 .mkt-hero{max-width:1160px;margin:0 auto;padding:40px 32px 64px;display:grid;grid-template-columns:1.05fr .95fr;
   gap:48px;align-items:center;}
 .mkt-eyebrow{font-family:var(--font-mono);font-size:12.5px;font-weight:700;letter-spacing:.16em;color:var(--ink-2);margin:0 0 18px;}
-.mkt-h1{font-size:clamp(40px,6vw,76px);line-height:.98;letter-spacing:-.035em;font-weight:700;margin:0;color:var(--ink-deep);}
+.mkt-h1{font-size:clamp(40px,6vw,76px);line-height:.98;letter-spacing:-.035em;font-weight:700;margin:0;color:var(--ink);}
 .mkt-accent{color:var(--primary);}
 .mkt-sub{font-size:clamp(16px,1.4vw,19px);line-height:1.55;color:var(--ink-2);max-width:30em;margin:22px 0 0;}
 .mkt-cta-row{display:flex;gap:14px;flex-wrap:wrap;margin:30px 0 0;}
@@ -245,7 +252,7 @@ const CSS = `
 .mkt-btn--primary:hover{background:var(--primary-pressed);transform:translateY(-2px);}
 .mkt-btn--ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink);}
 .mkt-btn--ghost:hover{background:var(--ink);color:var(--on-dark);transform:translateY(-2px);}
-.mkt-btn--dark{background:var(--ink-deep);color:var(--on-dark);}
+.mkt-btn--dark{background:var(--ink);color:var(--on-dark);}
 .mkt-btn--dark:hover{background:#000;transform:translateY(-2px);}
 .mkt-chips{display:flex;gap:22px;flex-wrap:wrap;list-style:none;padding:0;margin:28px 0 0;}
 .mkt-chips li{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12.5px;letter-spacing:.04em;color:var(--ink);text-transform:uppercase;}
@@ -263,24 +270,24 @@ const CSS = `
 @keyframes mktFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
 
 /* why */
-.mkt-why{background:var(--paper-2);border-top:1px solid rgba(20,20,20,.08);border-bottom:1px solid rgba(20,20,20,.08);}
+.mkt-why{background:var(--bg-warm);border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);}
 .mkt-why-inner{max-width:1160px;margin:0 auto;padding:72px 32px;}
-.mkt-why-lead{font-size:clamp(22px,2.6vw,32px);line-height:1.32;letter-spacing:-.02em;color:var(--ink-deep);max-width:20em;margin:0 0 44px;font-weight:500;}
+.mkt-why-lead{font-size:clamp(22px,2.6vw,32px);line-height:1.32;letter-spacing:-.02em;color:var(--ink);max-width:20em;margin:0 0 44px;font-weight:500;}
 .mkt-quote{color:var(--primary);font-style:italic;}
 .mkt-why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.mkt-why-card{background:var(--paper);border:1px solid rgba(20,20,20,.1);border-radius:16px;padding:26px;}
+.mkt-why-card{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:26px;}
 .mkt-why-ic{width:52px;height:52px;border-radius:14px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
 .mkt-why-card h3{font-size:19px;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink);}
 .mkt-why-card p{font-size:15px;line-height:1.55;color:var(--ink-2);margin:0;}
 
 /* band */
 .mkt-band{max-width:1160px;margin:0 auto;padding:72px 32px;display:flex;align-items:center;justify-content:space-between;gap:32px;flex-wrap:wrap;}
-.mkt-band-h{font-size:clamp(32px,4vw,52px);letter-spacing:-.03em;margin:0;color:var(--ink-deep);}
+.mkt-band-h{font-size:clamp(32px,4vw,52px);letter-spacing:-.03em;margin:0;color:var(--ink);}
 .mkt-band-sub{font-size:17px;color:var(--ink-2);max-width:26em;margin:12px 0 0;line-height:1.5;}
 .mkt-band-cta{display:flex;gap:14px;flex-wrap:wrap;}
 
 /* footer */
-.mkt-foot{background:var(--ink-deep);color:var(--on-dark);display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+.mkt-foot{background:var(--ink);color:var(--on-dark);display:flex;align-items:center;gap:20px;flex-wrap:wrap;
   padding:26px 32px;max-width:none;}
 .mkt-foot .mkt-brand{color:var(--on-dark);}
 .mkt-foot .mkt-brand-first{color:#9a9a9a;}
