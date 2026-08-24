@@ -83,8 +83,8 @@ export default function ProfilePage() {
 
       <div className="rf-card" style={{ padding: 0, marginBottom: 16 }}>
         {role === 'RIDER'
-          ? <><Row href="/rider" label="Rider dashboard" /><Row href="/documents" label="Documents & verification" last /></>
-          : <Row href="/home" label="Book a delivery" last />}
+          ? <><Row href="/rider" label="Rider dashboard" /><Row href="/documents" label="Documents & verification" /><Row href="/support" label="Help & support" last /></>
+          : <><Row href="/home" label="Book a delivery" /><Row href="/support" label="Help & support" last /></>}
       </div>
 
       <div className="rf-card" style={{ marginBottom: 16 }}>

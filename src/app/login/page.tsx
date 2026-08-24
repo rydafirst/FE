@@ -23,7 +23,6 @@ export default function LoginPage() {
   const [role, setRole] = useState<Role>('CUSTOMER');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -51,7 +50,7 @@ export default function LoginPage() {
     if (isSignup && name.trim().length < 2) { setErr('Please enter your name'); return; }
     setBusy(true);
     try {
-      await api.requestOtp(phone, email, isSignup ? name.trim() : undefined);
+      await api.requestOtp(phone, undefined, isSignup ? name.trim() : undefined);
       setPhase('code');
       setCooldown(RESEND_COOLDOWN);
     } catch (e) { setErr((e as Error).message); }
@@ -62,8 +61,8 @@ export default function LoginPage() {
     if (cooldown > 0 || busy) return;
     setErr(null); setNote(null); setBusy(true);
     try {
-      await api.requestOtp(phone, email, isSignup ? name.trim() : undefined);
-      setNote(`New code sent to ${email}`);
+      await api.requestOtp(phone, undefined, isSignup ? name.trim() : undefined);
+      setNote(`New code sent to ${phone}`);
       setCooldown(RESEND_COOLDOWN);
     } catch (e) { setErr((e as Error).message); }
     finally { setBusy(false); }
@@ -125,13 +124,10 @@ export default function LoginPage() {
             </>
           )}
           <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>PHONE NUMBER</label>
-          <input className="rf-input" style={{ margin: '8px 0 16px' }} value={phone}
+          <input className="rf-input" style={{ margin: '8px 0 6px' }} value={phone}
             onChange={(e) => setPhone(e.target.value)} placeholder="+234…" inputMode="tel" autoComplete="tel" />
-          <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>EMAIL</label>
-          <input className="rf-input" style={{ margin: '8px 0 6px' }} value={email}
-            onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" inputMode="email" type="email" autoComplete="email" />
           <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', margin: '0 0 16px' }}>
-            WE&apos;LL EMAIL YOUR CODE FOR NOW
+            WE&apos;LL TEXT YOUR CODE BY SMS
           </p>
           <Button onClick={sendOtp} disabled={busy}>{busy ? 'Sending…' : isSignup ? 'Create account' : 'Send code'}</Button>
 
@@ -152,7 +148,7 @@ export default function LoginPage() {
 
           {/* Didn't get it? Resend, gated by a short cooldown. */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>SENT TO {email.toUpperCase()}</span>
+            <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>SENT TO {phone}</span>
             <button onClick={resend} disabled={cooldown > 0 || busy} className="mono"
               style={{ background: 'none', border: 'none', padding: 4, cursor: cooldown > 0 || busy ? 'default' : 'pointer',
                 fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: cooldown > 0 || busy ? 'var(--mid)' : 'var(--ink)' }}>
@@ -164,7 +160,7 @@ export default function LoginPage() {
 
           <button onClick={() => { setPhase('phone'); setCode(''); setErr(null); setNote(null); }} className="mono"
             style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
-            ← USE A DIFFERENT EMAIL
+            ← USE A DIFFERENT NUMBER
           </button>
         </>
       )}

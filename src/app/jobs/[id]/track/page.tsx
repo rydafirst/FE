@@ -12,7 +12,9 @@ import { connectSocket, fetchRoute } from '@/lib/live';
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
 // Ordered lifecycle for the progress bar.
-const FLOW = ['FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'COMPLETED', 'RELEASED'];
+// #4 MULTI-STOP: EN_ROUTE_STOP sits after the primary drop-off (ARRIVED) — the rider is working
+// through the extra stops before the final release.
+const FLOW = ['FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'EN_ROUTE_STOP', 'COMPLETED', 'RELEASED'];
 // A customer can cancel (and be refunded) any time before the parcel is picked up.
 const CANCELLABLE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP'];
 
@@ -27,6 +29,7 @@ function label(status: string): { text: string; color: string } {
     case 'IN_PROGRESS': return { text: 'Picked up', color: 'var(--info)' };
     case 'EN_ROUTE_DROP': return { text: 'On the way to drop-off', color: 'var(--info)' };
     case 'ARRIVED': return { text: 'Rider has arrived', color: 'var(--warning)' };
+    case 'EN_ROUTE_STOP': return { text: 'Delivering your stops', color: 'var(--info)' };
     case 'AWAITING_CODE': return { text: 'Share your delivery code', color: 'var(--warning)' };
     case 'COMPLETED': case 'RELEASED': return { text: 'Delivered', color: 'var(--success)' };
     case 'CANCELLED': return { text: 'Cancelled', color: 'var(--danger)' };
@@ -56,16 +59,21 @@ export default function TrackPage() {
   });
 
   const [showChat, setShowChat] = useState(false);
-  const needsResolution = !!job && (job.status === 'WAITING' || job.status === 'AWAITING_RESOLUTION');
-  const waitingDue = !!job?.waitingFeeMinor && !job?.waitingTxId;
-  const payWaiting = async () => {
-    try { const r = await api.payWaiting(getToken(), id); window.open(r.paymentLink, '_blank'); }
-    catch (e) { setErr((e as Error).message); }
-  };
-  const returnToMe = async () => {
-    try { const r = await api.initiateReturn(getToken(), id); if (r.paymentLink) window.open(r.paymentLink, '_blank'); }
-    catch (e) { setErr((e as Error).message); }
-  };
+  // #0 DIRECT DELIVERY: waiting-fee / keep-waiting / return-to-me are disabled for launch. In direct
+  // mode the backend never puts a job in WAITING/AWAITING_RESOLUTION and the pay-waiting/return
+  // endpoints return 409, so this UI + its calls are commented out. `needsResolution` is pinned false
+  // so the rest of the screen (which reads it) still compiles and behaves as "no resolution needed".
+  const needsResolution = false;
+  // const needsResolution = !!job && (job.status === 'WAITING' || job.status === 'AWAITING_RESOLUTION');
+  // const waitingDue = !!job?.waitingFeeMinor && !job?.waitingTxId;
+  // const payWaiting = async () => {
+  //   try { const r = await api.payWaiting(getToken(), id); window.open(r.paymentLink, '_blank'); }
+  //   catch (e) { setErr((e as Error).message); }
+  // };
+  // const returnToMe = async () => {
+  //   try { const r = await api.initiateReturn(getToken(), id); if (r.paymentLink) window.open(r.paymentLink, '_blank'); }
+  //   catch (e) { setErr((e as Error).message); }
+  // };
   const notifyComing = async () => {
     try { await api.notifyComing(getToken(), id); setErr(null); }
     catch (e) { setErr((e as Error).message); }
@@ -83,6 +91,16 @@ export default function TrackPage() {
   const cancelOrder = async () => {
     try { await api.cancelJob(getToken(), id); location.href = '/activity'; }
     catch (e) { setErr((e as Error).message); }
+  };
+  // #6 Per-trip support: open the existing (unresolved) support thread for this trip, or start one.
+  const contactSupport = async () => {
+    try {
+      const threads = await api.mySupportThreads(getToken());
+      const existing = threads.find((t) => t.jobId === id && t.status !== 'RESOLVED');
+      if (existing) { location.href = `/support/${existing.id}`; return; }
+      const t = await api.startSupportThread(getToken(), { category: 'DELIVERY_ISSUE', jobId: id });
+      location.href = `/support/${t.id}`;
+    } catch (e) { setErr((e as Error).message); }
   };
   useEffect(() => { api.getAccount(getToken()).then(setRefAcct).catch(() => {}); }, []);
 
@@ -160,7 +178,7 @@ export default function TrackPage() {
   // stays open: the webhook funds it if the money arrives, and the payment-window timeout cancels it
   // (with feedback) if it never does. This screen just shows "payment not completed" as guidance.
 
-  const hasRider = !!job && ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'].includes(job.status);
+  const hasRider = !!job && ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'EN_ROUTE_STOP', 'AWAITING_CODE'].includes(job.status);
 
   // Assigned rider's public details. These two hooks MUST sit above the early return below: a hook
   // declared after a conditional return runs on some renders and not others (here, only when the job
@@ -228,20 +246,27 @@ export default function TrackPage() {
         <div className="rf-card" style={{ marginBottom: 12 }}>
           <Row label="Status" value={l.text} />
           <Row label="Type" value={job.type} />
+          {/* #0 DIRECT DELIVERY: no return deposit is charged, so the split-out deposit lines are
+              removed and the plain escrow total is shown.
           {job.returnReserveMinor ? (
             <>
               <Row label="Delivery fare" value={naira(job.amountMinor - job.returnReserveMinor)} />
               <Row label="Return deposit (refundable)" value={naira(job.returnReserveMinor)} />
             </>
-          ) : null}
+          ) : null} */}
           <Row label="Amount held in escrow" value={naira(job.amountMinor)} strong />
+          {/* #0 DIRECT DELIVERY: return-deposit explainer removed.
           {job.returnReserveMinor ? (
             <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '4px 0 0', lineHeight: 1.4 }}>
               Your {naira(job.returnReserveMinor)} return deposit is refunded in full once the delivery is completed.
             </p>
-          ) : null}
+          ) : null} */}
         </div>
       )}
+
+      {/* #4 MULTI-STOP: compact per-stop progress for the customer — delivered/pending, current stop
+          highlighted. Only rendered when the order has extra stops; single-stop orders are unchanged. */}
+      {job?.extraStops?.length ? <StopProgress job={job} /> : null}
 
       {/* Live map: pickup + drop-off always; the rider marker appears once a rider is assigned and streaming. */}
       {job && (job.pickup || job.dropoff) && (
@@ -312,6 +337,9 @@ export default function TrackPage() {
         </div>
       )}
 
+      {/* #0 DIRECT DELIVERY: recipient-unavailable / waiting-fee / return-to-me panel is disabled for
+          launch. In direct mode the customer and rider just call/chat to sort it out (the chat is still
+          available below). Kept commented so it can be switched back on with the fallback flow.
       {needsResolution && (
         <div className="rf-card" style={{ border: '1px solid var(--warning)', marginBottom: 12 }}>
           <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--warning)', letterSpacing: '.06em', marginBottom: 6 }}>RECIPIENT UNAVAILABLE</div>
@@ -328,6 +356,7 @@ export default function TrackPage() {
           {showChat && <div style={{ marginTop: 12 }}><ChatPanel jobId={id} /></div>}
         </div>
       )}
+      */}
 
       {hasRider && !needsResolution && (
         <div style={{ marginBottom: 12 }}>
@@ -367,11 +396,60 @@ export default function TrackPage() {
         )
       )}
 
+      <div style={{ marginBottom: 12 }}>
+        <Button variant="ghost" onClick={contactSupport}>Contact support about this trip</Button>
+      </div>
+
       <div style={{ display: 'flex', gap: 8 }}>
         <Button variant="ghost" onClick={refresh}>Refresh</Button>
         <Button variant="ghost" onClick={() => (location.href = '/home')}>New order</Button>
       </div>
     </main>
+  );
+}
+
+// #4 MULTI-STOP: customer-facing progress list for a multi-stop delivery. Stop #1 is the primary
+// drop-off (done once `primaryStopDeliveredAt` is set); the extras follow in order. The first stop
+// still pending is highlighted as the one the rider is on now.
+function StopProgress({ job }: { job: Job }) {
+  const extras = job.extraStops ?? [];
+  const rows = [
+    { label: job.dropoffAddress || 'Drop-off 1', delivered: !!job.primaryStopDeliveredAt },
+    ...extras.map((s, i) => ({ label: s.address || s.recipient?.name || `Stop ${i + 2}`, delivered: s.status === 'DELIVERED' })),
+  ];
+  const total = rows.length;
+  const doneCount = rows.filter((r) => r.delivered).length;
+  const current = rows.findIndex((r) => !r.delivered);
+  return (
+    <div className="rf-card" style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>DELIVERY STOPS</span>
+        <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{doneCount}/{total} DELIVERED</span>
+      </div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+        {rows.map((r, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: r.delivered ? 'var(--success)' : 'var(--line-2)' }} />)}
+      </div>
+      {rows.map((r, i) => {
+        const isCurrent = i === current;
+        return (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderTop: i === 0 ? 'none' : '1px solid var(--line-2)' }}>
+            <span className="mono" style={{
+              width: 20, height: 20, flexShrink: 0, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 'var(--text-caption)', fontWeight: 700,
+              background: r.delivered ? 'var(--success)' : isCurrent ? 'var(--info)' : 'var(--bg-2)',
+              color: r.delivered || isCurrent ? 'var(--on-dark)' : 'var(--ink-2)',
+              border: r.delivered || isCurrent ? 'none' : '1px solid var(--line)',
+            }}>{r.delivered ? '✓' : i + 1}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 'var(--text-small)', fontWeight: isCurrent ? 600 : 400, color: r.delivered ? 'var(--ink-2)' : 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.label}</div>
+            </div>
+            <span className="mono" style={{ fontSize: 'var(--text-caption)', letterSpacing: '.05em', color: r.delivered ? 'var(--success)' : isCurrent ? 'var(--info)' : 'var(--ink-2)' }}>
+              {r.delivered ? 'DELIVERED' : isCurrent ? 'CURRENT' : 'PENDING'}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

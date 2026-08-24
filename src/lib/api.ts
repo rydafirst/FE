@@ -12,7 +12,28 @@ const BASE = normalizeBase(process.env.NEXT_PUBLIC_API_URL);
 export type JobType = 'DELIVERY' | 'RIDE';
 export interface GeoPoint { lat: number; lng: number }
 export interface Quote { quoteToken: string; amountMinor: number; currency: 'NGN'; breakdown: {
-  baseMinor: number; distanceMinor: number; platformFeeMinor: number; totalMinor: number } }
+  baseMinor: number; distanceMinor: number; timeMinor: number; platformFeeMinor: number; totalMinor: number } }
+// #4 MULTI-STOP: the customer-supplied metadata for one EXTRA drop-off, paired BY INDEX to the quote
+// `stops` points (the point itself is authoritative from the signed quote, never sent here).
+export interface ExtraStopInput {
+  recipient?: { name: string; phone: string };
+  item?: string;
+  instructions?: string;
+  address?: string;
+  area?: string;
+}
+// #4 MULTI-STOP: an extra drop-off as returned on the Job (no codes — those are shown once on create).
+// `recipient.phone` is withheld from the rider until the parcel is in transit, so it's optional here.
+export interface ExtraStop {
+  point: GeoPoint;
+  status: 'PENDING' | 'DELIVERED';
+  deliveredAt?: number;
+  address?: string;
+  area?: string;
+  recipient?: { name: string; phone?: string };
+  item?: string;
+  instructions?: string;
+}
 export interface Job {
   id: string; type: JobType; status: string; amountMinor: number; currency: 'NGN'; createdAt: string;
   customerName?: string;
@@ -24,7 +45,14 @@ export interface Job {
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
   waitStartedAt?: number; waitingFeeMinor?: number; waitingTxId?: string; returnOfJobId?: string;
   returnReserveMinor?: number;
+  // #4 MULTI-STOP: extra ordered drop-offs after the primary dropoff (absent on single-stop jobs),
+  // plus the timestamp the primary drop-off (stop #1) was confirmed.
+  extraStops?: ExtraStop[];
+  primaryStopDeliveredAt?: number;
 }
+// #4 MULTI-STOP: createJob echoes the plaintext single-use code for each extra stop exactly once, for
+// the booking customer to hand to each recipient (same one-time model as the primary delivery code).
+export type CreatedJob = Job & { paymentLink?: string; extraStopCodes?: string[] };
 export interface ChatMessage { id: string; jobId: string; senderId: string; body: string; createdAt: number }
 export interface AvailableJob {
   id: string; type: JobType; amountMinor: number; currency: 'NGN'; createdAt: string;
@@ -63,6 +91,16 @@ export interface RiderProfile { track: VehicleTrack | null; legalName?: string; 
 // number exposed; 'direct' means fall back to a tel: link with `phone`.
 export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct' }
 export interface PendingRating { jobId: string; amountMinor: number; createdAt: string; dropoffArea?: string; riderName?: string }
+// ---- Support chat (#5 support + agent hand-off, #6 per-trip support) ----
+export type SupportCategory = 'PAYMENT' | 'DELIVERY_ISSUE' | 'CONDUCT' | 'ACCOUNT' | 'APP_ISSUE' | 'OTHER';
+export type SupportStatus = 'BOT' | 'AWAITING_AGENT' | 'AGENT_JOINED' | 'RESOLVED';
+export interface SupportThread {
+  id: string; userId: string; jobId?: string; category: SupportCategory; status: SupportStatus;
+  agentId?: string; agentJoinDeadline?: number; createdAt: string; updatedAt: string;
+}
+export interface SupportMessage {
+  id: string; threadId: string; sender: 'USER' | 'BOT' | 'AGENT'; senderId?: string; body: string; createdAt: string;
+}
 
 async function call<T>(path: string, opts: RequestInit & { token?: string } = {}): Promise<T> {
   const { token, headers, ...rest } = opts;
@@ -93,15 +131,20 @@ export const api = {
     call<{ accessToken: string; refreshToken: string }>(`/auth/otp/verify`, {
       method: 'POST', body: JSON.stringify({ phone, code, role }),
     }),
-  quote: (token: string, body: { type: JobType; pickup: GeoPoint; dropoff: GeoPoint }) =>
+  // #4 MULTI-STOP: `stops` are optional EXTRA drop-off points (max 8) after the primary dropoff, in
+  // order. Omitting them is a plain single-stop quote (unchanged); the fare reflects the full route.
+  quote: (token: string, body: { type: JobType; pickup: GeoPoint; dropoff: GeoPoint; stops?: GeoPoint[] }) =>
     call<Quote>(`/jobs/quote`, { method: 'POST', token, body: JSON.stringify(body) }),
   createJob: (token: string, body: {
     quoteToken: string; refundAccountId?: string;
     customerName?: string; recipient?: { name: string; phone: string }; item?: string; weightKg?: number; instructions?: string;
     pickupAddress?: string; dropoffAddress?: string; pickupArea?: string; dropoffArea?: string;
     fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
+    // #4 MULTI-STOP: per-stop metadata in the SAME order & count as the signed quote `stops` (points
+    // come from the quote). Omit for single-stop deliveries. Response adds `extraStopCodes`.
+    extraStops?: ExtraStopInput[];
   }) =>
-    call<Job>(`/jobs`, {
+    call<CreatedJob>(`/jobs`, {
       method: 'POST', token,
       headers: { 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify(body),
@@ -110,6 +153,12 @@ export const api = {
   confirmCode: (token: string, id: string, code: string) =>
     call<{ status: string }>(`/jobs/${id}/confirm-code`, {
       method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ code }),
+    }),
+  // #4 MULTI-STOP: rider confirms an EXTRA drop-off (0-based index within extraStops) with the stop's
+  // recipient code + a GPS fix. Returns EN_ROUTE_STOP while stops remain, or RELEASED on the final one.
+  confirmStop: (token: string, id: string, index: number, body: { code: string; lat: number; lng: number; accuracyM?: number }) =>
+    call<{ status: string }>(`/jobs/${id}/stops/${index}/confirm-code`, {
+      method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(body),
     }),
   availableJobs: (token: string, pos?: { lat: number; lng: number }) =>
     call<AvailableJob[]>(`/jobs/available`, { method: 'POST', token, body: JSON.stringify(pos ?? {}) }),
@@ -210,4 +259,21 @@ export const api = {
     call<{ riderStatus: string }>(`/admin/documents/${id}/approve`, { method: 'POST', token }),
   adminRejectDocument: (token: string, id: string, reason: string) =>
     call<{ riderStatus: string }>(`/admin/documents/${id}/reject`, { method: 'POST', token, body: JSON.stringify({ reason }) }),
+  // ---- Support chat: user (any signed-in user) ----
+  startSupportThread: (token: string, body: { category: SupportCategory; jobId?: string }) =>
+    call<SupportThread>(`/support/threads`, { method: 'POST', token, body: JSON.stringify(body) }),
+  answerSupport: (token: string, id: string, answer: string) =>
+    call<{ thread: SupportThread; messages: SupportMessage[] }>(`/support/threads/${id}/answer`, { method: 'POST', token, body: JSON.stringify({ answer }) }),
+  postSupportMessage: (token: string, id: string, body: string) =>
+    call<SupportMessage>(`/support/threads/${id}/messages`, { method: 'POST', token, body: JSON.stringify({ body }) }),
+  mySupportThreads: (token: string) => call<SupportThread[]>(`/support/threads`, { token }),
+  supportMessages: (token: string, id: string) => call<SupportMessage[]>(`/support/threads/${id}/messages`, { token }),
+  // ---- Support chat: agent (admin with SUPPORT scope) ----
+  agentSupportThreads: (token: string) => call<SupportThread[]>(`/support/agent/threads`, { token }),
+  agentSupportMessages: (token: string, id: string) =>
+    call<{ thread: SupportThread; messages: SupportMessage[] }>(`/support/agent/threads/${id}/messages`, { token }),
+  agentReply: (token: string, id: string, body: string) =>
+    call<SupportMessage>(`/support/agent/threads/${id}/reply`, { method: 'POST', token, body: JSON.stringify({ body }) }),
+  agentResolve: (token: string, id: string) =>
+    call<SupportThread>(`/support/agent/threads/${id}/resolve`, { method: 'POST', token }),
 };
