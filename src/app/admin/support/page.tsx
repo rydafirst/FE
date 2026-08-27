@@ -202,12 +202,14 @@ function ThreadView({ id, wide, onBack, onResolved, onReplied }: {
       {thread?.status === 'RESOLVED' ? (
         <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', textAlign: 'center' }}>RESOLVED</div>
       ) : (
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input className="rf-input" style={{ flex: 1 }} value={draft} disabled={busy}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+          <input className="rf-input" style={{ flex: 1, minWidth: 0 }} value={draft} disabled={busy}
             placeholder="Reply to the customer…"
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') void reply(); }} />
-          <button onClick={() => void reply()} disabled={busy} className="rf-btn">Reply</button>
+          {/* rf-btn is full-width by default; size it to its label so the input keeps the row. */}
+          <button onClick={() => void reply()} disabled={busy} className="rf-btn"
+            style={{ width: 'auto', flex: '0 0 auto', paddingLeft: 22, paddingRight: 22 }}>Reply</button>
         </div>
       )}
     </div>

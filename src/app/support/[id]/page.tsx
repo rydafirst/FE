@@ -153,12 +153,14 @@ export default function SupportThreadPage() {
 
       {/* Free-text box */}
       {canFreeText && (
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input className="rf-input" style={{ flex: 1 }} value={draft} disabled={busy}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+          <input className="rf-input" style={{ flex: 1, minWidth: 0 }} value={draft} disabled={busy}
             placeholder={status === 'BOT' ? 'Describe your issue…' : 'Type a message…'}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') void submit(draft); }} />
-          <Button onClick={() => void submit(draft)} disabled={busy}>Send</Button>
+          {/* rf-btn is full-width by default; here it must size to its label so the input keeps the row. */}
+          <Button onClick={() => void submit(draft)} disabled={busy}
+            style={{ width: 'auto', flex: '0 0 auto', paddingLeft: 22, paddingRight: 22 }}>Send</Button>
         </div>
       )}
 
