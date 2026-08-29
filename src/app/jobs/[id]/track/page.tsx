@@ -78,12 +78,6 @@ export default function TrackPage() {
     try { await api.notifyComing(getToken(), id); setErr(null); }
     catch (e) { setErr((e as Error).message); }
   };
-  // Proxy mode: ask the server to ring us and bridge to the rider (no number exposed).
-  const callRider = async () => {
-    try { await api.requestCall(getToken(), id); setErr(null); }
-    catch { setErr('Could not place the call — please try again'); }
-  };
-
   const revealCode = async () => {
     try { const r = await api.issueCode(getToken(), id); setDeliveryCode(r.code); }
     catch (e) { setErr((e as Error).message); }
@@ -221,6 +215,17 @@ export default function TrackPage() {
   const step = job ? FLOW.indexOf(job.status) : -1;
   const l = job ? label(job.status) : { text: 'Loading…', color: 'var(--ink-2)' };
   const vehicleLabel = (tk: string | null) => tk === 'BIKE' ? 'Motorcycle' : tk === 'CAR' ? 'Car / Van' : tk === 'KEKE' ? 'Keke' : 'Vehicle';
+  // #4 MULTI-STOP: numbered map markers — the current stop is the first undelivered one.
+  const extraStops = job?.extraStops ?? [];
+  const primaryDelivered = !!job?.primaryStopDeliveredAt || extraStops.some((s) => s.status === 'DELIVERED');
+  const deliveredExtras = extraStops.filter((s) => s.status === 'DELIVERED').length;
+  const allStopsDone = extraStops.length > 0 && primaryDelivered && deliveredExtras >= extraStops.length;
+  const mapStops = extraStops.map((s, i) => ({
+    lat: s.point.lat, lng: s.point.lng,
+    label: s.address || s.area || `Stop ${i + 2}`,
+    done: s.status === 'DELIVERED',
+    current: primaryDelivered && !allStopsDone && i === deliveredExtras,
+  }));
 
   return (
     <main style={{ padding: 20 }}>
@@ -271,7 +276,7 @@ export default function TrackPage() {
       {/* Live map: pickup + drop-off always; the rider marker appears once a rider is assigned and streaming. */}
       {job && (job.pickup || job.dropoff) && (
         <div style={{ marginBottom: 12 }}>
-          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} trail={hasRider ? trail : undefined} route={route} height={360} />
+          <LiveMap pickup={job.pickup} dropoff={job.dropoff} rider={hasRider ? riderPos : null} trail={hasRider ? trail : undefined} route={route} stops={mapStops} height={360} />
           {hasRider && !riderPos && (
             <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center', marginTop: 6 }}>
               WAITING FOR RIDER LOCATION…
@@ -306,12 +311,19 @@ export default function TrackPage() {
             </div>
           </div>
           {/* Present only while the delivery is live — the server stops returning contact once the
-              job ends. Proxy mode requests a call (no number ever sent); direct mode uses tel:. */}
-          {rider?.callMode === 'proxy' ? (
-            <button type="button" onClick={callRider} className="mono rf-chip" style={{ cursor: 'pointer' }}>CALL</button>
-          ) : rider?.phone ? (
-            <a href={`tel:${rider.phone}`} className="mono rf-chip" style={{ textDecoration: 'none' }}>CALL</a>
-          ) : null}
+              job ends. Proxy mode requests a call (no number ever sent); direct mode uses tel:.
+              MESSAGE sits beside CALL so the customer has an obvious way to chat, not just the toggle
+              lower down. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Two ways to call: IN-APP (masked line, private) and CALL OUT (the rider's real number). */}
+            {rider?.callMode === 'proxy' && rider?.callNumber ? (
+              <a href={`tel:${rider.callNumber}`} className="mono rf-chip" style={{ textDecoration: 'none', textAlign: 'center' }}>IN-APP CALL</a>
+            ) : null}
+            {rider?.phone ? (
+              <a href={`tel:${rider.phone}`} className="mono rf-chip" style={{ textDecoration: 'none', textAlign: 'center' }}>CALL OUT</a>
+            ) : null}
+            <button type="button" onClick={() => setShowChat(true)} className="mono rf-chip" style={{ cursor: 'pointer' }}>MESSAGE</button>
+          </div>
         </div>
       ) : (
         <div className="rf-card" style={{ marginBottom: 12, textAlign: 'center', color: 'var(--ink-2)' }}>

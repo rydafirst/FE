@@ -8,9 +8,11 @@ const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const SOCKET_JS = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
 
-// Monochrome basemap (light, label-light) to match the design system. No key required.
-export const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-export const TILE_ATTR = '© OpenStreetMap © CARTO';
+// Keyless OpenStreetMap standard tiles. CARTO's basemaps now watermark unauthenticated tiles with
+// "API KEY REQUIRED"; OSM's are free and unwatermarked. A keyed provider (Mapbox/Google) for the
+// monochrome look is a later, isolated swap of this one constant.
+export const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+export const TILE_ATTR = '© OpenStreetMap';
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {

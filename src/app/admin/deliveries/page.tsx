@@ -5,7 +5,7 @@ import { getToken } from '@/lib/session';
 import { useAdminGuard } from '@/components/AdminNav';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
-const ACTIVE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'];
+const ACTIVE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE', 'EN_ROUTE_STOP'];
 
 type Category = 'all' | 'active' | 'completed' | 'cancelled' | 'failed';
 const FILTERS: { key: Category; label: string }[] = [
@@ -79,19 +79,90 @@ export default function AdminDeliveriesPage() {
       {shown === null && !err && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
       {shown?.length === 0 && <p style={{ color: 'var(--ink-2)', fontSize: 'var(--text-body)' }}>No deliveries here.</p>}
 
-      {shown?.map((d) => (
-        <div key={d.id} className="rf-card" style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 'var(--text-body)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {(d.pickupArea || '—')} → {(d.dropoffArea || '—')}
-            </div>
-            <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 3 }}>
-              {new Date(d.createdAt).toLocaleString('en-NG', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} · {naira(d.amountMinor)} · {d.id.slice(0, 8)}…
-            </div>
+      {shown?.map((d) => <DeliveryRow key={d.id} d={d} />)}
+    </div>
+  );
+}
+
+/**
+ * One delivery row — click to expand. The expanded panel shows the FULL job id with a copy button and,
+ * for a completed/released delivery, one-click payout actions wired straight to this job (no copying an
+ * id into a separate box). This is the admin's "is this rider actually paid, and if not, pay them" path.
+ */
+function DeliveryRow({ d }: { d: AdminDelivery }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  // A payout only exists once the delivery is done — that's when a rider transfer was attempted.
+  const payoutRelevant = d.status === 'COMPLETED' || d.status === 'RELEASED';
+
+  const copyId = async () => {
+    try { await navigator.clipboard.writeText(d.id); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard blocked */ }
+  };
+  const checkStatus = async () => {
+    setBusy(true); setResult(null);
+    try {
+      const s = await api.adminTransferStatus(getToken(), d.id);
+      setResult(`Payout status: ${s.status}${s.reason ? ` — ${s.reason}` : ''}${s.payoutRef ? `\nTransfer ref: ${s.payoutRef}` : ''}`);
+    } catch (e) { setResult(`Status check failed: ${(e as Error).message}`); } finally { setBusy(false); }
+  };
+  const resend = async () => {
+    setBusy(true); setResult(null);
+    try {
+      const r = await api.adminResendPayout(getToken(), d.id);
+      const msg: Record<string, string> = {
+        RESENT: `Re-sent ✓ — a fresh transfer for ${naira(r.amountMinor ?? 0)} was created. Tap "Check payout status" in a minute to confirm it settles.`,
+        ALREADY_SUCCESSFUL: 'No action — the rider has already been paid.',
+        IN_FLIGHT: `No action — the transfer is still ${r.providerStatus}. Wait for it to settle before re-sending.`,
+        UNKNOWN_AMOUNT: 'Cannot re-send — the failed transfer amount could not be read. Needs manual review.',
+      };
+      setResult(msg[r.outcome] ?? `${r.outcome} (${r.providerStatus})`);
+    } catch (e) { setResult(`Re-send failed: ${(e as Error).message}`); } finally { setBusy(false); }
+  };
+
+  const chip = { fontSize: 'var(--text-caption)', borderRadius: 8, padding: '7px 12px', cursor: busy ? 'default' : 'pointer', fontWeight: 600 } as const;
+
+  return (
+    <div className="rf-card" style={{ marginBottom: 8 }}>
+      <button onClick={() => setOpen((o) => !o)}
+        style={{ all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 'var(--text-body)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {(d.pickupArea || '—')} → {(d.dropoffArea || '—')}
           </div>
-          <span className="rf-pill" style={{ background: color(d.status), color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>{d.status.replace(/_/g, ' ')}</span>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 3 }}>
+            {new Date(d.createdAt).toLocaleString('en-NG', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} · {naira(d.amountMinor)} · {d.id.slice(0, 8)}…
+          </div>
         </div>
-      ))}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {d.payoutPending && (
+            <span className="rf-pill" style={{ background: 'var(--danger)', color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>PAYOUT DUE</span>
+          )}
+          <span className="rf-pill" style={{ background: color(d.status), color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>{d.status.replace(/_/g, ' ')}</span>
+          <span className="mono" style={{ color: 'var(--mid)', fontSize: 'var(--text-caption)' }}>{open ? '▲' : '▼'}</span>
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 10, borderTop: '1px solid var(--line-2)', paddingTop: 10 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', wordBreak: 'break-all' }}>JOB ID: {d.id}</span>
+            <button onClick={copyId} className="mono" style={{ ...chip, background: 'none', border: '1px solid var(--line)', color: 'var(--ink)' }}>{copied ? 'COPIED ✓' : 'COPY ID'}</button>
+          </div>
+
+          {payoutRelevant ? (
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              <button onClick={checkStatus} disabled={busy} style={{ ...chip, background: 'none', color: 'var(--ink)', border: '1px solid var(--line)' }}>Check payout status</button>
+              <button onClick={resend} disabled={busy} style={{ ...chip, background: 'var(--success)', color: 'var(--on-dark)', border: 'none' }}>{busy ? 'Working…' : 'Re-send payout'}</button>
+            </div>
+          ) : (
+            <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '8px 0 0' }}>No rider payout yet — a payout exists only after the delivery is completed.</p>
+          )}
+
+          {result && <pre style={{ marginTop: 10, padding: '10px 12px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 'var(--text-caption)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{result}</pre>}
+        </div>
+      )}
     </div>
   );
 }

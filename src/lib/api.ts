@@ -45,10 +45,18 @@ export interface Job {
   fallbackPolicy?: 'WAIT' | 'DELEGATE' | 'RETURN';
   waitStartedAt?: number; waitingFeeMinor?: number; waitingTxId?: string; returnOfJobId?: string;
   returnReserveMinor?: number;
+  // The platform's cut of `amountMinor`. A RIDER's take-home is amountMinor - platformFeeMinor
+  // (use riderNet()); the customer is charged the full amountMinor.
+  platformFeeMinor?: number;
   // #4 MULTI-STOP: extra ordered drop-offs after the primary dropoff (absent on single-stop jobs),
   // plus the timestamp the primary drop-off (stop #1) was confirmed.
   extraStops?: ExtraStop[];
   primaryStopDeliveredAt?: number;
+}
+
+/** A rider's take-home for a job: the customer's charge minus the platform fee. Never show gross to riders. */
+export function riderNet(amountMinor: number, platformFeeMinor?: number): number {
+  return Math.max(0, amountMinor - (platformFeeMinor ?? 0));
 }
 // #4 MULTI-STOP: createJob echoes the plaintext single-use code for each extra stop exactly once, for
 // the booking customer to hand to each recipient (same one-time model as the primary delivery code).
@@ -59,6 +67,10 @@ export interface AvailableJob {
   pickupArea: string; dropoffArea: string; pickupApprox: { lat: number; lng: number };
   tripDistanceMeters: number; tripEtaMin: number;
   toPickupMeters?: number; toPickupEtaMin?: number;
+  // #4 MULTI-STOP: total drop-offs (primary + extras); present only for multi-stop jobs (>1).
+  stopCount?: number;
+  // What the rider is actually paid (customer charge minus the platform fee). Riders see THIS, not gross.
+  riderPayoutMinor: number;
 }
 export interface Notification { id: string; jobId?: string; title: string; body: string; createdAt: number; read: boolean }
 export interface AdminQueueEntry { riderId: string; track: string | null; status: string; oldestPendingAt: number }
@@ -68,7 +80,7 @@ export interface AdminRiderDoc {
 }
 export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: string; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; launchCity: boolean } }
 export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; lateTotal: number; jobs: { id: string; status: string; type: string; late: boolean }[] }
-export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string }
+export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string; payoutPending?: boolean; payoutError?: string }
 export interface AdminFinance { totals: { held: number; released: number; refunded: number; platformRevenue: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
 export interface PendingPayout { id: string; amountMinor: number; createdAt: string; payoutError?: string; payoutRef?: string; dropoffArea?: string; riderName?: string }
 export interface AdminDispute { id: string; jobId: string; openedBy: string; status: string; tier: string; resolution?: string; createdAt: string; resolvedAt?: string }
@@ -89,7 +101,7 @@ export interface RiderProfile { track: VehicleTrack | null; legalName?: string; 
 // says whether it is a proxy number — dial whatever is given and don't cache it.
 // `callMode`: 'proxy' means masked in-app calling is live — request a call (server rings you) with no
 // number exposed; 'direct' means fall back to a tel: link with `phone`.
-export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct' }
+export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct'; callNumber?: string }
 export interface PendingRating { jobId: string; amountMinor: number; createdAt: string; dropoffArea?: string; riderName?: string }
 // ---- Support chat (#5 support + agent hand-off, #6 per-trip support) ----
 export type SupportCategory = 'PAYMENT' | 'DELIVERY_ISSUE' | 'CONDUCT' | 'ACCOUNT' | 'APP_ISSUE' | 'OTHER';

@@ -37,14 +37,10 @@ export default function RiderJob() {
   const [showChat, setShowChat] = useState(false);
   // #0 DIRECT DELIVERY: `now` only drove the waiting-fee meter, now disabled.
   // const [now, setNow] = useState(Date.now());
-  const [customer, setCustomer] = useState<{ name?: string; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct' } | null>(null);
+  const [customer, setCustomer] = useState<{ name?: string; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct'; callNumber?: string } | null>(null);
   const sockRef = useRef<any>(null);
   const { show, node: toast } = useToast();
   // Proxy mode: ask the server to ring us and bridge to the sender (no number exposed).
-  const callCustomer = async () => {
-    try { await api.requestCall(getToken(), id); show('Calling you now — pick up to connect'); }
-    catch { show('Could not place the call — please try again'); }
-  };
   const done = outcome !== null;
   const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   const step = FLOW.indexOf(status as (typeof FLOW)[number]);
@@ -287,14 +283,17 @@ export default function RiderJob() {
                 <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>CUSTOMER</div>
                 <div style={{ fontSize: 'var(--text-body)', fontWeight: 600 }}>{customer?.name || job.customerName || 'Customer'}</div>
               </div>
-              {/* Reach the SENDER — the recipient listed below is a different person. Proxy mode
-                  rings us and bridges (no number shown); direct mode uses tel:. */}
-              {customer?.callMode === 'proxy' ? (
-                <button type="button" onClick={callCustomer} className="mono rf-chip" style={{ cursor: 'pointer' }}>CALL</button>
-              ) : customer?.phone ? (
-                <a href={`tel:${customer.phone}`} className="mono rf-chip" style={{ textDecoration: 'none' }}>CALL</a>
-              ) : null}
-              <button type="button" className="mono rf-chip" onClick={() => setShowChat(true)}>MESSAGE</button>
+              {/* Reach the SENDER — the recipient listed below is a different person. IN-APP CALL uses
+                  the masked line (private); CALL OUT dials the customer's real number. */}
+              <div style={{ display: 'flex', gap: 6 }}>
+                {customer?.callMode === 'proxy' && customer?.callNumber ? (
+                  <a href={`tel:${customer.callNumber}`} className="mono rf-chip" style={{ textDecoration: 'none' }}>IN-APP CALL</a>
+                ) : null}
+                {customer?.phone ? (
+                  <a href={`tel:${customer.phone}`} className="mono rf-chip" style={{ textDecoration: 'none' }}>CALL OUT</a>
+                ) : null}
+                <button type="button" className="mono rf-chip" onClick={() => setShowChat(true)}>MESSAGE</button>
+              </div>
             </div>
           )}
           {job.pickupAddress && <Detail label="Pickup" value={job.pickupAddress} />}

@@ -17,7 +17,7 @@ export function JobsMap({ pins, height = 200 }: { pins: JobPin[]; height?: numbe
       if (cancelled || !elRef.current || mapRef.current) return;
       const c = pins[0] ?? { lat: 6.5244, lng: 3.3792 };
       const map = L.map(elRef.current, { zoomControl: false, attributionControl: false }).setView([c.lat, c.lng], 13);
-      L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 20 }).addTo(map);
+      L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19 }).addTo(map);
       mapRef.current = map;
       draw(L);
     });

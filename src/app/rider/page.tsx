@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { api, type AvailableJob, type Job } from '@/lib/api';
+import { api, riderNet, type AvailableJob, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 // A trip is "active" (resumable) until it reaches a terminal state.
-const ACTIVE = ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'];
+const ACTIVE = ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE', 'EN_ROUTE_STOP'];
 
 export default function RiderHome() {
   const { ready } = useRequireAuth();
@@ -100,7 +100,7 @@ export default function RiderHome() {
       {activeJob && (
         <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 16 }}>
           <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.08em', marginBottom: 4 }}>YOU HAVE AN ACTIVE DELIVERY</div>
-          <b style={{ fontSize: 'var(--text-body)' }}>{naira(activeJob.amountMinor)} · {activeJob.status.replace(/_/g, ' ').toLowerCase()}</b>
+          <b style={{ fontSize: 'var(--text-body)' }}>{naira(riderNet(activeJob.amountMinor, activeJob.platformFeeMinor))} · {activeJob.status.replace(/_/g, ' ').toLowerCase()}</b>
           <div style={{ height: 10 }} />
           <Button onClick={() => (location.href = `/jobs/${activeJob.id}/rider`)}>Resume delivery</Button>
         </div>
@@ -120,7 +120,7 @@ export default function RiderHome() {
 
       {online ? (
         <div style={{ margin: '12px 0' }}>
-          <JobsMap pins={jobs.map((j) => ({ id: j.id, lat: j.pickupApprox.lat, lng: j.pickupApprox.lng, label: naira(j.amountMinor) }))} />
+          <JobsMap pins={jobs.map((j) => ({ id: j.id, lat: j.pickupApprox.lat, lng: j.pickupApprox.lng, label: naira(j.riderPayoutMinor ?? j.amountMinor) }))} />
           <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center', marginTop: 8, letterSpacing: '.06em' }}>
             {jobs.length ? `${jobs.length} JOB${jobs.length > 1 ? 'S' : ''} NEARBY` : 'ONLINE — WAITING FOR JOBS'}
           </div>
@@ -147,11 +147,20 @@ export default function RiderHome() {
             jobs.map((j) => (
               <div key={j.id} className="rf-card" style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{j.type}</span>
-                  <b className="mono" style={{ fontSize: 'var(--text-subtitle)' }}>{naira(j.amountMinor)}</b>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{j.type}</span>
+                    {/* #4 MULTI-STOP: flag extra drop-offs BEFORE the rider accepts. */}
+                    {j.stopCount && j.stopCount > 1 ? (
+                      <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--on-dark)', background: 'var(--ink)', borderRadius: 4, padding: '2px 6px' }}>{j.stopCount} DROPS</span>
+                    ) : null}
+                  </span>
+                  <span style={{ textAlign: 'right' }}>
+                    <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>YOU EARN</div>
+                    <b className="mono" style={{ fontSize: 'var(--text-subtitle)' }}>{naira(j.riderPayoutMinor ?? j.amountMinor)}</b>
+                  </span>
                 </div>
                 <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink)', margin: '6px 0 8px' }}>
-                  {j.pickupArea || 'Nearby'} <span style={{ color: 'var(--mid)' }}>→</span> {j.dropoffArea || 'Nearby'}
+                  {j.pickupArea || 'Nearby'} <span style={{ color: 'var(--mid)' }}>→</span> {j.dropoffArea || 'Nearby'}{j.stopCount && j.stopCount > 1 ? ` +${j.stopCount - 1} more` : ''}
                 </div>
                 <div className="mono" style={{ fontSize: 'var(--text-caption)', letterSpacing: '.04em', margin: '0 0 10px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   {j.toPickupMeters !== undefined && (

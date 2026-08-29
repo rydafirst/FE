@@ -3,11 +3,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BottomNav } from '@/components/BottomNav';
 import { useRequireAuth } from '@/lib/useAuth';
-import { api, type Job } from '@/lib/api';
+import { api, riderNet, type Job } from '@/lib/api';
 import { getToken, getUserRole } from '@/lib/session';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
-const ACTIVE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE'];
+const ACTIVE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE', 'EN_ROUTE_STOP'];
 
 type Category = 'all' | 'active' | 'completed' | 'cancelled' | 'failed';
 const FILTERS: { key: Category; label: string }[] = [
@@ -95,7 +95,8 @@ export default function ActivityPage() {
               <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 3 }}>
                 {new Date(j.createdAt).toLocaleString('en-NG', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
               </div>
-              <b className="mono" style={{ fontSize: 'var(--text-small)', marginTop: 4, display: 'block' }}>{naira(j.amountMinor)}</b>
+              {/* Riders see their take-home (net of the platform fee); customers see what they paid. */}
+              <b className="mono" style={{ fontSize: 'var(--text-small)', marginTop: 4, display: 'block' }}>{naira(isRider ? riderNet(j.amountMinor, j.platformFeeMinor) : j.amountMinor)}</b>
             </div>
             <span className="rf-pill" style={{ background: b.color, color: 'var(--on-dark)', fontSize: 'var(--text-caption)' }}>{b.text.toUpperCase()}</span>
           </div>
