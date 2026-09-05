@@ -7,6 +7,7 @@ import { getUserRole, isLoggedIn } from '@/lib/session';
 export const NAV_ITEMS: { href: string; label: string }[] = [
   { href: '/admin', label: 'Dashboard' },
   { href: '/admin/riders', label: 'Riders' },
+  { href: '/admin/vendors', label: 'Vendors' },
   { href: '/admin/deliveries', label: 'Deliveries' },
   { href: '/admin/finance', label: 'Finance' },
   { href: '/admin/disputes', label: 'Disputes' },

@@ -18,7 +18,7 @@ export default function AdminSettingsPage() {
     api.adminSettings(getToken()).then(setS).catch((e) => setErr((e as Error).message));
   }, [ready, notAdmin]);
 
-  const save = async (patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'launchCity'>>) => {
+  const save = async (patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'launchCity'>>) => {
     setBusy(true); setMsg(null);
     try { setS(await api.adminUpdateSettings(getToken(), patch)); setMsg('Saved'); }
     catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
@@ -35,6 +35,9 @@ export default function AdminSettingsPage() {
 
       {s && (
         <>
+          <Toggle label="Marketplace enabled" hint="Master switch for all vendor + shop features (onboarding, storefront, checkout). Keep OFF until the vendor fund-flow has legal sign-off. When off, every marketplace request is refused server-side, not just hidden."
+            value={s.marketplaceEnabled} overridden={s.overridden.marketplaceEnabled} busy={busy}
+            onChange={(v) => { if (!v || window.confirm('Turn the marketplace ON? Only do this once the vendor payout fund-flow has legal sign-off.')) save({ marketplaceEnabled: v }); }} />
           <Toggle label="Enforce rider clearance" hint="Riders must have all documents approved before going online or accepting jobs."
             value={s.enforceRiderClearance} overridden={s.overridden.enforceRiderClearance} busy={busy}
             onChange={(v) => save({ enforceRiderClearance: v })} />

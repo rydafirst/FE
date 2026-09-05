@@ -28,6 +28,31 @@ export default function RiderJob() {
   const [code, setCode] = useState('');
   // #4 MULTI-STOP: separate code box for the extra-stop confirmation step (EN_ROUTE_STOP).
   const [stopCode, setStopCode] = useState('');
+  // ERRAND: rider captures the vendor's business account at the store (name-verified server-side).
+  const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
+  const [vBank, setVBank] = useState('');
+  const [vAcct, setVAcct] = useState('');
+  const [vBusy, setVBusy] = useState(false);
+  const [vResult, setVResult] = useState<{ accountName: string; match: boolean } | null>(null);
+  useEffect(() => { if (job?.type === 'ERRAND' && banks.length === 0) api.banks(getToken()).then(setBanks).catch(() => {}); }, [job?.type, banks.length]);
+  const captureVendor = async () => {
+    if (!vBank || vAcct.length < 10) return;
+    setVBusy(true);
+    try { setVResult(await api.errandVendorAccount(getToken(), id, vBank, vAcct)); setJob(await api.getJob(getToken(), id)); }
+    catch (e) { show((e as Error).message); }
+    finally { setVBusy(false); }
+  };
+  // ERRAND: the shop price is higher than declared — ask the customer to add the difference (in-app).
+  const [topUpAmt, setTopUpAmt] = useState('');
+  const [topUpBusy, setTopUpBusy] = useState(false);
+  const requestTopUp = async () => {
+    const minor = Math.round(Number(topUpAmt) * 100);
+    if (!minor || minor < 100) { show('Enter how much more the customer should add.'); return; }
+    setTopUpBusy(true);
+    try { await api.errandRequestTopUp(getToken(), id, minor); setTopUpAmt(''); setJob(await api.getJob(getToken(), id)); }
+    catch (e) { show((e as Error).message); }
+    finally { setTopUpBusy(false); }
+  };
   const [outcome, setOutcome] = useState<'paid' | null>(null);
   const [confirming, setConfirming] = useState(false);
   // #0 DIRECT DELIVERY: "receiver not available?" waiting flow removed.
@@ -264,10 +289,68 @@ export default function RiderJob() {
         </div>
       )}
 
+      {/* ERRAND ("buy-for-me"): what to buy + the vendor-account capture at the store. */}
+      {!done && job?.type === 'ERRAND' && job.errand && (
+        <div className="rf-card" style={{ marginBottom: 16, borderColor: 'var(--primary)' }}>
+          <div className="mono" style={{ color: 'var(--primary)', fontSize: 'var(--text-caption)', letterSpacing: '.06em', marginBottom: 8 }}>ERRAND · BUY FOR THE CUSTOMER</div>
+          {job.errand.store?.name && <div style={{ fontSize: 'var(--text-small)', marginBottom: 4 }}><b>Shop:</b> {job.errand.store.name}</div>}
+          <div style={{ fontSize: 'var(--text-small)', marginBottom: 4 }}><b>Buy:</b> {job.errand.shoppingList}</div>
+          <div style={{ fontSize: 'var(--text-small)', marginBottom: 4 }}><b>Amount to spend:</b> {naira(job.errand.goodsMinor)}</div>
+          {job.errand.vendorPaidAt ? (
+            <div style={{ marginTop: 8 }}>
+              <div className="mono" style={{ color: 'var(--success)', marginBottom: 8, fontSize: 'var(--text-caption)' }}>✓ VENDOR PAID — COLLECT THE ITEMS AND DELIVER</div>
+              <a href={`/jobs/${id}/receipt`} target="_blank" rel="noopener noreferrer"><Button variant="ghost">Show payment receipt to shop</Button></a>
+            </div>
+          ) : job.errand.vendorAccount ? (
+            <div className="mono" style={{ color: 'var(--ink-2)', marginTop: 8, fontSize: 'var(--text-caption)' }}>ACCOUNT SENT — WAITING FOR THE CUSTOMER TO APPROVE PAYMENT</div>
+          ) : (
+            <div style={{ marginTop: 10 }}>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 6 }}>ENTER THE SHOP&apos;S BUSINESS ACCOUNT (BUSINESS ACCOUNTS ONLY)</div>
+              <select className="rf-input" value={vBank} onChange={(e) => { setVBank(e.target.value); setVResult(null); }} style={{ width: '100%', marginBottom: 8 }}>
+                <option value="">Select the shop&apos;s bank</option>
+                {banks.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
+              </select>
+              <input className="rf-input" inputMode="numeric" placeholder="Account number (10 digits)" value={vAcct}
+                onChange={(e) => { setVAcct(e.target.value.replace(/\D/g, '').slice(0, 10)); setVResult(null); }} style={{ width: '100%', marginBottom: 8 }} />
+              {vResult ? (
+                <div style={{ border: `1px solid ${vResult.match ? 'var(--success)' : 'var(--warning)'}`, borderRadius: 8, padding: 12 }}>
+                  <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>ACCOUNT NAME</div>
+                  <div style={{ fontWeight: 700, marginTop: 2 }}>{vResult.accountName}</div>
+                  <div className="mono" style={{ color: vResult.match ? 'var(--success)' : 'var(--warning)', marginTop: 6, fontSize: 'var(--text-caption)' }}>
+                    {vResult.match ? '✓ MATCHES THE STORE — WAITING FOR CUSTOMER TO APPROVE' : '⚠ DOESN’T CLEARLY MATCH — THE CUSTOMER MUST CONFIRM'}
+                  </div>
+                </div>
+              ) : (
+                <Button onClick={captureVendor} disabled={vBusy || !vBank || vAcct.length < 10}>{vBusy ? 'Checking…' : 'Confirm vendor account'}</Button>
+              )}
+            </div>
+          )}
+          {/* Shop costs more than declared: ask the customer to add the difference (in-app). */}
+          {!job.errand.vendorPaidAt && (
+            <div style={{ marginTop: 12, borderTop: '1px solid var(--line-2)', paddingTop: 12 }}>
+              {(job.errand.requestedTopUpMinor ?? 0) > 0 ? (
+                <div className="mono" style={{ color: 'var(--warning)', fontSize: 'var(--text-caption)' }}>
+                  ⏳ ASKED THE CUSTOMER FOR {naira(job.errand.requestedTopUpMinor!)} MORE — WAITING FOR THEM TO PAY
+                </div>
+              ) : (
+                <>
+                  <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 6 }}>SHOP COSTS MORE THAN {naira(job.errand.goodsMinor)}?</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input className="rf-input" inputMode="numeric" placeholder="Extra needed (₦)" value={topUpAmt}
+                      onChange={(e) => setTopUpAmt(e.target.value.replace(/[^\d]/g, '').slice(0, 7))} style={{ flex: 1 }} />
+                    <Button onClick={requestTopUp} disabled={topUpBusy || !topUpAmt}>{topUpBusy ? '…' : 'Ask customer'}</Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Delivery details the rider needs to complete the drop. */}
       {!done && job && (
         <div className="rf-card" style={{ marginBottom: 16 }}>
-          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 10 }}>DELIVERY DETAILS</div>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 10 }}>{job.type === 'ERRAND' ? 'DELIVER TO' : 'DELIVERY DETAILS'}</div>
 
           {(customer?.photoUrl || customer?.name || job.customerName) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>

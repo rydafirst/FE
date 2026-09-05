@@ -90,7 +90,9 @@ export default function ActivityPage() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <b style={{ fontSize: 'var(--text-body)', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {j.dropoffArea || j.dropoffAddress || 'Delivery'}
+                {j.type === 'ERRAND'
+                  ? (j.errand?.store?.name ? `Order · ${j.errand.store.name}` : 'Errand')
+                  : (j.dropoffArea || j.dropoffAddress || 'Delivery')}
               </b>
               <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)', marginTop: 3 }}>
                 {new Date(j.createdAt).toLocaleString('en-NG', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}

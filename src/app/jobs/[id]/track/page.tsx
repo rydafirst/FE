@@ -98,6 +98,23 @@ export default function TrackPage() {
   };
   useEffect(() => { api.getAccount(getToken()).then(setRefAcct).catch(() => {}); }, []);
 
+  // ERRAND: approve the shop account the rider captured — releases the goods-money to that account.
+  const approveVendor = async () => {
+    try { await api.errandApproveVendor(getToken(), id); setJob(await api.getJob(getToken(), id)); }
+    catch (e) { setErr((e as Error).message); }
+  };
+  // ERRAND: the shop costs more than declared — add the extra through the app. It's collected via the
+  // hosted checkout and funded by the webhook, then it grows the goods held for the shop (never the rider).
+  const [addingTopUp, setAddingTopUp] = useState(false);
+  const addTopUp = async () => {
+    setAddingTopUp(true);
+    try {
+      const r = await api.errandStartTopUp(getToken(), id, `${window.location.origin}/jobs/${id}/track`);
+      if (r.paymentLink) window.location.href = r.paymentLink;
+    } catch (e) { setErr((e as Error).message); }
+    finally { setAddingTopUp(false); }
+  };
+
   const refresh = async () => {
     try { setJob(await api.getJob(getToken(), id)); setErr(null); }
     catch (e) { setErr((e as Error).message); }
@@ -273,6 +290,43 @@ export default function TrackPage() {
           highlighted. Only rendered when the order has extra stops; single-stop orders are unchanged. */}
       {job?.extraStops?.length ? <StopProgress job={job} /> : null}
 
+      {/* ERRAND ("buy-for-me"): summary + the approve-and-pay step when the rider is at the shop. */}
+      {job?.type === 'ERRAND' && job.errand ? (
+        <div className="rf-card" style={{ marginBottom: 12, borderColor: job.errand.vendorAccount && !job.errand.vendorPaidAt ? 'var(--warning)' : 'var(--line)' }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 6 }}>ERRAND · WE&apos;LL BUY IT FOR YOU</div>
+          <Row label="Buying" value={job.errand.shoppingList} />
+          <Row label="Amount" value={naira(job.errand.goodsMinor)} strong />
+          {!job.errand.vendorPaidAt && (job.errand.requestedTopUpMinor ?? 0) > 0 ? (
+            <div style={{ marginTop: 10, border: '1px solid var(--warning)', borderRadius: 8, padding: 12 }}>
+              <div className="rf-mono" style={{ color: 'var(--warning)', marginBottom: 6 }}>YOUR RIDER NEEDS MORE</div>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 10px', lineHeight: 1.5 }}>
+                The items cost more than expected. Add {naira(job.errand.requestedTopUpMinor!)} so your rider can pay the shop. The money stays in escrow and goes to the shop, never the rider.
+              </p>
+              <Button onClick={addTopUp} disabled={addingTopUp}>{addingTopUp ? 'Opening…' : `Add ${naira(job.errand.requestedTopUpMinor!)}`}</Button>
+            </div>
+          ) : null}
+          {job.errand.vendorPaidAt ? (
+            <div style={{ marginTop: 8 }}>
+              <div className="mono" style={{ color: 'var(--success)', marginBottom: 8, fontSize: 'var(--text-caption)' }}>✓ PAID THE SHOP — YOUR RIDER IS BRINGING YOUR ITEMS</div>
+              <a href={`/jobs/${id}/receipt`} target="_blank" rel="noopener noreferrer"><Button variant="ghost">View payment receipt</Button></a>
+            </div>
+          ) : job.errand.vendorAccount ? (
+            <div style={{ marginTop: 10 }}>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 8px', lineHeight: 1.5 }}>
+                Your rider is at the shop. Confirm the shop&apos;s account, then approve to pay {naira(job.errand.goodsMinor)}.
+              </p>
+              <div style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 10 }}>
+                <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>SHOP ACCOUNT NAME</div>
+                <div style={{ fontSize: 'var(--text-body)', fontWeight: 700, marginTop: 2 }}>{job.errand.vendorAccount.accountName}</div>
+              </div>
+              <Button onClick={approveVendor}>{`Approve & pay ${naira(job.errand.goodsMinor)}`}</Button>
+            </div>
+          ) : (
+            <div className="mono" style={{ color: 'var(--ink-2)', marginTop: 8, fontSize: 'var(--text-caption)' }}>YOUR RIDER WILL ENTER THE SHOP&apos;S ACCOUNT WHEN THEY ARRIVE</div>
+          )}
+        </div>
+      ) : null}
+
       {/* Live map: pickup + drop-off always; the rider marker appears once a rider is assigned and streaming. */}
       {job && (job.pickup || job.dropoff) && (
         <div style={{ marginBottom: 12 }}>
@@ -432,6 +486,15 @@ function StopProgress({ job }: { job: Job }) {
   const total = rows.length;
   const doneCount = rows.filter((r) => r.delivered).length;
   const current = rows.findIndex((r) => !r.delivered);
+  // #4 MULTI-STOP: reveal each EXTRA stop's code on demand (keyed by 0-based extra index) — no screenshot.
+  const [codes, setCodes] = useState<Record<number, string>>({});
+  const [busy, setBusy] = useState<number | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const revealStop = async (extraIdx: number) => {
+    setBusy(extraIdx); setErr(null);
+    try { const r = await api.issueStopCode(getToken(), job.id, extraIdx); setCodes((p) => ({ ...p, [extraIdx]: r.code })); }
+    catch (e) { setErr((e as Error).message); } finally { setBusy(null); }
+  };
   return (
     <div className="rf-card" style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -441,23 +504,45 @@ function StopProgress({ job }: { job: Job }) {
       <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
         {rows.map((r, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: r.delivered ? 'var(--success)' : 'var(--line-2)' }} />)}
       </div>
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-caption)', margin: '0 0 8px' }}>{err}</p>}
       {rows.map((r, i) => {
         const isCurrent = i === current;
+        const extraIdx = i - 1; // rows[0] is the primary; extras start at row 1
+        const isExtra = i >= 1;
         return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderTop: i === 0 ? 'none' : '1px solid var(--line-2)' }}>
-            <span className="mono" style={{
-              width: 20, height: 20, flexShrink: 0, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 'var(--text-caption)', fontWeight: 700,
-              background: r.delivered ? 'var(--success)' : isCurrent ? 'var(--info)' : 'var(--bg-2)',
-              color: r.delivered || isCurrent ? 'var(--on-dark)' : 'var(--ink-2)',
-              border: r.delivered || isCurrent ? 'none' : '1px solid var(--line)',
-            }}>{r.delivered ? '✓' : i + 1}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 'var(--text-small)', fontWeight: isCurrent ? 600 : 400, color: r.delivered ? 'var(--ink-2)' : 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.label}</div>
+          <div key={i} style={{ padding: '7px 0', borderTop: i === 0 ? 'none' : '1px solid var(--line-2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="mono" style={{
+                width: 20, height: 20, flexShrink: 0, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 'var(--text-caption)', fontWeight: 700,
+                background: r.delivered ? 'var(--success)' : isCurrent ? 'var(--info)' : 'var(--bg-2)',
+                color: r.delivered || isCurrent ? 'var(--on-dark)' : 'var(--ink-2)',
+                border: r.delivered || isCurrent ? 'none' : '1px solid var(--line)',
+              }}>{r.delivered ? '✓' : i + 1}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 'var(--text-small)', fontWeight: isCurrent ? 600 : 400, color: r.delivered ? 'var(--ink-2)' : 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.label}</div>
+              </div>
+              <span className="mono" style={{ fontSize: 'var(--text-caption)', letterSpacing: '.05em', color: r.delivered ? 'var(--success)' : isCurrent ? 'var(--info)' : 'var(--ink-2)' }}>
+                {r.delivered ? 'DELIVERED' : isCurrent ? 'CURRENT' : 'PENDING'}
+              </span>
             </div>
-            <span className="mono" style={{ fontSize: 'var(--text-caption)', letterSpacing: '.05em', color: r.delivered ? 'var(--success)' : isCurrent ? 'var(--info)' : 'var(--ink-2)' }}>
-              {r.delivered ? 'DELIVERED' : isCurrent ? 'CURRENT' : 'PENDING'}
-            </span>
+            {/* Reveal THIS extra stop's code on demand (extra stops only; the primary has its own reveal). */}
+            {isExtra && !r.delivered && (
+              <div style={{ marginLeft: 30, marginTop: 6 }}>
+                {codes[extraIdx] ? (
+                  <div>
+                    <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>CODE FOR STOP {i + 1}</div>
+                    <div className="mono" style={{ fontSize: 'var(--text-subtitle)', fontWeight: 700, letterSpacing: 4 }}>{codes[extraIdx]}</div>
+                    <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>GIVE THIS TO THE PERSON AT STOP {i + 1}</div>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => revealStop(extraIdx)} disabled={busy === extraIdx} className="mono"
+                    style={{ fontSize: 'var(--text-caption)', background: 'none', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 10px', cursor: busy === extraIdx ? 'default' : 'pointer' }}>
+                    {busy === extraIdx ? 'REVEALING…' : `REVEAL CODE FOR STOP ${i + 1}`}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         );
       })}

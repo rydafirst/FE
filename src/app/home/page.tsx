@@ -34,6 +34,8 @@ const emptyStop = (): ExtraStopForm => ({ place: null, recipientName: '', recipi
 export default function HomePage() {
   const { ready } = useRequireAuth();
   const [type, setType] = useState<JobType>('DELIVERY');
+  const [marketplaceOn, setMarketplaceOn] = useState(false); // hidden until the public config confirms it
+  useEffect(() => { api.publicConfig().then((c) => setMarketplaceOn(c.marketplaceEnabled)).catch(() => {}); }, []);
   const [pickup, setPickup] = useState<Place | null>(null);
   const [locateSignal, setLocateSignal] = useState(0);
   const [showLocPrompt, setShowLocPrompt] = useState(false);
@@ -210,7 +212,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         {(['DELIVERY', 'RIDE'] as JobType[]).map((t) => (
           <button key={t} onClick={() => { setType(t); setQuote(null); }} className="mono"
             style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-caption)', letterSpacing: '.06em',
@@ -218,6 +220,38 @@ export default function HomePage() {
               color: type === t ? 'var(--ink)' : 'var(--mid)' }}>{t}</button>
         ))}
       </div>
+
+      {/* ERRAND ("buy-for-me"): a distinct flow — a rider buys something for you and delivers it. */}
+      <a href="/errand" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--line)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+        <span style={{ width: 38, height: 38, borderRadius: 19, background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🛍️</span>
+        <span style={{ flex: 1 }}>
+          <b style={{ fontSize: 'var(--text-body)', color: 'var(--ink)', display: 'block' }}>Send an errand</b>
+          <span style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)' }}>Need something bought and delivered? Tap here.</span>
+        </span>
+        <span className="mono" style={{ color: 'var(--mid)' }}>→</span>
+      </a>
+
+      {/* MARKETPLACE: browse/sell. Both entry points are hidden while the marketplace master switch is off. */}
+      {marketplaceOn && (<>
+      <a href="/shop" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--line)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+        <span style={{ width: 38, height: 38, borderRadius: 19, background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🛒</span>
+        <span style={{ flex: 1 }}>
+          <b style={{ fontSize: 'var(--text-body)', color: 'var(--ink)', display: 'block' }}>Shop from vendors</b>
+          <span style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)' }}>Order products and we deliver them to you.</span>
+        </span>
+        <span className="mono" style={{ color: 'var(--mid)' }}>→</span>
+      </a>
+
+      {/* MARKETPLACE: become a vendor / manage your shop. */}
+      <a href="/vendor" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--line)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+        <span style={{ width: 38, height: 38, borderRadius: 19, background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏪</span>
+        <span style={{ flex: 1 }}>
+          <b style={{ fontSize: 'var(--text-body)', color: 'var(--ink)', display: 'block' }}>Sell on Rydafirst</b>
+          <span style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)' }}>Register your shop and list your products.</span>
+        </span>
+        <span className="mono" style={{ color: 'var(--mid)' }}>→</span>
+      </a>
+      </>)}
 
       {/* #2 COMING SOON: Rydafirst is licensed as a courier, not a ride-hailing operator, so the Ride
           tab shows an on-brand Coming Soon panel and can't be quoted/paid. Delivery stays fully live. */}
