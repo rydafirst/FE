@@ -16,6 +16,7 @@ export interface ErrandDetails {
   shoppingList: string;
   store?: { name?: string; area?: string; address?: string };
   vendorAccount?: { bankCode: string; accountNumber: string; accountName: string };
+  accountByCustomer?: boolean;
   vendorApproved?: boolean;
   vendorPaidAt?: number;
   deliveryFeeMinor?: number;
@@ -41,6 +42,17 @@ export interface Product {
 export interface VendorOrder {
   id: string; status: string; createdAt: string; goodsMinor: number; deliveryFeeMinor: number;
   items: string; customerName?: string; vendorPaidAt?: number; vendorPayoutRef?: string;
+}
+export interface LateReport {
+  id: string; jobId: string; riderId: string; reporterId: string;
+  status: 'PENDING' | 'UPHELD' | 'WAIVED' | 'DISMISSED';
+  verdict: 'ON_TIME' | 'LATE' | 'UNCERTAIN';
+  actualSec: number; staticEtaSec: number; trafficAwareSec?: number; deliveryFeeMinor: number;
+  forfeitMinor?: number; reviewedBy?: string; reviewedAt?: number; createdAt: number;
+}
+export interface RiderReliabilitySummary {
+  riderId: string; activeStrikes: number; totalStrikes: number; suspendedUntil: number | null;
+  score: number; reports: LateReport[];
 }
 export interface GeoPoint { lat: number; lng: number }
 export interface Quote { quoteToken: string; amountMinor: number; currency: 'NGN'; breakdown: {
@@ -91,6 +103,18 @@ export interface Job {
 export function riderNet(amountMinor: number, platformFeeMinor?: number): number {
   return Math.max(0, amountMinor - (platformFeeMinor ?? 0));
 }
+/**
+ * What the RIDER actually earns on a job — the number shown under a job on the rider side.
+ * For an ERRAND the customer's charge (amountMinor) includes the ITEM money that goes to the shop; the
+ * rider earns only the delivery fee (minus platform fee), NEVER the goods. For a normal delivery it's
+ * the take-home. Use this — not riderNet(amountMinor) — anywhere the rider sees their pay for an errand.
+ */
+export function riderJobPayout(job: Job): number {
+  const grossFare = job.type === 'ERRAND' && job.errand
+    ? (job.errand.deliveryFeeMinor ?? Math.max(0, job.amountMinor - job.errand.goodsMinor))
+    : job.amountMinor;
+  return Math.max(0, grossFare - (job.platformFeeMinor ?? 0));
+}
 // #4 MULTI-STOP: createJob echoes the plaintext single-use code for each extra stop exactly once, for
 // the booking customer to hand to each recipient (same one-time model as the primary delivery code).
 export type CreatedJob = Job & { paymentLink?: string; extraStopCodes?: string[] };
@@ -111,7 +135,7 @@ export interface AdminRiderDoc {
   id: string; type: string; label: string; status: string; version: number;
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
-export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; launchCity: string; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; launchCity: boolean } }
+export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: string; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: boolean } }
 export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; lateTotal: number; jobs: { id: string; status: string; type: string; late: boolean }[] }
 export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string; payoutPending?: boolean; payoutError?: string }
 export interface AdminFinance { totals: { held: number; released: number; refunded: number; platformRevenue: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
@@ -198,7 +222,7 @@ export const api = {
   createErrand: (token: string, body: {
     quoteToken: string; goodsMinor: number; shoppingList: string;
     storeName?: string; storeArea?: string; storeAddress?: string; dropoffAddress?: string; dropoffArea?: string;
-    customerName?: string; returnUrl?: string;
+    customerName?: string; returnUrl?: string; bankCode?: string; accountNumber?: string;
   }) => call<Job & { paymentLink?: string }>(`/jobs/errand`, { method: 'POST', token, headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(body) }),
   errandVendorAccount: (token: string, id: string, bankCode: string, accountNumber: string) =>
     call<{ accountName: string; match: boolean }>(`/jobs/${id}/errand/vendor-account`, { method: 'POST', token, body: JSON.stringify({ bankCode, accountNumber }) }),
@@ -212,6 +236,16 @@ export const api = {
   errandConfirmTopUp: (token: string, id: string, transactionId: string) =>
     call<{ funded: boolean; goodsMinor: number }>(`/jobs/${id}/errand/confirm-topup`, { method: 'POST', token, body: JSON.stringify({ transactionId }) }),
   errandReceipt: (token: string, id: string) => call<ErrandReceipt>(`/jobs/${id}/errand/receipt`, { token }),
+  reportLate: (token: string, id: string) => call<{ reportId: string; verdict: string; status: string }>(`/jobs/${id}/report-late`, { method: 'POST', token }),
+  // ---- Admin: rider reliability ----
+  adminReliabilityReports: (token: string) => call<LateReport[]>(`/admin/reliability/reports`, { token }),
+  adminUpholdReport: (token: string, id: string) => call<LateReport>(`/admin/reliability/reports/${id}/uphold`, { method: 'POST', token }),
+  adminWaiveReport: (token: string, id: string) => call<LateReport>(`/admin/reliability/reports/${id}/waive`, { method: 'POST', token }),
+  adminRiderReliability: (token: string, riderId: string) => call<RiderReliabilitySummary>(`/admin/reliability/riders/${riderId}`, { token }),
+  adminRiderStrike: (token: string, riderId: string, body: { jobId?: string; reason?: string }) =>
+    call<{ ok?: boolean }>(`/admin/reliability/riders/${riderId}/strike`, { method: 'POST', token, body: JSON.stringify(body) }),
+  adminLiftSuspension: (token: string, riderId: string) =>
+    call<{ ok?: boolean }>(`/admin/reliability/riders/${riderId}/lift-suspension`, { method: 'POST', token }),
   getJob: (token: string, id: string) => call<Job>(`/jobs/${id}`, { token }),
   confirmCode: (token: string, id: string, code: string) =>
     call<{ status: string }>(`/jobs/${id}/confirm-code`, {
@@ -314,7 +348,7 @@ export const api = {
   adminVerifyRiderName: (token: string, riderId: string, verified: boolean) =>
     call<{ ok?: boolean }>(`/admin/documents/riders/${riderId}/verify-name`, { method: 'POST', token, body: JSON.stringify({ verified }) }),
   adminSettings: (token: string) => call<EffectiveSettings>(`/admin/settings`, { token }),
-  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'launchCity'>>) =>
+  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity'>>) =>
     call<EffectiveSettings>(`/admin/settings`, { method: 'PUT', token, body: JSON.stringify(patch) }),
   publicConfig: () => call<{ marketplaceEnabled: boolean }>(`/config`),
   adminOps: (token: string) => call<AdminOps>(`/admin/ops/jobs/active`, { token }),

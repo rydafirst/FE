@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { AddressInput, type Place } from '@/components/AddressInput';
 import { MapPreview } from '@/components/MapPreview';
-import { api, type JobType, type Quote, type Job, type CreatedJob } from '@/lib/api';
+import { api, type JobType, type Quote, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -50,7 +50,6 @@ export default function HomePage() {
   const [extraStops, setExtraStops] = useState<ExtraStopForm[]>([]);
   // #4 MULTI-STOP: after booking a multi-stop order we hold the created job so we can show the
   // customer each stop's one-time code (returned once) before sending them on to pay.
-  const [booked, setBooked] = useState<{ job: CreatedJob; link: string } | null>(null);
   const [item, setItem] = useState('');
   const [weight, setWeight] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -148,44 +147,16 @@ export default function HomePage() {
       };
       const job = await api.createJob(getToken(), body);
       const link = (job as { paymentLink?: string }).paymentLink ?? `/jobs/${job.id}/track`;
-      // #4 MULTI-STOP: if the server returned one-time codes for the extra stops, show them once so the
-      // customer can share each with its recipient BEFORE we send them off to pay. Single-stop bookings
-      // (no codes) go straight to checkout, exactly as before.
-      if (job.extraStopCodes && job.extraStopCodes.length) { setBooked({ job, link }); return; }
+      // #4 MULTI-STOP: we no longer show the booking-time stop codes. Revealing a stop code on the Track
+      // screen mints a fresh single-use code that invalidates any earlier one, so a code shown here would
+      // already be stale by the time the rider reaches that stop. The customer reveals each stop's code on
+      // the Track screen when handing it to the rider. Every booking goes straight to checkout.
       // Redirect to the Flutterwave hosted checkout; after paying, the customer returns to tracking.
       location.href = link;
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
 
   if (!ready) return null;
-
-  // #4 MULTI-STOP: one-time codes handoff. The extra-stop codes are shown exactly once here, so the
-  // customer can note/share each with its recipient before continuing to payment. (The primary stop's
-  // code is still revealed later on the tracking screen, unchanged.)
-  if (booked) {
-    const codes = booked.job.extraStopCodes ?? [];
-    return (
-      <main style={{ padding: 20, paddingBottom: 96 }}>
-        <div className="rf-card" style={{ border: '1px solid var(--ink)' }}>
-          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.08em', marginBottom: 6 }}>SHARE YOUR STOP CODES</div>
-          <b style={{ fontSize: 'var(--text-subtitle)' }}>Give each recipient their code</b>
-          <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', lineHeight: 1.5, margin: '8px 0 14px' }}>
-            The rider needs each stop&apos;s code to hand over. Share them now — they&apos;re shown once. Your first drop-off&apos;s
-            code is revealed on the tracking screen.
-          </p>
-          {codes.map((code, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i === 0 ? '1px solid var(--line)' : '1px solid var(--line-2)' }}>
-              <span style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)' }}>Stop {i + 2} code</span>
-              <span className="mono" style={{ fontSize: 'var(--text-heading)', fontWeight: 700, letterSpacing: '.3em' }}>{code}</span>
-            </div>
-          ))}
-          <div style={{ height: 14 }} />
-          <Button onClick={() => { location.href = booked.link; }}>Continue to payment</Button>
-        </div>
-        <BottomNav />
-      </main>
-    );
-  }
 
   return (
     <main style={{ padding: 20, paddingBottom: 96 }}>

@@ -17,6 +17,10 @@ const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFr
 const FLOW = ['FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'EN_ROUTE_STOP', 'COMPLETED', 'RELEASED'];
 // A customer can cancel (and be refunded) any time before the parcel is picked up.
 const CANCELLABLE = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP'];
+// ERRAND SECURITY: the customer can only approve the shop payment once the rider has GPS-reached the
+// shop (mirrors the backend gate). Before that, the approve button is replaced with a waiting note.
+const PRE_ARRIVAL_STATUSES = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP'];
+const hasReachedStore = (status: string) => !PRE_ARRIVAL_STATUSES.includes(status);
 
 function label(status: string): { text: string; color: string } {
   switch (status) {
@@ -118,6 +122,20 @@ export default function TrackPage() {
   const refresh = async () => {
     try { setJob(await api.getJob(getToken(), id)); setErr(null); }
     catch (e) { setErr((e as Error).message); }
+  };
+
+  // RELIABILITY: report a completed delivery as late. The server times it against a traffic-aware ETA
+  // and either flags it for admin review or clears it as on-time — no penalty is applied here.
+  const [reportingLate, setReportingLate] = useState(false);
+  const [lateResult, setLateResult] = useState<string | null>(null);
+  const reportLate = async () => {
+    setReportingLate(true); setErr(null);
+    try {
+      const r = await api.reportLate(getToken(), id);
+      setLateResult(r.verdict === 'LATE' ? 'Reported — that delivery was late. Thank you.'
+        : r.verdict === 'ON_TIME' ? 'We checked the timing — this delivery was on time.'
+        : 'Reported — our team will review it.');
+    } catch (e) { setErr((e as Error).message); } finally { setReportingLate(false); }
   };
 
   // On return from Flutterwave, verify the transaction and fund the job (webhook-independent),
@@ -310,16 +328,20 @@ export default function TrackPage() {
               <div className="mono" style={{ color: 'var(--success)', marginBottom: 8, fontSize: 'var(--text-caption)' }}>✓ PAID THE SHOP — YOUR RIDER IS BRINGING YOUR ITEMS</div>
               <a href={`/jobs/${id}/receipt`} target="_blank" rel="noopener noreferrer"><Button variant="ghost">View payment receipt</Button></a>
             </div>
-          ) : job.errand.vendorAccount ? (
+          ) : job.errand.vendorAccount && hasReachedStore(job.status) ? (
             <div style={{ marginTop: 10 }}>
               <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 8px', lineHeight: 1.5 }}>
                 Your rider is at the shop. Confirm the shop&apos;s account, then approve to pay {naira(job.errand.goodsMinor)}.
               </p>
               <div style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 10 }}>
-                <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>SHOP ACCOUNT NAME</div>
+                <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>SHOP ACCOUNT NAME{job.errand.accountByCustomer ? ' (YOU ENTERED THIS)' : ''}</div>
                 <div style={{ fontSize: 'var(--text-body)', fontWeight: 700, marginTop: 2 }}>{job.errand.vendorAccount.accountName}</div>
               </div>
               <Button onClick={approveVendor}>{`Approve & pay ${naira(job.errand.goodsMinor)}`}</Button>
+            </div>
+          ) : job.errand.vendorAccount ? (
+            <div className="mono" style={{ color: 'var(--ink-2)', marginTop: 8, fontSize: 'var(--text-caption)', lineHeight: 1.5 }}>
+              YOUR RIDER IS ON THE WAY — YOU&apos;LL APPROVE THE SHOP PAYMENT ONCE THEY REACH THE SHOP
             </div>
           ) : (
             <div className="mono" style={{ color: 'var(--ink-2)', marginTop: 8, fontSize: 'var(--text-caption)' }}>YOUR RIDER WILL ENTER THE SHOP&apos;S ACCOUNT WHEN THEY ARRIVE</div>
@@ -460,6 +482,16 @@ export default function TrackPage() {
             CANCEL THIS ORDER →
           </button>
         )
+      )}
+
+      {job && (job.status === 'COMPLETED' || job.status === 'RELEASED') && (
+        <div style={{ marginBottom: 12 }}>
+          {lateResult ? (
+            <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center', lineHeight: 1.5 }}>{lateResult.toUpperCase()}</p>
+          ) : (
+            <Button variant="ghost" onClick={reportLate} disabled={reportingLate}>{reportingLate ? 'Reporting…' : 'Report late delivery'}</Button>
+          )}
+        </div>
       )}
 
       <div style={{ marginBottom: 12 }}>

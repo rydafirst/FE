@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { api, riderNet, type AvailableJob, type Job } from '@/lib/api';
+import { api, riderJobPayout, type AvailableJob, type Job } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { BottomNav } from '@/components/BottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -100,7 +100,7 @@ export default function RiderHome() {
       {activeJob && (
         <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 16 }}>
           <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.08em', marginBottom: 4 }}>YOU HAVE AN ACTIVE DELIVERY</div>
-          <b style={{ fontSize: 'var(--text-body)' }}>{naira(riderNet(activeJob.amountMinor, activeJob.platformFeeMinor))} · {activeJob.status.replace(/_/g, ' ').toLowerCase()}</b>
+          <b style={{ fontSize: 'var(--text-body)' }}>{naira(riderJobPayout(activeJob))} · {activeJob.status.replace(/_/g, ' ').toLowerCase()}</b>
           <div style={{ height: 10 }} />
           <Button onClick={() => (location.href = `/jobs/${activeJob.id}/rider`)}>Resume delivery</Button>
         </div>

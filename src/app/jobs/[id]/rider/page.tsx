@@ -15,6 +15,10 @@ const FLOW = ['EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP'] as
 const LABEL: Record<(typeof FLOW)[number], string> = {
   EN_ROUTE_PICKUP: 'Heading to pickup', AT_PICKUP: 'At pickup', IN_PROGRESS: 'Picked up', EN_ROUTE_DROP: 'Heading to drop',
 };
+// ERRAND SECURITY: the shop-account capture form only appears once the rider has actually reached the
+// shop (GPS-verified AT_PICKUP). Mirrors the backend geofence gate on the capture endpoint.
+const PRE_ARRIVAL_STATUSES = ['CREATED', 'FUNDED', 'SEARCHING', 'ACCEPTED', 'EN_ROUTE_PICKUP'];
+const hasReachedStore = (status: string) => !PRE_ARRIVAL_STATUSES.includes(status);
 // #0 DIRECT DELIVERY: the Wait/Delegate/Return fallback is disabled for launch. The rider page keeps
 // its core flow (advance → arrive → confirm code); the waiting-fee / return machinery is commented out.
 // type Fallback = 'WAIT' | 'DELEGATE' | 'RETURN';
@@ -302,7 +306,13 @@ export default function RiderJob() {
               <a href={`/jobs/${id}/receipt`} target="_blank" rel="noopener noreferrer"><Button variant="ghost">Show payment receipt to shop</Button></a>
             </div>
           ) : job.errand.vendorAccount ? (
-            <div className="mono" style={{ color: 'var(--ink-2)', marginTop: 8, fontSize: 'var(--text-caption)' }}>ACCOUNT SENT — WAITING FOR THE CUSTOMER TO APPROVE PAYMENT</div>
+            <div className="mono" style={{ color: 'var(--ink-2)', marginTop: 8, fontSize: 'var(--text-caption)' }}>
+              {job.errand.accountByCustomer ? 'CUSTOMER PROVIDED THE SHOP ACCOUNT — WAITING FOR THEM TO APPROVE PAYMENT' : 'ACCOUNT SENT — WAITING FOR THE CUSTOMER TO APPROVE PAYMENT'}
+            </div>
+          ) : !hasReachedStore(status) ? (
+            <div className="mono" style={{ color: 'var(--ink-2)', marginTop: 10, fontSize: 'var(--text-caption)', lineHeight: 1.5 }}>
+              HEAD TO THE SHOP — THE ACCOUNT FORM OPENS WHEN YOU ARRIVE (GPS-VERIFIED)
+            </div>
           ) : (
             <div style={{ marginTop: 10 }}>
               <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 6 }}>ENTER THE SHOP&apos;S BUSINESS ACCOUNT (BUSINESS ACCOUNTS ONLY)</div>

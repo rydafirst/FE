@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { AddressInput, type Place } from '@/components/AddressInput';
 import { api, type Quote } from '@/lib/api';
@@ -24,6 +24,12 @@ export default function ErrandPage() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // OPTIONAL: if the customer already has the shop's account (e.g. they called the shop) they can enter
+  // it now. It's name-matched server-side, and only paid after the rider actually reaches the shop.
+  const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
+  const [bankCode, setBankCode] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  useEffect(() => { api.banks(getToken()).then(setBanks).catch(() => {}); }, []);
 
   const goodsMinor = Math.round((Number(amount.replace(/[^\d]/g, '')) || 0) * 100);
 
@@ -48,6 +54,7 @@ export default function ErrandPage() {
         ...(shop.area ? { storeArea: shop.area } : {}),
         ...(dropoff.label ? { dropoffAddress: dropoff.label } : {}),
         ...(dropoff.area ? { dropoffArea: dropoff.area } : {}),
+        ...(bankCode && accountNumber.length >= 10 ? { bankCode, accountNumber } : {}),
       });
       location.href = (job as { paymentLink?: string }).paymentLink ?? `/jobs/${job.id}/track`;
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
@@ -77,6 +84,19 @@ export default function ErrandPage() {
       <input className="rf-input" inputMode="numeric" style={{ width: '100%', margin: '4px 0 4px' }} value={amount} onChange={(e) => { setAmount(e.target.value.replace(/[^\d]/g, '')); setQuote(null); }} placeholder="e.g. 5000" />
       <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '0 0 14px', lineHeight: 1.5 }}>
         Enter what the items cost. If it&apos;s more at the shop, your rider will ask and you can top up in the app.
+      </p>
+
+      {/* OPTIONAL: pre-enter the shop's account if the customer already has it (name-matched server-side,
+          paid only after the rider reaches the shop). Blank = the rider collects it at the shop. */}
+      <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>SHOP ACCOUNT — OPTIONAL (IF YOU ALREADY HAVE IT)</label>
+      <select className="rf-input" style={{ width: '100%', margin: '4px 0 8px' }} value={bankCode} onChange={(e) => { setBankCode(e.target.value); setQuote(null); }}>
+        <option value="">Select the shop&apos;s bank</option>
+        {banks.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
+      </select>
+      <input className="rf-input" inputMode="numeric" maxLength={10} style={{ width: '100%', margin: '0 0 4px' }}
+        value={accountNumber} onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setQuote(null); }} placeholder="Shop account number (10 digits)" />
+      <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '0 0 14px', lineHeight: 1.5 }}>
+        Leave this blank if you don&apos;t have it — your rider will collect it at the shop. Either way we verify the name matches before paying.
       </p>
 
       {!quote ? (
