@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
         {stats.map((s) => (
           <Link key={s.label} href={s.href} className="rf-card" style={{ textDecoration: 'none', color: 'inherit', padding: '16px 18px', borderColor: s.alert ? 'var(--danger)' : undefined }}>
             <div className="mono" style={{ fontSize: 'var(--text-caption)', color: s.alert ? 'var(--danger)' : 'var(--ink-2)', letterSpacing: '.05em' }}>{s.label.toUpperCase()}</div>
-            <div style={{ fontSize: 'var(--text-title)', fontWeight: 700, marginTop: 6, letterSpacing: '-0.02em' }}>{s.value}</div>
+            <div style={{ fontSize: 'var(--text-title)', fontWeight: 700, marginTop: 6, letterSpacing: '-0.02em', overflowWrap: 'anywhere' }}>{s.value}</div>
           </Link>
         ))}
       </div>
@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
       <div className="admin-dash-grid">
         {/* Live activity feed */}
         <div className="rf-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
             <b style={{ fontSize: 'var(--text-body)' }}>Live activity</b>
             <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LATEST BOOKINGS &amp; DELIVERIES</span>
           </div>

@@ -79,7 +79,7 @@ export default function AdminDeliveriesPage() {
       {shown === null && !err && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
       {shown?.length === 0 && <p style={{ color: 'var(--ink-2)', fontSize: 'var(--text-body)' }}>No deliveries here.</p>}
 
-      {shown?.map((d) => <DeliveryRow key={d.id} d={d} />)}
+      {shown?.map((d) => <DeliveryRow key={d.id} d={d} onChanged={load} />)}
     </div>
   );
 }
@@ -89,13 +89,25 @@ export default function AdminDeliveriesPage() {
  * for a completed/released delivery, one-click payout actions wired straight to this job (no copying an
  * id into a separate box). This is the admin's "is this rider actually paid, and if not, pay them" path.
  */
-function DeliveryRow({ d }: { d: AdminDelivery }) {
+function DeliveryRow({ d, onChanged }: { d: AdminDelivery; onChanged: () => void }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   // A payout only exists once the delivery is done — that's when a rider transfer was attempted.
   const payoutRelevant = d.status === 'COMPLETED' || d.status === 'RELEASED';
+  // A stuck/non-functioning delivery can be voided while it's not yet settled. Voiding refunds if funded.
+  const voidable = !['COMPLETED', 'RELEASED', 'CANCELLED', 'DISPUTE_RESOLVED'].includes(d.status);
+
+  const voidDelivery = async () => {
+    if (!window.confirm(`Void this delivery (${d.pickupArea || '—'} → ${d.dropoffArea || '—'})? It will be cancelled and stop showing as live. If it was paid, the customer is refunded in full.`)) return;
+    setBusy(true); setResult(null);
+    try {
+      const r = await api.adminVoidDelivery(getToken(), d.id);
+      setResult(r.refunded ? 'Voided ✓ — cancelled and the customer was refunded in full.' : 'Voided ✓ — cancelled (nothing was charged, so no refund needed).');
+      onChanged();
+    } catch (e) { setResult(`Void failed: ${(e as Error).message}`); } finally { setBusy(false); }
+  };
 
   const copyId = async () => {
     try { await navigator.clipboard.writeText(d.id); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard blocked */ }
@@ -158,6 +170,16 @@ function DeliveryRow({ d }: { d: AdminDelivery }) {
             </div>
           ) : (
             <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '8px 0 0' }}>No rider payout yet — a payout exists only after the delivery is completed.</p>
+          )}
+
+          {/* Remove a stuck / non-functioning delivery so it stops showing as live. */}
+          {voidable && (
+            <div style={{ marginTop: 10, borderTop: '1px solid var(--line-2)', paddingTop: 10 }}>
+              <button onClick={voidDelivery} disabled={busy}
+                style={{ ...chip, background: 'none', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
+                {busy ? 'Working…' : 'Void this delivery (cancel & hide)'}
+              </button>
+            </div>
           )}
 
           {result && <pre style={{ marginTop: 10, padding: '10px 12px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 'var(--text-caption)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{result}</pre>}

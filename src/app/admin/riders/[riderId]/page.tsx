@@ -49,6 +49,16 @@ export default function AdminRiderPage() {
     catch (e) { setErr((e as Error).message); } finally { setBusy(null); }
   };
 
+  // Undo a mistaken approval: this pushes the document back to REJECTED, which un-clears the rider and
+  // lets them re-upload it from their app. Same backend path as a reject, with a clear default reason.
+  const revoke = async (doc: AdminRiderDoc) => {
+    const reason = window.prompt(`Undo approval of "${doc.label}"? The rider will be asked to re-upload it. Reason shown to them:`, 'Approved in error — please re-upload a clear copy.');
+    if (!reason || reason.trim().length < 3) return;
+    setBusy(doc.id);
+    try { await api.adminRejectDocument(getToken(), doc.id, reason.trim()); await load(); }
+    catch (e) { setErr((e as Error).message); } finally { setBusy(null); }
+  };
+
   if (!ready) return null;
 
   return (
@@ -115,7 +125,7 @@ export default function AdminRiderPage() {
             <div style={{ fontSize: 'var(--text-small)', color: 'var(--danger)', marginTop: 8 }}>Rejected: {doc.rejectionReason}</div>
           )}
 
-          {doc.status !== 'APPROVED' && (
+          {doc.status !== 'APPROVED' ? (
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button onClick={() => approve(doc)} disabled={busy === doc.id} className="rf-btn"
                 style={{ flex: 1, background: 'var(--ink)', color: 'var(--on-dark)', opacity: busy === doc.id ? 0.6 : 1 }}>
@@ -124,6 +134,14 @@ export default function AdminRiderPage() {
               <button onClick={() => reject(doc)} disabled={busy === doc.id} className="rf-btn"
                 style={{ flex: 1, background: 'var(--bg)', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
                 Reject
+              </button>
+            </div>
+          ) : (
+            /* Already approved — allow undoing a mistaken approval so the rider can re-upload. */
+            <div style={{ marginTop: 12 }}>
+              <button onClick={() => revoke(doc)} disabled={busy === doc.id} className="rf-btn"
+                style={{ width: '100%', background: 'var(--bg)', color: 'var(--danger)', border: '1px solid var(--danger)', opacity: busy === doc.id ? 0.6 : 1 }}>
+                {busy === doc.id ? '…' : 'Undo approval (ask rider to re-upload)'}
               </button>
             </div>
           )}
