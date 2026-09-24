@@ -6,6 +6,7 @@ import { api, VEHICLE_COLORS, type ChecklistItem, type DocChecklist, type DocSta
 import { getToken } from '@/lib/session';
 
 const TRACKS: { value: VehicleTrack; label: string; hint: string }[] = [
+  { value: 'BICYCLE', label: 'Bicycle', hint: 'Pedal bike · lightest documents' },
   { value: 'BIKE', label: 'Motorcycle', hint: 'Dispatch bike' },
   { value: 'CAR', label: 'Car / Van', hint: 'Larger loads' },
   { value: 'KEKE', label: 'Keke (tricycle)', hint: 'Mid-size loads' },
@@ -118,6 +119,10 @@ export default function DocumentsPage() {
 
       {data?.track && <RiderDetails />}
 
+      {/* Guarantor details — only when a guarantor is required (the signed-note photo is the
+          "Guarantor's signed note" row in the document list). */}
+      {data?.track && data.items.some((i) => i.type === 'GUARANTOR') && <GuarantorDetails />}
+
       {data?.track && data.items.map((item) => {
         const st = STATE[item.status];
         const isBusy = busy === item.type;
@@ -204,6 +209,62 @@ function RiderDetails() {
       </div>
       <button onClick={save} disabled={saving} className="rf-btn" style={{ width: '100%', background: 'var(--ink)', color: 'var(--on-dark)', opacity: saving ? 0.6 : 1 }}>
         {saving ? 'Saving…' : 'Save details'}
+      </button>
+      {msg && <p style={{ fontSize: 'var(--text-small)', color: msg === 'Saved' ? 'var(--success)' : 'var(--danger)', marginTop: 8, textAlign: 'center' }}>{msg}</p>}
+    </div>
+  );
+}
+
+// The rider's guarantor — typed details here + a photo of a short signed note (uploaded as the
+// "Guarantor's signed note" document row). Admin sees both when reviewing the rider.
+function GuarantorDetails() {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [relationship, setRelationship] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.riderProfile(getToken()).then((p) => {
+      setName(p.guarantorName ?? ''); setPhone(p.guarantorPhone ?? '');
+      setAddress(p.guarantorAddress ?? ''); setRelationship(p.guarantorRelationship ?? ''); setLoaded(true);
+    }).catch(() => setLoaded(true));
+  }, []);
+
+  const save = async () => {
+    if (!name.trim() || phone.trim().length < 7) { setMsg('Enter your guarantor’s name and phone number.'); return; }
+    setSaving(true); setMsg(null);
+    try {
+      await api.updateRiderProfile(getToken(), {
+        guarantorName: name.trim(), guarantorPhone: phone.trim(),
+        ...(address.trim() ? { guarantorAddress: address.trim() } : {}),
+        ...(relationship.trim() ? { guarantorRelationship: relationship.trim() } : {}),
+      });
+      setMsg('Saved');
+    } catch (e) { setMsg((e as Error).message); } finally { setSaving(false); }
+  };
+
+  if (!loaded) return null;
+  const lbl = { fontSize: 'var(--text-caption)', color: 'var(--ink-2)', display: 'block', marginBottom: 4 } as const;
+
+  return (
+    <div className="rf-card" style={{ marginBottom: 16 }}>
+      <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em', marginBottom: 4 }}>YOUR GUARANTOR</div>
+      <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 10px', lineHeight: 1.5 }}>
+        Someone who vouches for you. Fill their details here, then upload a photo of a short note they sign (the “Guarantor’s signed note” item below).
+      </p>
+      <label className="mono" style={lbl}>GUARANTOR’S FULL NAME</label>
+      <input className="rf-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Musa Ibrahim" style={{ marginBottom: 10 }} />
+      <label className="mono" style={lbl}>GUARANTOR’S PHONE</label>
+      <input className="rf-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. 0803 000 0000" style={{ marginBottom: 10 }} />
+      <label className="mono" style={lbl}>GUARANTOR’S ADDRESS</label>
+      <input className="rf-input" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, area, city" style={{ marginBottom: 10 }} />
+      <label className="mono" style={lbl}>RELATIONSHIP TO YOU</label>
+      <input className="rf-input" value={relationship} onChange={(e) => setRelationship(e.target.value)} placeholder="e.g. Uncle, employer, friend" style={{ marginBottom: 12 }} />
+      <button onClick={save} disabled={saving} className="rf-btn" style={{ width: '100%', background: 'var(--ink)', color: 'var(--on-dark)', opacity: saving ? 0.6 : 1 }}>
+        {saving ? 'Saving…' : 'Save guarantor'}
       </button>
       {msg && <p style={{ fontSize: 'var(--text-small)', color: msg === 'Saved' ? 'var(--success)' : 'var(--danger)', marginTop: 8, textAlign: 'center' }}>{msg}</p>}
     </div>

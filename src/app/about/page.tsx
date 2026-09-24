@@ -62,7 +62,7 @@ export default function AboutPage() {
       <Section title="Contact us">
         <p style={{ margin: '0 0 10px' }}>Rydafirst Limited</p>
         <p style={{ margin: '0 0 10px', color: 'var(--ink)' }}>
-          138 Unity Zone 6, Olorunsogo, Ado Ekiti, Ekiti State, Nigeria<br />
+          Nigeria<br />
           <a href="tel:+2348149249926" style={{ color: 'var(--primary)', textDecoration: 'none' }}>+234 814 924 9926</a>
         </p>
       </Section>

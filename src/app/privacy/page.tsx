@@ -107,7 +107,7 @@ export default function PrivacyPolicy() {
       <Section title="Contact us">
         <P>Questions about this policy or your data? Reach Rydafirst Limited at:</P>
         <P style={{ color: 'var(--ink)' }}>
-          138 Unity Zone 6, Olorunsogo, Ado Ekiti, Ekiti State, Nigeria<br />
+          Nigeria<br />
           <a href="tel:+2348149249926" style={{ color: 'var(--primary)', textDecoration: 'none' }}>+234 814 924 9926</a>
         </P>
       </Section>

@@ -249,7 +249,7 @@ export default function TrackPage() {
 
   const step = job ? FLOW.indexOf(job.status) : -1;
   const l = job ? label(job.status) : { text: 'Loading…', color: 'var(--ink-2)' };
-  const vehicleLabel = (tk: string | null) => tk === 'BIKE' ? 'Motorcycle' : tk === 'CAR' ? 'Car / Van' : tk === 'KEKE' ? 'Keke' : 'Vehicle';
+  const vehicleLabel = (tk: string | null) => tk === 'BIKE' ? 'Motorcycle' : tk === 'CAR' ? 'Car / Van' : tk === 'KEKE' ? 'Keke' : tk === 'BICYCLE' ? 'Bicycle' : 'Vehicle';
   // #4 MULTI-STOP: numbered map markers — the current stop is the first undelivered one.
   const extraStops = job?.extraStops ?? [];
   const primaryDelivered = !!job?.primaryStopDeliveredAt || extraStops.some((s) => s.status === 'DELIVERED');

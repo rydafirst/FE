@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Rydafirst public homepage — the "ryda" poster campaign as a website.
@@ -12,6 +12,38 @@ import { useEffect, useRef } from 'react';
  * poster illustrations (/brand/poster-*.png). Breaks out of the app's 480px mobile shell.
  */
 const APP_STORE_URL = 'https://apps.apple.com/app/rydafirst/id6789930826';
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=ng.rydafirst.app';
+
+type Platform = 'ios' | 'android' | 'other';
+
+/** Detect the visitor's mobile platform so we can show the matching store (App Store vs Google Play).
+ *  Starts as 'other' (renders both) so the server + first client paint agree, then refines after mount. */
+function usePlatform(): Platform {
+  const [platform, setPlatform] = useState<Platform>('other');
+  useEffect(() => {
+    const ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/i.test(ua)) setPlatform('ios');
+    else if (/Android/i.test(ua)) setPlatform('android');
+    else setPlatform('other');
+  }, []);
+  return platform;
+}
+
+// Flip to true once the Google Play listing is actually published (pending developer verification).
+// Until then, Android visitors see a "coming soon" state instead of a link that would 404.
+const PLAY_STORE_LIVE = false;
+
+interface StoreCta { href: string | null; label: string; comingSoon: boolean }
+/** What the "Get the app" action should do for this platform. On Android, Play is only offered once
+ *  it's live; before that it's a non-clickable "coming soon". iOS/desktop go to the App Store. */
+function storeCta(p: Platform): StoreCta {
+  if (p === 'android') {
+    return PLAY_STORE_LIVE
+      ? { href: PLAY_STORE_URL, label: 'Get the app', comingSoon: false }
+      : { href: null, label: 'Android · coming soon', comingSoon: true };
+  }
+  return { href: APP_STORE_URL, label: 'Get the app', comingSoon: false };
+}
 
 function AppleIcon() {
   return (
@@ -21,8 +53,38 @@ function AppleIcon() {
   );
 }
 
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden style={{ marginRight: 9, marginTop: -1 }}>
+      <path fill="currentColor" d="M3.6 2.3c-.3.2-.5.6-.5 1.1v17.2c0 .5.2.9.5 1.1l.1.1L13 12.6v-.2L3.7 2.2l-.1.1z" />
+      <path fill="currentColor" d="M16.3 15.9 13 12.6v-.2l3.3-3.3.1.1 3.9 2.2c1.1.6 1.1 1.6 0 2.3l-3.9 2.2h-.1z" />
+      <path fill="currentColor" d="M16.4 15.8 13 12.5 3.6 21.9c.4.4 1 .4 1.7 0l11.1-6.1" opacity=".85" />
+      <path fill="currentColor" d="M16.4 9.2 5.3 3.1c-.7-.4-1.3-.4-1.7 0L13 12.5l3.4-3.3z" opacity=".7" />
+    </svg>
+  );
+}
+
+/** Platform-aware download button(s): App Store on iPhone, Google Play on Android (or a "coming soon"
+ *  chip until the Play listing is live), both on desktop. */
+function StoreButtons({ platform }: { platform: Platform }) {
+  const appStore = (
+    <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary"><AppleIcon />Download on the App Store</a>
+  );
+  const play = PLAY_STORE_LIVE ? (
+    <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary"><PlayIcon />Get it on Google Play</a>
+  ) : (
+    <span className="mkt-btn mkt-btn--soon"><PlayIcon />Google Play — coming soon</span>
+  );
+  if (platform === 'ios') return appStore;
+  if (platform === 'android') return play;
+  return <>{appStore}{play}</>; // desktop / unknown → offer both
+}
+
 export default function Home() {
   const revealRoot = useRef<HTMLDivElement>(null);
+  const platform = usePlatform();
+  const cta = storeCta(platform);
+  const [ridersOpen, setRidersOpen] = useState(false);
   useEffect(() => {
     const els = revealRoot.current?.querySelectorAll('[data-reveal]');
     if (!els?.length) return;
@@ -47,9 +109,23 @@ export default function Home() {
         <nav className="mkt-nav-links">
           <a href="#how">How it works</a>
           <a href="#trust">The guarantee</a>
-          <a href="#riders">For riders</a>
+          {/* Riders dropdown — the rider web-app sign-in lives here, so customers aren't nudged to sign
+              into the web app (we want them to download the mobile app instead). */}
+          <div className="mkt-dropdown" onMouseEnter={() => setRidersOpen(true)} onMouseLeave={() => setRidersOpen(false)}>
+            <button type="button" className="mkt-dropdown-btn" aria-haspopup="true" aria-expanded={ridersOpen} onClick={() => setRidersOpen((o) => !o)}>
+              Riders <span aria-hidden style={{ fontSize: 11 }}>▾</span>
+            </button>
+            {ridersOpen && (
+              <div className="mkt-dropdown-menu" role="menu">
+                <a href="#riders" role="menuitem" onClick={() => setRidersOpen(false)}>Why ride with us</a>
+                <Link href="/login" role="menuitem" onClick={() => setRidersOpen(false)}>Rider web app →</Link>
+              </div>
+            )}
+          </div>
         </nav>
-        <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-nav-cta">Get the app</a>
+        {cta.href
+          ? <a href={cta.href} target="_blank" rel="noopener noreferrer" className="mkt-nav-cta">{cta.label}</a>
+          : <span className="mkt-nav-cta mkt-nav-cta--soon">{cta.label}</span>}
       </header>
 
       {/* Hero */}
@@ -65,8 +141,7 @@ export default function Home() {
             the work. Track every trip live, pickup to door.
           </p>
           <div className="mkt-cta-row up-4">
-            <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary"><AppleIcon />Download on the App Store</a>
-            <Link href="/login" className="mkt-btn mkt-btn--ghost">Open web app →</Link>
+            <StoreButtons platform={platform} />
           </div>
           <ul className="mkt-chips up-5" aria-label="What you get">
             <li><span className="mkt-dot" /> Escrow-protected</li>
@@ -121,19 +196,23 @@ export default function Home() {
             Your payment is locked in escrow before you ever pick up, and released the moment delivery
             is confirmed. Fair pay if a trip fails through no fault of yours. No more “I’ll pay you later.”
           </p>
-          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary" style={{ marginTop: 26 }}><AppleIcon />Become a rider</a>
+          {cta.href
+            ? <a href={cta.href} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary" style={{ marginTop: 26 }}>{platform === 'android' ? <PlayIcon /> : <AppleIcon />}Become a rider</a>
+            : <span className="mkt-btn mkt-btn--soon" style={{ marginTop: 26 }}><PlayIcon />Android app — coming soon</span>}
         </div>
       </section>
 
       <footer className="mkt-foot">
         <span className="mkt-brand" style={{ fontSize: 20 }}>ryd<span className="mkt-brand-y">a</span><span className="mkt-brand-first">first</span></span>
         <span className="mkt-foot-tag">WE ARE FOR RIDERS</span>
-        <span className="mkt-foot-contact">138 Unity Zone 6, Olorunsogo, Ado Ekiti, Ekiti State · <a href="tel:+2348149249926">+234 814 924 9926</a></span>
+        <span className="mkt-foot-contact">Nigeria · <a href="tel:+2348149249926">+234 814 924 9926</a></span>
         <span className="mkt-foot-links">
           <Link href="/about">About</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
-          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">Get the app</a>
+          {cta.href
+            ? <a href={cta.href} target="_blank" rel="noopener noreferrer">{cta.label}</a>
+            : <span style={{ color: '#8f8f8f' }}>{cta.label}</span>}
         </span>
       </footer>
     </div>
@@ -164,9 +243,17 @@ const CSS = `
 .mkt-brand{font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--ink);text-decoration:none;}
 .mkt-brand-y{color:var(--primary);}
 .mkt-brand-first{color:var(--ink-2);font-weight:400;}
-.mkt-nav-links{display:flex;gap:26px;margin-left:auto;}
+.mkt-nav-links{display:flex;align-items:center;gap:26px;margin-left:auto;}
 .mkt-nav-links a{color:var(--ink-2);text-decoration:none;font-size:15px;transition:color .18s;}
 .mkt-nav-links a:hover{color:var(--ink);}
+.mkt-dropdown{position:relative;}
+.mkt-dropdown-btn{font-family:inherit;font-size:15px;color:var(--ink-2);background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:5px;transition:color .18s;}
+.mkt-dropdown-btn:hover{color:var(--ink);}
+.mkt-dropdown-menu{position:absolute;top:calc(100% + 12px);right:0;min-width:190px;background:var(--bg,#fff);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 18px 40px -18px rgba(20,20,20,.35);padding:6px;display:flex;flex-direction:column;z-index:20;}
+.mkt-dropdown-menu::before{content:"";position:absolute;top:-16px;left:0;right:0;height:16px;}
+.mkt-dropdown-menu a{display:block;padding:9px 12px;border-radius:8px;font-size:14.5px;color:var(--ink-2);}
+.mkt-dropdown-menu a:hover{background:var(--bg-2);color:var(--ink);}
 .mkt-nav-cta{font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   color:var(--on-dark);background:var(--ink);text-decoration:none;padding:10px 16px;border-radius:var(--radius-pill);transition:transform .18s,background .18s;}
 .mkt-nav-cta:hover{background:#000;transform:translateY(-1px);}
@@ -182,6 +269,9 @@ const CSS = `
 .mkt-btn--primary:hover{background:var(--primary-pressed);transform:translateY(-2px);}
 .mkt-btn--ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink);}
 .mkt-btn--ghost:hover{background:var(--ink);color:var(--on-dark);transform:translateY(-2px);}
+.mkt-btn--soon{background:transparent;color:var(--ink-2);border:1.5px dashed var(--line);cursor:default;}
+.mkt-nav-cta--soon{background:var(--line);color:var(--ink-2);cursor:default;}
+.mkt-nav-cta--soon:hover{background:var(--line);transform:none;}
 .mkt-chips{display:flex;gap:22px;flex-wrap:wrap;list-style:none;padding:0;margin:28px 0 0;}
 .mkt-chips li{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12.5px;letter-spacing:.04em;color:var(--ink);text-transform:uppercase;}
 .mkt-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);}

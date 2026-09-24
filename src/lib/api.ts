@@ -141,9 +141,9 @@ export interface AdminDelivery { id: string; status: string; type: string; amoun
 export interface AdminFinance { totals: { held: number; released: number; refunded: number; platformRevenue: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
 export interface PendingPayout { id: string; amountMinor: number; createdAt: string; payoutError?: string; payoutRef?: string; dropoffArea?: string; riderName?: string }
 export interface AdminDispute { id: string; jobId: string; openedBy: string; status: string; tier: string; resolution?: string; createdAt: string; resolvedAt?: string }
-export interface AdminRiderProfile { track: string | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: string }
+export interface AdminRiderProfile { track: string | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: string; guarantorName?: string; guarantorPhone?: string; guarantorAddress?: string; guarantorRelationship?: string }
 export interface AdminRiderDetail { riderId: string; track: string | null; status: string; profile?: AdminRiderProfile; documents: AdminRiderDoc[] }
-export type VehicleTrack = 'BIKE' | 'CAR' | 'KEKE';
+export type VehicleTrack = 'BIKE' | 'CAR' | 'KEKE' | 'BICYCLE';
 export type DocType =
   | 'PROFILE_PHOTO' | 'GOV_ID' | 'LICENSE' | 'ADDRESS_PROOF' | 'VEHICLE_REG' | 'PROOF_OF_OWNERSHIP'
   | 'ROADWORTHINESS' | 'INSURANCE' | 'VEHICLE_PHOTO' | 'GUARANTOR' | 'LASRRA' | 'LASDRI' | 'HACKNEY_PERMIT' | 'KEKE_PERMIT';
@@ -153,7 +153,7 @@ export interface ChecklistItem { type: DocType; label: string; required: boolean
 export interface DocChecklist { track: VehicleTrack | null; onboarding: DocOnboarding; items: ChecklistItem[] }
 export type VehicleColor = 'BLACK' | 'WHITE' | 'SILVER' | 'GREY' | 'RED' | 'BLUE' | 'GREEN' | 'GOLD' | 'OTHER';
 export const VEHICLE_COLORS: VehicleColor[] = ['BLACK', 'WHITE', 'SILVER', 'GREY', 'RED', 'BLUE', 'GREEN', 'GOLD', 'OTHER'];
-export interface RiderProfile { track: VehicleTrack | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: VehicleColor }
+export interface RiderProfile { track: VehicleTrack | null; legalName?: string; nameVerified: boolean; vehiclePlate?: string; vehicleColor?: VehicleColor; guarantorName?: string; guarantorPhone?: string; guarantorAddress?: string; guarantorRelationship?: string }
 // `phone` is present only while the job is in flight, and only for the counterparty. `phoneMasked`
 // says whether it is a proxy number — dial whatever is given and don't cache it.
 // `callMode`: 'proxy' means masked in-app calling is live — request a call (server rings you) with no
@@ -332,7 +332,7 @@ export const api = {
   requestDocumentUpload: (token: string, body: { type: DocType; contentType: string; issuedAt?: number; expiresAt?: number }) =>
     call<{ documentId: string; uploadUrl: string }>(`/me/documents/upload-url`, { method: 'POST', token, body: JSON.stringify(body) }),
   riderProfile: (token: string) => call<RiderProfile>(`/me/documents/profile`, { token }),
-  updateRiderProfile: (token: string, body: { legalName?: string; vehiclePlate?: string; vehicleColor?: VehicleColor }) =>
+  updateRiderProfile: (token: string, body: { legalName?: string; vehiclePlate?: string; vehicleColor?: VehicleColor; guarantorName?: string; guarantorPhone?: string; guarantorAddress?: string; guarantorRelationship?: string }) =>
     call<RiderProfile>(`/me/documents/profile`, { method: 'PUT', token, body: JSON.stringify(body) }),
   jobRider: (token: string, id: string) => call<{ rider: RiderSummary | null }>(`/jobs/${id}/rider`, { token }),
   jobCustomer: (token: string, id: string) => call<{ name?: string; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct' }>(`/jobs/${id}/customer`, { token }),

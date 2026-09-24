@@ -51,7 +51,7 @@ export default function TermsPage() {
 
       <h2 style={{ fontSize: 'var(--text-subtitle)', marginTop: 20 }}>8. Changes and contact</h2>
       <p>We may update these terms and will post the updated version here. Questions? Contact Rydafirst
-        Limited at 138 Unity Zone 6, Olorunsogo, Ado Ekiti, Ekiti State, Nigeria, or call{' '}
+        Limited in Nigeria, or call{' '}
         <a href="tel:+2348149249926" style={{ color: 'var(--primary)', textDecoration: 'none' }}>+234 814 924 9926</a>.</p>
      </div>
     </main>

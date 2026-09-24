@@ -96,6 +96,17 @@ export default function AdminRiderPage() {
         </div>
       )}
 
+      {/* Guarantor the rider entered — cross-check against the signed-note photo in the documents below. */}
+      {data?.profile && (data.profile.guarantorName || data.profile.guarantorPhone) && (
+        <div className="rf-card" style={{ marginBottom: 16 }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 8 }}>GUARANTOR</div>
+          {data.profile.guarantorName && <GRow label="Name" value={data.profile.guarantorName} />}
+          {data.profile.guarantorPhone && <GRow label="Phone" value={data.profile.guarantorPhone} />}
+          {data.profile.guarantorAddress && <GRow label="Address" value={data.profile.guarantorAddress} />}
+          {data.profile.guarantorRelationship && <GRow label="Relationship" value={data.profile.guarantorRelationship} />}
+        </div>
+      )}
+
       {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
       {data === null && !err && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
       {data?.documents.length === 0 && <p style={{ color: 'var(--ink-2)', fontSize: 'var(--text-body)' }}>No documents uploaded yet.</p>}
@@ -147,6 +158,15 @@ export default function AdminRiderPage() {
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+function GRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: 12 }}>
+      <span style={{ color: 'var(--ink-2)', fontSize: 'var(--text-small)' }}>{label}</span>
+      <span style={{ fontSize: 'var(--text-small)', fontWeight: 600, textAlign: 'right', wordBreak: 'break-word' }}>{value}</span>
     </div>
   );
 }

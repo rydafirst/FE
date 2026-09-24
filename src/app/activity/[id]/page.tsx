@@ -7,7 +7,7 @@ import { getToken, getUserRole } from '@/lib/session';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 const SUPPORT_EMAIL = 'support@rydafirst.com';
-const vehicleLabel = (tk: string | null) => tk === 'BIKE' ? 'Motorcycle' : tk === 'CAR' ? 'Car / Van' : tk === 'KEKE' ? 'Keke' : 'Vehicle';
+const vehicleLabel = (tk: string | null) => tk === 'BIKE' ? 'Motorcycle' : tk === 'CAR' ? 'Car / Van' : tk === 'KEKE' ? 'Keke' : tk === 'BICYCLE' ? 'Bicycle' : 'Vehicle';
 
 function statusLabel(s: string): { text: string; color: string } {
   switch (s) {
