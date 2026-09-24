@@ -53,9 +53,13 @@ export default function AdminRiderPage() {
 
   return (
     <div>
-      <a href="/admin" className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textDecoration: 'none' }}>‹ BACK TO QUEUE</a>
+      {/* Back to the riders list (not the main dashboard) so review is a tight loop. */}
+      <button onClick={() => router.push('/admin/riders')} className="mono"
+        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>
+        ‹ BACK TO RIDERS
+      </button>
       <h1 style={{ fontSize: 'var(--text-heading)', letterSpacing: '-0.02em', margin: '10px 0 4px' }}>
-        Rider {riderId.slice(0, 8)}…
+        {data?.profile?.legalName ? `${data.profile.legalName}${data.profile.nameVerified ? ' ✓' : ''}` : `Rider ${riderId.slice(0, 8)}…`}
       </h1>
       {data && (
         <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 16 }}>

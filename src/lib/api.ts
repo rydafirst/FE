@@ -130,7 +130,7 @@ export interface AvailableJob {
   riderPayoutMinor: number;
 }
 export interface Notification { id: string; jobId?: string; title: string; body: string; createdAt: number; read: boolean }
-export interface AdminQueueEntry { riderId: string; track: string | null; status: string; oldestPendingAt: number }
+export interface AdminQueueEntry { riderId: string; name: string | null; nameVerified: boolean; track: string | null; status: string; oldestPendingAt: number }
 export interface AdminRiderDoc {
   id: string; type: string; label: string; status: string; version: number;
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
