@@ -29,9 +29,8 @@ function usePlatform(): Platform {
   return platform;
 }
 
-// Flip to true once the Google Play listing is actually published (pending developer verification).
-// Until then, Android visitors see a "coming soon" state instead of a link that would 404.
-const PLAY_STORE_LIVE = false;
+// The Google Play listing is live at PLAY_STORE_URL, so Android goes straight to Play.
+const PLAY_STORE_LIVE = true;
 
 interface StoreCta { href: string | null; label: string; comingSoon: boolean }
 /** What the "Get the app" action should do for this platform. On Android, Play is only offered once
@@ -85,6 +84,26 @@ export default function Home() {
   const platform = usePlatform();
   const cta = storeCta(platform);
   const [ridersOpen, setRidersOpen] = useState(false);
+  const ridersRef = useRef<HTMLDivElement>(null);
+
+  // Close the Riders menu on a click anywhere outside it, or on Escape — so it stays open (and its
+  // links stay clickable) once opened, instead of flickering shut on hover.
+  useEffect(() => {
+    if (!ridersOpen) return;
+    const onPointer = (e: MouseEvent | TouchEvent) => {
+      if (ridersRef.current && !ridersRef.current.contains(e.target as Node)) setRidersOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setRidersOpen(false); };
+    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('touchstart', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('touchstart', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [ridersOpen]);
+
   useEffect(() => {
     const els = revealRoot.current?.querySelectorAll('[data-reveal]');
     if (!els?.length) return;
@@ -110,8 +129,9 @@ export default function Home() {
           <a href="#how">How it works</a>
           <a href="#trust">The guarantee</a>
           {/* Riders dropdown — the rider web-app sign-in lives here, so customers aren't nudged to sign
-              into the web app (we want them to download the mobile app instead). */}
-          <div className="mkt-dropdown" onMouseEnter={() => setRidersOpen(true)} onMouseLeave={() => setRidersOpen(false)}>
+              into the web app (we want them to download the mobile app instead). Click to open; it stays
+              open until you pick an item or click away (no hover-flicker). */}
+          <div className="mkt-dropdown" ref={ridersRef}>
             <button type="button" className="mkt-dropdown-btn" aria-haspopup="true" aria-expanded={ridersOpen} onClick={() => setRidersOpen((o) => !o)}>
               Riders <span aria-hidden style={{ fontSize: 11 }}>▾</span>
             </button>
