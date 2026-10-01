@@ -37,6 +37,7 @@ export default function DocumentsPage() {
   const [data, setData] = useState<DocChecklist | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [changingTrack, setChangingTrack] = useState(false); // re-open the vehicle picker after one is chosen
   const fileRef = useRef<HTMLInputElement>(null);
   const pending = useRef<ChecklistItem | null>(null);
 
@@ -46,7 +47,7 @@ export default function DocumentsPage() {
   useEffect(() => { if (ready) void load(); }, [ready, load]);
 
   const chooseTrack = async (track: VehicleTrack) => {
-    try { await api.setVehicleTrack(getToken(), track); await load(); } catch (e) { setErr((e as Error).message); }
+    try { await api.setVehicleTrack(getToken(), track); setChangingTrack(false); await load(); } catch (e) { setErr((e as Error).message); }
   };
 
   // Row click → (optionally ask expiry) → open the native file picker.
@@ -101,29 +102,48 @@ export default function DocumentsPage() {
       {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
       {data === null && !err && <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>LOADING…</p>}
 
-      {data && !data.track && (
+      {data && (!data.track || changingTrack) && (
         <>
-          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 8 }}>WHAT DO YOU DELIVER WITH?</div>
-          {TRACKS.map((tr) => (
-            <button key={tr.value} onClick={() => chooseTrack(tr.value)} className="rf-card"
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', textAlign: 'left', marginBottom: 10, cursor: 'pointer', background: 'var(--bg)' }}>
-              <span>
-                <span style={{ fontSize: 'var(--text-body)', fontWeight: 700, display: 'block' }}>{tr.label}</span>
-                <span style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)' }}>{tr.hint}</span>
-              </span>
-              <span style={{ color: 'var(--ink-2)', fontSize: 'var(--text-heading)' }}>›</span>
-            </button>
-          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>WHAT DO YOU DELIVER WITH?</span>
+            {changingTrack && (
+              <button onClick={() => setChangingTrack(false)} className="mono" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>CANCEL</button>
+            )}
+          </div>
+          {TRACKS.map((tr) => {
+            const current = data.track === tr.value;
+            return (
+              <button key={tr.value} onClick={() => chooseTrack(tr.value)} className="rf-card"
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', textAlign: 'left', marginBottom: 10, cursor: 'pointer', background: 'var(--bg)', borderColor: current ? 'var(--ink)' : 'var(--line)' }}>
+                <span>
+                  <span style={{ fontSize: 'var(--text-body)', fontWeight: 700, display: 'block' }}>{tr.label}</span>
+                  <span style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)' }}>{tr.hint}</span>
+                </span>
+                <span style={{ color: 'var(--ink-2)', fontSize: 'var(--text-heading)' }}>{current ? '✓' : '›'}</span>
+              </button>
+            );
+          })}
         </>
       )}
 
-      {data?.track && <RiderDetails />}
+      {/* Current vehicle + a way to change it. */}
+      {data?.track && !changingTrack && (
+        <div className="rf-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div>
+            <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>YOUR VEHICLE</div>
+            <div style={{ fontSize: 'var(--text-body)', fontWeight: 700, marginTop: 3 }}>{TRACKS.find((x) => x.value === data.track)?.label ?? data.track}</div>
+          </div>
+          <button onClick={() => setChangingTrack(true)} className="mono" style={{ cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '8px 14px', fontSize: 'var(--text-caption)', color: 'var(--ink)' }}>CHANGE</button>
+        </div>
+      )}
+
+      {data?.track && !changingTrack && <RiderDetails />}
 
       {/* Guarantor details — only when a guarantor is required (the signed-note photo is the
           "Guarantor's signed note" row in the document list). */}
-      {data?.track && data.items.some((i) => i.type === 'GUARANTOR') && <GuarantorDetails />}
+      {data?.track && !changingTrack && data.items.some((i) => i.type === 'GUARANTOR') && <GuarantorDetails />}
 
-      {data?.track && data.items.map((item) => {
+      {data?.track && !changingTrack && data.items.map((item) => {
         const st = STATE[item.status];
         const isBusy = busy === item.type;
         const clickable = !['SUBMITTED', 'UNDER_REVIEW', 'APPROVED'].includes(item.status);
@@ -193,7 +213,7 @@ function RiderDetails() {
         )}
       </div>
       <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>FULL NAME (AS ON YOUR ID)</label>
-      <input className="rf-input" value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder="e.g. Tolu Olonibua" style={{ marginBottom: 10 }} />
+      <input className="rf-input" value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder="e.g. Ada Okeke" style={{ marginBottom: 10 }} />
       <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>VEHICLE PLATE NUMBER</label>
       <input className="rf-input" value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="e.g. ABC 123 DE" style={{ marginBottom: 10 }} />
       <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>VEHICLE COLOUR</label>
