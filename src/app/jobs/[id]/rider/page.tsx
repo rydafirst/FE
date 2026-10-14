@@ -136,7 +136,13 @@ export default function RiderJob() {
   useEffect(() => {
     if (geo !== 'on' || done) return;
     const watchId = navigator.geolocation.watchPosition(
-      (pos) => sockRef.current?.emit('location', { jobId: id, riderId: getUserId(), lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        // Fan out to EVERY active delivery this rider is on (stacked second customer tracks too), and
+        // keep the per-job emit for backward-compat with an older backend during the deploy window.
+        const riderId = getUserId();
+        sockRef.current?.emit('locationAll', { riderId, lat: pos.coords.latitude, lng: pos.coords.longitude });
+        sockRef.current?.emit('location', { jobId: id, riderId, lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
       (err) => { if (err.code === err.PERMISSION_DENIED) setGeo('denied'); },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 },
     );

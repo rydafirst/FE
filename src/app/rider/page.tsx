@@ -13,12 +13,13 @@ import { useToast } from '@/components/ui/Toast';
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 // A trip is "active" (resumable) until it reaches a terminal state.
 const ACTIVE = ['ACCEPTED', 'EN_ROUTE_PICKUP', 'AT_PICKUP', 'IN_PROGRESS', 'EN_ROUTE_DROP', 'ARRIVED', 'AWAITING_CODE', 'EN_ROUTE_STOP'];
+const MAX_ACTIVE = 2; // mirror of the server's MAX_ACTIVE_JOBS_PER_RIDER (UX-only; server enforces)
 
 export default function RiderHome() {
   const { ready } = useRequireAuth();
   const [online, setOnline] = useState(false);
   const [jobs, setJobs] = useState<AvailableJob[]>([]);
-  const [activeJob, setActiveJob] = useState<Job | null>(null);
+  const [activeJobs, setActiveJobs] = useState<Job[]>([]);
   const [earnings, setEarnings] = useState<number | null>(null);
   const [hasBank, setHasBank] = useState<boolean | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export default function RiderHome() {
   useEffect(() => {
     if (!ready) return;
     api.assignedJobs(getToken())
-      .then((js) => setActiveJob(js.find((j) => ACTIVE.includes(j.status)) ?? null))
+      .then((js) => setActiveJobs(js.filter((j) => ACTIVE.includes(j.status))))
       .catch(() => {});
     api.getAvailability(getToken()).then((a) => setOnline(a.online)).catch(() => {});
     api.getAccount(getToken()).then((a) => setHasBank(a != null)).catch(() => setHasBank(null));
@@ -74,13 +75,15 @@ export default function RiderHome() {
     await Promise.all([
       loadFeed(),
       api.getAvailability(getToken()).then((a) => setOnline(a.online)).catch(() => {}),
-      api.assignedJobs(getToken()).then((js) => setActiveJob(js.find((j) => ACTIVE.includes(j.status)) ?? null)).catch(() => {}),
+      api.assignedJobs(getToken()).then((js) => setActiveJobs(js.filter((j) => ACTIVE.includes(j.status)))).catch(() => {}),
       api.wallet(getToken()).then((w) => setEarnings(w.releasedMinor)).catch(() => {}),
     ]);
   }, [loadFeed]);
 
   const accept = async (id: string) => {
     if (noBank) { location.href = '/profile'; return; }
+    // Stacking cap: at the max, send the rider to their first active trip instead of a 409 round-trip.
+    if (activeJobs.length >= MAX_ACTIVE) { show(`You already have ${activeJobs.length} active deliveries — finish or release one first`); location.href = `/jobs/${activeJobs[0].id}/rider`; return; }
     try { const j = await api.accept(getToken(), id); location.href = `/jobs/${j.id}/rider`; }
     catch (e) { show((e as Error).message); loadFeed(); }
   };
@@ -96,13 +99,21 @@ export default function RiderHome() {
         </b>
         <NotificationBell />
       </header>
-      {/* Resume an in-progress trip — visible on any browser/device signed into this account. */}
-      {activeJob && (
+      {/* Resume in-progress trip(s) — visible on any browser/device signed into this account. A rider may
+          hold up to MAX_ACTIVE at once; each is independent, so each gets its own resume button. */}
+      {activeJobs.length > 0 && (
         <div className="rf-card" style={{ border: '1px solid var(--ink)', marginBottom: 16 }}>
-          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.08em', marginBottom: 4 }}>YOU HAVE AN ACTIVE DELIVERY</div>
-          <b style={{ fontSize: 'var(--text-body)' }}>{naira(riderJobPayout(activeJob))} · {activeJob.status.replace(/_/g, ' ').toLowerCase()}</b>
-          <div style={{ height: 10 }} />
-          <Button onClick={() => (location.href = `/jobs/${activeJob.id}/rider`)}>Resume delivery</Button>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.08em', marginBottom: 4 }}>
+            {activeJobs.length > 1 ? `YOU HAVE ${activeJobs.length} ACTIVE DELIVERIES` : 'YOU HAVE AN ACTIVE DELIVERY'}
+          </div>
+          {activeJobs.map((j, i) => (
+            <div key={j.id} style={{ marginTop: i === 0 ? 4 : 12, borderTop: i === 0 ? 'none' : '1px solid var(--line-2)', paddingTop: i === 0 ? 0 : 12 }}>
+              <b style={{ fontSize: 'var(--text-body)' }}>{naira(riderJobPayout(j))} · {j.status.replace(/_/g, ' ').toLowerCase()}</b>
+              <div style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginTop: 2 }}>{(j.pickupArea || 'Pickup')} → {(j.dropoffArea || 'Drop-off')}</div>
+              <div style={{ height: 8 }} />
+              <Button onClick={() => (location.href = `/jobs/${j.id}/rider`)}>{activeJobs.length > 1 ? `Open delivery ${i + 1}` : 'Resume delivery'}</Button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -168,7 +179,7 @@ export default function RiderHome() {
                   )}
                   <span style={{ color: 'var(--mid)' }}>TRIP {(Math.round(j.tripDistanceMeters / 100) / 10).toFixed(1)} KM · ~{j.tripEtaMin} MIN</span>
                 </div>
-                <Button onClick={() => accept(j.id)} disabled={noBank}>Accept job</Button>
+                <Button onClick={() => accept(j.id)} disabled={noBank || activeJobs.length >= MAX_ACTIVE}>Accept job</Button>
               </div>
             ))
           )}

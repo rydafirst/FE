@@ -321,7 +321,7 @@ export default function HomePage() {
         <div className="rf-card" ref={quoteRef} style={{ marginTop: 16, scrollMarginTop: 16 }}>
           <Row label="Base" value={naira(quote.breakdown.baseMinor)} />
           <Row label="Distance" value={naira(quote.breakdown.distanceMinor)} />
-          <Row label="Time" value={naira(quote.breakdown.timeMinor)} />
+          {quote.breakdown.timeMinor > 0 && <Row label="Time" value={naira(quote.breakdown.timeMinor)} />}
           <Row label="Platform fee" value={naira(quote.breakdown.platformFeeMinor)} />
           <div style={{ borderTop: '1px solid var(--line)', margin: '8px 0' }} />
           <Row label="Total" value={naira(quote.breakdown.totalMinor)} strong />

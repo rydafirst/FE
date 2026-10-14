@@ -109,6 +109,20 @@ function DeliveryRow({ d, onChanged }: { d: AdminDelivery; onChanged: () => void
     } catch (e) { setResult(`Void failed: ${(e as Error).message}`); } finally { setBusy(false); }
   };
 
+  // Manual dispatch: a SEARCHING (funded, awaiting a rider) delivery can be handed to a specific rider,
+  // even one already at their active-delivery cap. The rider id goes in the box below.
+  const assignable = d.status === 'SEARCHING';
+  const [assignId, setAssignId] = useState('');
+  const assignDelivery = async () => {
+    if (assignId.trim().length < 3) { setResult('Enter the rider ID to assign to.'); return; }
+    setBusy(true); setResult(null);
+    try {
+      await api.adminAssignDelivery(getToken(), d.id, assignId.trim());
+      setResult('Assigned ✓ — the rider has been notified and the delivery is now theirs.');
+      onChanged();
+    } catch (e) { setResult(`Assign failed: ${(e as Error).message}`); } finally { setBusy(false); }
+  };
+
   const copyId = async () => {
     try { await navigator.clipboard.writeText(d.id); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard blocked */ }
   };
@@ -170,6 +184,17 @@ function DeliveryRow({ d, onChanged }: { d: AdminDelivery; onChanged: () => void
             </div>
           ) : (
             <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '8px 0 0' }}>No rider payout yet — a payout exists only after the delivery is completed.</p>
+          )}
+
+          {/* Manually assign a searching delivery to a specific rider (bypasses the active-delivery cap). */}
+          {assignable && (
+            <div style={{ marginTop: 10, borderTop: '1px solid var(--line-2)', paddingTop: 10 }}>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 6 }}>ASSIGN TO A SPECIFIC RIDER (OVERRIDES THE CAP)</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input className="rf-input" style={{ flex: 1, minWidth: 180 }} placeholder="Rider ID" value={assignId} onChange={(e) => setAssignId(e.target.value)} />
+                <button onClick={assignDelivery} disabled={busy} style={{ ...chip, background: 'var(--ink)', color: 'var(--on-dark)', border: 'none' }}>{busy ? 'Working…' : 'Assign'}</button>
+              </div>
+            </div>
           )}
 
           {/* Remove a stuck / non-functioning delivery so it stops showing as live. */}

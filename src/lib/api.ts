@@ -364,6 +364,9 @@ export const api = {
   // Force-void a stuck/non-functioning delivery so it stops showing as live (refunds if funded).
   adminVoidDelivery: (token: string, jobId: string) =>
     call<{ status: string; refunded: boolean }>(`/admin/ops/deliveries/${jobId}/void`, { method: 'POST', token }),
+  // Manually assign a SEARCHING delivery to a specific rider (bypasses the per-rider active cap).
+  adminAssignDelivery: (token: string, jobId: string, riderId: string) =>
+    call<{ status: string; riderId?: string }>(`/admin/ops/deliveries/${jobId}/assign`, { method: 'POST', token, body: JSON.stringify({ riderId }) }),
   adminDisputes: (token: string) => call<AdminDispute[]>(`/admin/disputes`, { token }),
   adminResolveDispute: (token: string, id: string, resolution: 'RELEASE' | 'REFUND' | 'SPLIT', riderShareMinor?: number) =>
     call<{ status: string }>(`/admin/disputes/${id}/resolve`, { method: 'POST', token, body: JSON.stringify({ resolution, ...(riderShareMinor != null ? { riderShareMinor } : {}) }) }),
