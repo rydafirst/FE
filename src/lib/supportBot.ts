@@ -16,7 +16,8 @@ export type SupportCategory =
   | 'CONDUCT'
   | 'ACCOUNT'
   | 'APP_ISSUE'
-  | 'OTHER';
+  | 'OTHER'
+  | 'ANNOUNCEMENT'; // admin-initiated "Message from Rydafirst" — not user-startable
 
 export type SupportStatus = 'BOT' | 'AWAITING_AGENT' | 'AGENT_JOINED' | 'RESOLVED';
 
@@ -32,6 +33,7 @@ export const CATEGORY_LABELS: Record<SupportCategory, string> = {
   ACCOUNT: 'Account',
   APP_ISSUE: 'App problem',
   OTHER: 'Something else',
+  ANNOUNCEMENT: 'Message from Rydafirst',
 };
 
 /** One-line helper shown under each category in the picker. */
@@ -42,6 +44,7 @@ export const CATEGORY_HINTS: Record<SupportCategory, string> = {
   ACCOUNT: 'Login, verification or your details',
   APP_ISSUE: 'A bug, crash or something not loading',
   OTHER: 'Anything not covered above',
+  ANNOUNCEMENT: 'An official message from the Rydafirst team',
 };
 
 export interface BotStep {
@@ -54,6 +57,8 @@ export interface BotStep {
  * Mirrors backend SCRIPTS exactly (prompts + tap options, in order). See file header.
  */
 const SCRIPTS: Readonly<Record<SupportCategory, readonly BotStep[]>> = {
+  // Admin-initiated; the bot script never runs for these (the thread opens already joined by an agent).
+  ANNOUNCEMENT: [{ kind: 'freetext', prompt: 'You can reply to the Rydafirst team here.' }],
   PAYMENT: [
     {
       kind: 'choice',

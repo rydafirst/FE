@@ -57,6 +57,9 @@ export default function AdminSupportPage() {
       <h1 style={{ fontSize: 'var(--text-heading)', letterSpacing: '-0.02em', margin: '0 0 14px' }}>Support inbox</h1>
       {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)' }}>{err}</p>}
 
+      <MessageUser onSent={() => loadQueue()} />
+
+
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
         {/* Queue */}
         {showQueue && (
@@ -104,6 +107,55 @@ export default function AdminSupportPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Admin → user outreach: send an official "Message from Rydafirst" to any account by phone.
+function MessageUser({ onSent }: { onSent: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [body, setBody] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const send = async () => {
+    if (busy || !phone.trim() || !body.trim()) return;
+    setBusy(true); setErr(null); setMsg(null);
+    try {
+      await api.adminMessageUser(getToken(), phone.trim(), body.trim());
+      setMsg('Sent — it’s in their Help & support, and they can reply.');
+      setBody(''); setPhone('');
+      onSent();
+    } catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  };
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="rf-chip" style={{ cursor: 'pointer', marginBottom: 14 }}>
+        + Message a user
+      </button>
+    );
+  }
+  return (
+    <div className="rf-card" style={{ marginBottom: 14, border: '1px solid var(--ink)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>MESSAGE A USER (OFFICIAL)</div>
+        <button onClick={() => setOpen(false)} className="mono" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>CLOSE</button>
+      </div>
+      <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 10px', lineHeight: 1.45 }}>
+        Sends an official “Message from Rydafirst” to a rider or customer by phone. It lands in their Help &amp; support and they can reply.
+      </p>
+      <input className="rf-input" style={{ marginBottom: 8 }} value={phone} inputMode="tel"
+        placeholder="Phone (e.g. +234…)" onChange={(e) => setPhone(e.target.value)} />
+      <textarea className="rf-input" style={{ marginBottom: 8, minHeight: 80, resize: 'vertical' }} value={body}
+        placeholder="Your message…" onChange={(e) => setBody(e.target.value)} />
+      <button onClick={() => void send()} disabled={busy || !phone.trim() || !body.trim()} className="rf-btn"
+        style={{ width: 'auto', paddingLeft: 22, paddingRight: 22 }}>{busy ? 'Sending…' : 'Send message'}</button>
+      {msg && <p style={{ color: 'var(--success)', fontSize: 'var(--text-small)', margin: '8px 0 0' }}>{msg}</p>}
+      {err && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-small)', margin: '8px 0 0' }}>{err}</p>}
     </div>
   );
 }

@@ -4,6 +4,25 @@ import { api, type ChatMessage } from '@/lib/api';
 import { getToken, getUserId } from '@/lib/session';
 import { Button } from '@/components/ui/Button';
 
+// Monochrome line icons matching the design system (same style as the nav icons) — replaces emoji.
+const lineProps = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+function CameraIcon() {
+  return (
+    <svg {...lineProps} aria-hidden>
+      <path d="M3 8a1 1 0 0 1 1-1h2.5l1.3-1.8a1 1 0 0 1 .8-.4h6.8a1 1 0 0 1 .8.4L17.5 7H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+      <circle cx="12" cy="13" r="3.4" />
+    </svg>
+  );
+}
+function MicIcon() {
+  return (
+    <svg {...lineProps} aria-hidden>
+      <path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+    </svg>
+  );
+}
+
 // One-time acceptance of the chat conduct terms, remembered in the browser.
 const TERMS_KEY = 'rf_chat_terms_v1';
 function readAccepted(): boolean {
@@ -198,7 +217,7 @@ export function ChatPanel({ jobId }: { jobId: string }) {
                 border: mine ? 'none' : '1px solid var(--line)', borderRadius: 12, padding: '8px 12px', fontSize: 'var(--text-body)', lineHeight: 1.4 }}>
                 {m.replyToId && (
                   <div style={{ borderLeft: `2px solid ${mine ? 'var(--on-dark)' : 'var(--primary)'}`, paddingLeft: 8, marginBottom: 5, opacity: 0.85, fontSize: 'var(--text-small)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>
-                    {repliedTo ? (repliedTo.audioUrl ? '🎤 Voice note' : repliedTo.imageUrl ? '📷 Photo' : repliedTo.body) : 'Message'}
+                    {repliedTo ? (repliedTo.audioUrl ? 'Voice note' : repliedTo.imageUrl ? 'Photo' : repliedTo.body) : 'Message'}
                   </div>
                 )}
                 {m.imageUrl && (
@@ -233,7 +252,7 @@ export function ChatPanel({ jobId }: { jobId: string }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, marginBottom: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--primary)' }}>REPLYING TO {replyTo.senderId === me ? 'YOURSELF' : 'THEM'}</div>
-            <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{replyTo.audioUrl ? '🎤 Voice note' : replyTo.imageUrl ? '📷 Photo' : replyTo.body}</div>
+            <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{replyTo.audioUrl ? 'Voice note' : replyTo.imageUrl ? 'Photo' : replyTo.body}</div>
           </div>
           <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontSize: 'var(--text-subtitle)', lineHeight: 1 }}>×</button>
         </div>
@@ -252,13 +271,13 @@ export function ChatPanel({ jobId }: { jobId: string }) {
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) void sendImage(f); e.target.value = ''; }} />
           <button type="button" onClick={() => fileRef.current?.click()} aria-label="Attach a photo" title="Attach a photo"
-            style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, padding: '0 14px', cursor: 'pointer', fontSize: 18 }}>📷</button>
+            style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, padding: '0 12px', cursor: 'pointer', color: 'var(--ink)', display: 'flex', alignItems: 'center' }}><CameraIcon /></button>
           <input className="rf-input" style={{ flex: 1 }} value={draft} placeholder={replyTo ? 'Type your reply…' : 'Type a message…'}
             onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') send(); }} />
           {draft.trim()
             ? <Button onClick={send}>Send</Button>
             : <button type="button" onClick={startRecording} aria-label="Record a voice note" title="Record a voice note"
-                style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, padding: '0 14px', cursor: 'pointer', fontSize: 18 }}>🎤</button>}
+                style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, padding: '0 12px', cursor: 'pointer', color: 'var(--ink)', display: 'flex', alignItems: 'center' }}><MicIcon /></button>}
         </div>
       )}
     </div>

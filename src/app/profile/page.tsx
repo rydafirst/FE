@@ -151,6 +151,9 @@ function ReferralCard() {
 
   useEffect(() => { api.myReferral(getToken()).then(setData).catch(() => {}); }, []);
 
+  // Program switched off from admin → hide the whole card.
+  if (data && !data.enabled) return null;
+
   const copy = async (what: 'code' | 'link', text: string) => {
     try { await navigator.clipboard.writeText(text); setCopied(what); setTimeout(() => setCopied(null), 1500); } catch { /* clipboard blocked */ }
   };

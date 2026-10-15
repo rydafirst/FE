@@ -24,6 +24,8 @@ export default function LoginPage() {
   // A referral code carried in from a rider's shared link (?ref=CODE). Kept so we can attach it right
   // after the new rider's account is created.
   const [refCode, setRefCode] = useState('');
+  const [referralsOn, setReferralsOn] = useState(false); // from public config; hides the code box when off
+  useEffect(() => { api.publicConfig().then((c) => setReferralsOn(c.referralsEnabled)).catch(() => {}); }, []);
 
   // Rider registration lives on the web. A link like /login?role=rider (from the marketing site or the
   // mobile app) lands straight on the rider sign-up form; ?ref=CODE pre-fills a referral.
@@ -141,9 +143,13 @@ export default function LoginPage() {
               <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>FULL NAME</label>
               <input className="rf-input" style={{ margin: '8px 0 16px' }} value={name}
                 onChange={(e) => setName(e.target.value)} placeholder="e.g. Chidi Okafor" autoComplete="name" />
-              <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>REFERRAL CODE (OPTIONAL)</label>
-              <input className="rf-input mono" style={{ margin: '8px 0 16px', letterSpacing: '.1em', textTransform: 'uppercase' }} value={refCode}
-                onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="e.g. AB3K9P" maxLength={16} />
+              {referralsOn && (
+                <>
+                  <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>REFERRAL CODE (OPTIONAL)</label>
+                  <input className="rf-input mono" style={{ margin: '8px 0 16px', letterSpacing: '.1em', textTransform: 'uppercase' }} value={refCode}
+                    onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="e.g. AB3K9P" maxLength={16} />
+                </>
+              )}
             </>
           )}
           <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>PHONE NUMBER</label>

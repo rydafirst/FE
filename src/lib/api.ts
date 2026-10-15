@@ -135,8 +135,9 @@ export interface AdminRiderDoc {
   id: string; type: string; label: string; status: string; version: number;
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
-export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: string; referralRewardMinor: number; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: boolean; referralRewardMinor: boolean } }
-export interface MyReferral { code: string; link: string; rewardMinor: number; invited: number; pending: number; credited: number; earnedMinor: number }
+export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: string; referralRewardMinor: number; referralsEnabled: boolean; disabledDocByTrack: Record<string, string[]>; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: boolean; referralRewardMinor: boolean; referralsEnabled: boolean; disabledDocByTrack: boolean } }
+export interface DocCatalog { tracks: string[]; items: { type: string; label: string; tracks: string[] }[] }
+export interface MyReferral { enabled: boolean; code: string; link: string; rewardMinor: number; invited: number; pending: number; credited: number; earnedMinor: number }
 export interface AdminReferralRow { id: string; status: 'PENDING' | 'CREDITED' | 'REJECTED'; createdAt: number; referrer: { id: string; name: string | null; phone: string | null }; referee: { id: string; name: string | null; phone: string | null }; refereeDeliveries: number; qualified: boolean; rewardMinor: number; creditedAt?: number; payoutRef?: string; payoutError?: string }
 export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; lateTotal: number; jobs: { id: string; status: string; type: string; late: boolean }[] }
 export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string; payoutPending?: boolean; payoutError?: string }
@@ -163,7 +164,7 @@ export interface RiderProfile { track: VehicleTrack | null; legalName?: string; 
 export interface RiderSummary { name?: string; nameVerified: boolean; vehicleType: VehicleTrack | null; vehiclePlate?: string; vehicleColor?: string; rating?: number; ratingCount?: number; photoUrl?: string; phone?: string; phoneMasked?: boolean; callMode?: 'proxy' | 'direct'; callNumber?: string }
 export interface PendingRating { jobId: string; amountMinor: number; createdAt: string; dropoffArea?: string; riderName?: string }
 // ---- Support chat (#5 support + agent hand-off, #6 per-trip support) ----
-export type SupportCategory = 'PAYMENT' | 'DELIVERY_ISSUE' | 'CONDUCT' | 'ACCOUNT' | 'APP_ISSUE' | 'OTHER';
+export type SupportCategory = 'PAYMENT' | 'DELIVERY_ISSUE' | 'CONDUCT' | 'ACCOUNT' | 'APP_ISSUE' | 'OTHER' | 'ANNOUNCEMENT';
 export type SupportStatus = 'BOT' | 'AWAITING_AGENT' | 'AGENT_JOINED' | 'RESOLVED';
 export interface SupportThread {
   id: string; userId: string; jobId?: string; category: SupportCategory; status: SupportStatus;
@@ -350,8 +351,9 @@ export const api = {
   adminVerifyRiderName: (token: string, riderId: string, verified: boolean) =>
     call<{ ok?: boolean }>(`/admin/documents/riders/${riderId}/verify-name`, { method: 'POST', token, body: JSON.stringify({ verified }) }),
   adminSettings: (token: string) => call<EffectiveSettings>(`/admin/settings`, { token }),
-  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor'>>) =>
+  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor' | 'referralsEnabled' | 'disabledDocByTrack'>>) =>
     call<EffectiveSettings>(`/admin/settings`, { method: 'PUT', token, body: JSON.stringify(patch) }),
+  adminDocumentCatalog: (token: string) => call<DocCatalog>(`/admin/documents/catalog`, { token }),
 
   // ---- Referrals ----
   myReferral: (token: string) => call<MyReferral>(`/me/referrals`, { token }),
@@ -359,7 +361,9 @@ export const api = {
   adminReferrals: (token: string) => call<{ rewardMinor: number; items: AdminReferralRow[] }>(`/admin/referrals`, { token }),
   adminCreditReferral: (token: string, id: string) => call<AdminReferralRow>(`/admin/referrals/${id}/credit`, { method: 'POST', token }),
   adminRejectReferral: (token: string, id: string) => call<AdminReferralRow>(`/admin/referrals/${id}/reject`, { method: 'POST', token }),
-  publicConfig: () => call<{ marketplaceEnabled: boolean }>(`/config`),
+  publicConfig: () => call<{ marketplaceEnabled: boolean; referralsEnabled: boolean }>(`/config`),
+  adminMessageUser: (token: string, phone: string, body: string) =>
+    call<{ id: string }>(`/support/agent/message-user`, { method: 'POST', token, body: JSON.stringify({ phone, body }) }),
   adminOps: (token: string) => call<AdminOps>(`/admin/ops/jobs/active`, { token }),
   adminDeliveries: (token: string) => call<AdminDelivery[]>(`/admin/ops/deliveries`, { token }),
   adminFinance: (token: string) => call<AdminFinance>(`/admin/finance/reconciliation`, { token }),

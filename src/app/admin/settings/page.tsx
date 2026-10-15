@@ -1,14 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { api, type EffectiveSettings } from '@/lib/api';
+import { api, type EffectiveSettings, type DocCatalog } from '@/lib/api';
 import { getToken } from '@/lib/session';
 import { useAdminGuard } from '@/components/AdminNav';
 
 const CITIES = ['LAGOS', 'ABUJA', 'PORT_HARCOURT', 'OTHER'];
+const TRACK_LABEL: Record<string, string> = { BIKE: 'Bike', CAR: 'Car', KEKE: 'Keke', BICYCLE: 'Bicycle' };
 
 export default function AdminSettingsPage() {
   const { ready, notAdmin } = useAdminGuard();
   const [s, setS] = useState<EffectiveSettings | null>(null);
+  const [catalog, setCatalog] = useState<DocCatalog | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -16,9 +18,10 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     if (!ready || notAdmin) return;
     api.adminSettings(getToken()).then(setS).catch((e) => setErr((e as Error).message));
+    api.adminDocumentCatalog(getToken()).then(setCatalog).catch(() => {});
   }, [ready, notAdmin]);
 
-  const save = async (patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor'>>) => {
+  const save = async (patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor' | 'referralsEnabled' | 'disabledDocByTrack'>>) => {
     setBusy(true); setMsg(null);
     try { setS(await api.adminUpdateSettings(getToken(), patch)); setMsg('Saved'); }
     catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
@@ -62,8 +65,65 @@ export default function AdminSettingsPage() {
             </div>
           </div>
 
+          <Toggle label="Referral program" hint="When ON, riders see their invite code/link and new riders can enter a referral code at sign-up. Turn OFF to pause the whole program — the code box is hidden and new claims are refused (already-earned referrals are unaffected)."
+            value={s.referralsEnabled} overridden={s.overridden.referralsEnabled} busy={busy}
+            onChange={(v) => save({ referralsEnabled: v })} />
+
           <ReferralReward valueMinor={s.referralRewardMinor} overridden={s.overridden.referralRewardMinor} busy={busy}
             onSave={(naira) => save({ referralRewardMinor: Math.round(naira * 100) })} />
+
+          {catalog && (
+            <div className="rf-card" style={{ marginBottom: 12 }}>
+              <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 6 }}>
+                RIDER DOCUMENTS — PER VEHICLE {s.overridden.disabledDocByTrack ? '· OVERRIDDEN' : '· FROM ENV'}
+              </div>
+              <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', marginBottom: 12, lineHeight: 1.45 }}>
+                Tick a box to <b>require</b> that document for that vehicle; untick to stop collecting it. Changes apply to
+                the rider checklist on the app and the web. Profile photo and government ID are always required; the
+                guarantor has its own switch above.
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 360 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>Document</th>
+                      {catalog.tracks.map((tr) => (
+                        <th key={tr} className="mono" style={{ padding: '6px 8px', fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center' }}>{TRACK_LABEL[tr] ?? tr}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catalog.items.map((d) => (
+                      <tr key={d.type} style={{ borderTop: '1px solid var(--line-2)' }}>
+                        <td style={{ padding: '8px', fontSize: 'var(--text-small)', color: 'var(--ink)' }}>{d.label}</td>
+                        {catalog.tracks.map((tr) => {
+                          const applies = d.tracks.includes(tr);
+                          const required = applies && !(s.disabledDocByTrack[tr] ?? []).includes(d.type);
+                          return (
+                            <td key={tr} style={{ padding: '8px', textAlign: 'center' }}>
+                              {applies ? (
+                                <input type="checkbox" checked={required} disabled={busy}
+                                  onChange={() => {
+                                    const cur = { ...s.disabledDocByTrack };
+                                    const list = new Set(cur[tr] ?? []);
+                                    if (required) list.add(d.type); else list.delete(d.type); // required→hide, hidden→show
+                                    cur[tr] = [...list];
+                                    save({ disabledDocByTrack: cur });
+                                  }}
+                                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--ink)' }} />
+                              ) : (
+                                <span style={{ color: 'var(--line)' }}>—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {msg && <p style={{ fontSize: 'var(--text-small)', color: 'var(--success)' }}>{msg}</p>}
           <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginTop: 8 }}>
