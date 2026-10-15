@@ -85,6 +85,7 @@ export default function Home() {
   const cta = storeCta(platform);
   const [ridersOpen, setRidersOpen] = useState(false);
   const ridersRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false); // mobile nav menu
 
   // Close the Riders menu on a click anywhere outside it, or on Escape — so it stays open (and its
   // links stay clickable) once opened, instead of flickering shut on hover.
@@ -146,7 +147,23 @@ export default function Home() {
         {cta.href
           ? <a href={cta.href} target="_blank" rel="noopener noreferrer" className="mkt-nav-cta">{cta.label}</a>
           : <span className="mkt-nav-cta mkt-nav-cta--soon">{cta.label}</span>}
+        {/* Mobile menu toggle — the desktop nav (incl. the Riders → Rider web app link) is hidden on
+            small screens, so this hamburger surfaces the same links in a dropdown panel. */}
+        <button type="button" className="mkt-nav-toggle" aria-label="Menu" aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((o) => !o)}>
+          {menuOpen ? '✕' : '☰'}
+        </button>
       </header>
+
+      {/* Mobile nav panel */}
+      {menuOpen && (
+        <div className="mkt-mobile-menu">
+          <a href="#how" onClick={() => setMenuOpen(false)}>How it works</a>
+          <a href="#trust" onClick={() => setMenuOpen(false)}>The guarantee</a>
+          <a href="#riders" onClick={() => setMenuOpen(false)}>Why ride with us</a>
+          <Link href="/login" className="mkt-mobile-menu-rider" onClick={() => setMenuOpen(false)}>Rider web app →</Link>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="mkt-hero">
@@ -259,7 +276,7 @@ const CSS = `
   background-image:url(/brand/background.png);background-repeat:repeat;background-size:900px;}
 .mkt-root>*:not(.mkt-tex){position:relative;z-index:1;}
 
-.mkt-nav{display:flex;align-items:center;gap:24px;max-width:1180px;margin:0 auto;padding:22px 32px;}
+.mkt-nav{display:flex;align-items:center;gap:24px;max-width:1180px;margin:0 auto;padding:22px 32px;position:relative;z-index:50;}
 .mkt-brand{font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--ink);text-decoration:none;}
 .mkt-brand-y{color:var(--primary);}
 .mkt-brand-first{color:var(--ink-2);font-weight:400;}
@@ -277,6 +294,9 @@ const CSS = `
 .mkt-nav-cta{font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   color:var(--on-dark);background:var(--ink);text-decoration:none;padding:10px 16px;border-radius:var(--radius-pill);transition:transform .18s,background .18s;}
 .mkt-nav-cta:hover{background:#000;transform:translateY(-1px);}
+.mkt-nav-toggle{display:none;margin-left:14px;background:none;border:1px solid var(--line);border-radius:10px;
+  width:42px;height:42px;font-size:19px;line-height:1;color:var(--ink);cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;}
+.mkt-mobile-menu{display:none;}
 
 .mkt-hero{max-width:1180px;margin:0 auto;padding:40px 32px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;}
 .mkt-eyebrow{font-family:var(--font-mono);font-size:12.5px;font-weight:700;letter-spacing:.16em;color:var(--ink-2);margin:0 0 18px;}
@@ -342,6 +362,17 @@ const CSS = `
   .mkt-hero{grid-template-columns:1fr;padding-top:24px;}
   .mkt-hero-art{order:-1;max-width:420px;margin:0 auto;}
   .mkt-nav-links{display:none;}
+  /* With the desktop links hidden, push the CTA to the right and reveal the hamburger. */
+  .mkt-nav-cta{margin-left:auto;}
+  .mkt-nav-toggle{display:inline-flex;}
+  .mkt-mobile-menu{display:flex;flex-direction:column;position:relative;z-index:50;max-width:1180px;margin:0 auto;
+    padding:4px 20px 14px;}
+  .mkt-mobile-menu a{color:var(--ink);text-decoration:none;font-size:16px;padding:13px 10px;border-radius:10px;
+    border-top:1px solid var(--line);}
+  .mkt-mobile-menu a:first-child{border-top:none;}
+  .mkt-mobile-menu a:active{background:var(--bg-2);}
+  .mkt-mobile-menu-rider{font-family:var(--font-mono);font-size:14px!important;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--primary)!important;margin-top:4px;}
   .mkt-steps-grid{grid-template-columns:1fr 1fr;}
   .mkt-poster-grid{grid-template-columns:1fr 1fr;}
 }

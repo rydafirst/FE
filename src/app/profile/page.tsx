@@ -87,6 +87,8 @@ export default function ProfilePage() {
           : <><Row href="/home" label="Book a delivery" /><Row href="/support" label="Help & support" last /></>}
       </div>
 
+      {role === 'RIDER' && <ReferralCard />}
+
       <div className="rf-card" style={{ marginBottom: 16 }}>
         <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '0 0 6px', letterSpacing: '.06em' }}>SESSION</p>
         <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 12px' }}>
@@ -156,6 +158,70 @@ function BankAccountCard({ role }: { role: 'CUSTOMER' | 'RIDER' | 'ADMIN' }) {
           <button onClick={() => setEditing(false)} className="mono" style={{ background: 'none', border: 'none', padding: '10px 0 0', cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>CANCEL</button>
         </div>
       )}
+    </div>
+  );
+}
+
+const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG')}`;
+
+// Rider "Invite & earn": share a personal code/link; earn once a referred rider finishes their first
+// delivery (an admin credits it). The code is generated server-side on first load.
+function ReferralCard() {
+  const [data, setData] = useState<import('@/lib/api').MyReferral | null>(null);
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+
+  useEffect(() => { api.myReferral(getToken()).then(setData).catch(() => {}); }, []);
+
+  const copy = async (what: 'code' | 'link', text: string) => {
+    try { await navigator.clipboard.writeText(text); setCopied(what); setTimeout(() => setCopied(null), 1500); } catch { /* clipboard blocked */ }
+  };
+  const share = async () => {
+    if (!data) return;
+    const msg = `Join me on Rydafirst as a rider and start earning. Use my code ${data.code}: ${data.link}`;
+    try { if (navigator.share) { await navigator.share({ title: 'Ride & earn with Rydafirst', text: msg, url: data.link }); return; } } catch { /* cancelled */ }
+    void copy('link', data.link);
+  };
+
+  return (
+    <div className="rf-card" style={{ marginBottom: 16, border: '1px solid var(--ink)' }}>
+      <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '0 0 6px', letterSpacing: '.06em' }}>INVITE &amp; EARN</p>
+      <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', lineHeight: 1.45, margin: '0 0 12px' }}>
+        {data ? <>Earn <b style={{ color: 'var(--ink)' }}>{naira(data.rewardMinor)}</b> for every rider who joins with your code and completes their first delivery.</> : 'Loading…'}
+      </p>
+
+      {data && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <div style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 6, padding: '10px 12px', fontFamily: 'var(--font-mono, monospace)', fontSize: 'var(--text-subtitle)', letterSpacing: '.12em', fontWeight: 700 }}>
+              {data.code}
+            </div>
+            <button onClick={() => copy('code', data.code)} className="mono"
+              style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '10px 12px', background: 'var(--bg)', cursor: 'pointer', fontSize: 'var(--text-caption)' }}>
+              {copied === 'code' ? 'COPIED' : 'COPY'}
+            </button>
+          </div>
+          <Button onClick={share}>Share your link</Button>
+          <button onClick={() => copy('link', data.link)} className="mono"
+            style={{ display: 'block', width: '100%', marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
+            {copied === 'link' ? 'LINK COPIED ✓' : 'OR COPY LINK'}
+          </button>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 14, textAlign: 'center' }}>
+            <Stat label="INVITED" value={String(data.invited)} />
+            <Stat label="PENDING" value={String(data.pending)} />
+            <Stat label="EARNED" value={naira(data.earnedMinor)} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ flex: 1, border: '1px solid var(--line-2)', borderRadius: 6, padding: '10px 6px' }}>
+      <div className="mono" style={{ fontSize: 'var(--text-subtitle)', fontWeight: 700 }}>{value}</div>
+      <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>{label}</div>
     </div>
   );
 }

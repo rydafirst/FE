@@ -12,6 +12,7 @@ export const NAV_ITEMS: { href: string; label: string }[] = [
   { href: '/admin/finance', label: 'Finance' },
   { href: '/admin/disputes', label: 'Disputes' },
   { href: '/admin/reliability', label: 'Reliability' },
+  { href: '/admin/referrals', label: 'Referrals' },
   { href: '/admin/support', label: 'Support' },
   { href: '/admin/settings', label: 'Settings' },
 ];

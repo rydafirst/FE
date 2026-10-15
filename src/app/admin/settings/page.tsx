@@ -18,7 +18,7 @@ export default function AdminSettingsPage() {
     api.adminSettings(getToken()).then(setS).catch((e) => setErr((e as Error).message));
   }, [ready, notAdmin]);
 
-  const save = async (patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity'>>) => {
+  const save = async (patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor'>>) => {
     setBusy(true); setMsg(null);
     try { setS(await api.adminUpdateSettings(getToken(), patch)); setMsg('Saved'); }
     catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
@@ -62,12 +62,44 @@ export default function AdminSettingsPage() {
             </div>
           </div>
 
+          <ReferralReward valueMinor={s.referralRewardMinor} overridden={s.overridden.referralRewardMinor} busy={busy}
+            onSave={(naira) => save({ referralRewardMinor: Math.round(naira * 100) })} />
+
           {msg && <p style={{ fontSize: 'var(--text-small)', color: 'var(--success)' }}>{msg}</p>}
           <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginTop: 8 }}>
             Changes take effect immediately and override the deployed environment defaults.
           </p>
         </>
       )}
+    </div>
+  );
+}
+
+function ReferralReward({ valueMinor, overridden, busy, onSave }: {
+  valueMinor: number; overridden: boolean; busy: boolean; onSave: (naira: number) => void;
+}) {
+  const [naira, setNaira] = useState(String(Math.round(valueMinor / 100)));
+  useEffect(() => { setNaira(String(Math.round(valueMinor / 100))); }, [valueMinor]);
+  const n = Number(naira);
+  const dirty = Number.isFinite(n) && n >= 0 && Math.round(n * 100) !== valueMinor;
+  return (
+    <div className="rf-card" style={{ marginBottom: 12 }}>
+      <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 6 }}>
+        RIDER REFERRAL REWARD {overridden ? '· OVERRIDDEN' : '· FROM ENV'}
+      </div>
+      <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', marginBottom: 10 }}>
+        Paid to a rider when someone they referred completes their first delivery (you credit it on the Referrals page).
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <span className="mono" style={{ fontSize: 'var(--text-body)' }}>₦</span>
+        <input className="rf-input mono" style={{ maxWidth: 160 }} value={naira} inputMode="numeric"
+          onChange={(e) => setNaira(e.target.value.replace(/[^0-9]/g, ''))} />
+        <button onClick={() => onSave(n)} disabled={busy || !dirty} className="mono"
+          style={{ border: 'none', borderRadius: 8, padding: '10px 16px', cursor: dirty ? 'pointer' : 'not-allowed',
+            background: dirty ? 'var(--ink)' : 'var(--line)', color: dirty ? 'var(--on-dark)' : 'var(--mid)', fontSize: 'var(--text-caption)' }}>
+          SAVE
+        </button>
+      </div>
     </div>
   );
 }

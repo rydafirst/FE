@@ -135,7 +135,9 @@ export interface AdminRiderDoc {
   id: string; type: string; label: string; status: string; version: number;
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
-export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: string; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: boolean } }
+export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: string; referralRewardMinor: number; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: boolean; referralRewardMinor: boolean } }
+export interface MyReferral { code: string; link: string; rewardMinor: number; invited: number; pending: number; credited: number; earnedMinor: number }
+export interface AdminReferralRow { id: string; status: 'PENDING' | 'CREDITED' | 'REJECTED'; createdAt: number; referrer: { id: string; name: string | null; phone: string | null }; referee: { id: string; name: string | null; phone: string | null }; refereeDeliveries: number; qualified: boolean; rewardMinor: number; creditedAt?: number; payoutRef?: string; payoutError?: string }
 export interface AdminOps { summary: { activeTotal: number; byStatus: Record<string, number> }; lateTotal: number; jobs: { id: string; status: string; type: string; late: boolean }[] }
 export interface AdminDelivery { id: string; status: string; type: string; amountMinor: number; pickupArea?: string; dropoffArea?: string; createdAt: string; payoutPending?: boolean; payoutError?: string }
 export interface AdminFinance { totals: { held: number; released: number; refunded: number; platformRevenue: number }; reconciliation: { inSync: boolean; drift: { held: number; released: number; refunded: number } } }
@@ -348,8 +350,15 @@ export const api = {
   adminVerifyRiderName: (token: string, riderId: string, verified: boolean) =>
     call<{ ok?: boolean }>(`/admin/documents/riders/${riderId}/verify-name`, { method: 'POST', token, body: JSON.stringify({ verified }) }),
   adminSettings: (token: string) => call<EffectiveSettings>(`/admin/settings`, { token }),
-  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity'>>) =>
+  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor'>>) =>
     call<EffectiveSettings>(`/admin/settings`, { method: 'PUT', token, body: JSON.stringify(patch) }),
+
+  // ---- Referrals ----
+  myReferral: (token: string) => call<MyReferral>(`/me/referrals`, { token }),
+  claimReferral: (token: string, code: string) => call<{ ok: true }>(`/me/referrals/claim`, { method: 'POST', token, body: JSON.stringify({ code }) }),
+  adminReferrals: (token: string) => call<{ rewardMinor: number; items: AdminReferralRow[] }>(`/admin/referrals`, { token }),
+  adminCreditReferral: (token: string, id: string) => call<AdminReferralRow>(`/admin/referrals/${id}/credit`, { method: 'POST', token }),
+  adminRejectReferral: (token: string, id: string) => call<AdminReferralRow>(`/admin/referrals/${id}/reject`, { method: 'POST', token }),
   publicConfig: () => call<{ marketplaceEnabled: boolean }>(`/config`),
   adminOps: (token: string) => call<AdminOps>(`/admin/ops/jobs/active`, { token }),
   adminDeliveries: (token: string) => call<AdminDelivery[]>(`/admin/ops/deliveries`, { token }),

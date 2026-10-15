@@ -23,12 +23,18 @@ export default function LoginPage() {
   const [role, setRole] = useState<Role>('CUSTOMER');
   const [name, setName] = useState('');
 
+  // A referral code carried in from a rider's shared link (?ref=CODE). Kept so we can attach it right
+  // after the new rider's account is created.
+  const [refCode, setRefCode] = useState('');
+
   // Rider registration lives on the web. A link like /login?role=rider (from the marketing site or the
-  // mobile app) lands straight on the rider sign-up form.
+  // mobile app) lands straight on the rider sign-up form; ?ref=CODE pre-fills a referral.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     if (q.get('role')?.toUpperCase() === 'RIDER') { setRole('RIDER'); setMode('signup'); }
     else if (q.get('signup') != null) setMode('signup');
+    const ref = q.get('ref');
+    if (ref) { setRefCode(ref.trim().toUpperCase()); setMode('signup'); setRole('RIDER'); }
   }, []);
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
@@ -86,6 +92,11 @@ export default function LoginPage() {
       // Route by the *actual* role in the issued token (an allowlisted admin phone is upgraded to
       // ADMIN server-side regardless of the requested role).
       const actual = getUserRole();
+      // New rider who arrived via a referral link: attach the code now (best-effort — a bad/used code
+      // must never block them from getting into the app).
+      if (actual === 'RIDER' && isSignup && refCode) {
+        try { await api.claimReferral(t.accessToken, refCode); } catch { /* ignore: non-blocking */ }
+      }
       location.href = actual === 'ADMIN' ? '/admin' : actual === 'RIDER' ? '/rider' : '/home';
     } catch (e) { setErr((e as Error).message); }
     finally { setBusy(false); }
@@ -134,6 +145,13 @@ export default function LoginPage() {
               <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>FULL NAME</label>
               <input className="rf-input" style={{ margin: '8px 0 16px' }} value={name}
                 onChange={(e) => setName(e.target.value)} placeholder="e.g. Chidi Okafor" autoComplete="name" />
+              {role === 'RIDER' && (
+                <>
+                  <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>REFERRAL CODE (OPTIONAL)</label>
+                  <input className="rf-input mono" style={{ margin: '8px 0 16px', letterSpacing: '.1em', textTransform: 'uppercase' }} value={refCode}
+                    onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="e.g. AB3K9P" maxLength={16} />
+                </>
+              )}
             </>
           )}
           <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>PHONE NUMBER</label>
