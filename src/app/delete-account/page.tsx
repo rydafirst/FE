@@ -17,7 +17,7 @@ export default function DeleteAccountPage() {
 
       <h2 style={{ fontSize: 'var(--text-subtitle)', marginTop: 20 }}>Or request it by email</h2>
       <p>If you can&apos;t access the app, email{' '}
-        <a href="mailto:support@rydafirst.com?subject=Delete%20my%20account" style={{ color: 'var(--ink)' }}>support@rydafirst.com</a>{' '}
+        <a href="mailto:rydafirst@gmail.com?subject=Delete%20my%20account" style={{ color: 'var(--ink)' }}>rydafirst@gmail.com</a>{' '}
         from the address on your account, with the subject &ldquo;Delete my account&rdquo;. We action
         verified requests within 30 days.</p>
 
@@ -32,7 +32,7 @@ export default function DeleteAccountPage() {
         verification documents are kept only for the period applicable regulations require.</p>
 
       <h2 style={{ fontSize: 'var(--text-subtitle)', marginTop: 20 }}>Questions</h2>
-      <p>Contact <a href="mailto:privacy@rydafirst.com" style={{ color: 'var(--ink)' }}>privacy@rydafirst.com</a>.
+      <p>Contact <a href="mailto:rydafirst@gmail.com" style={{ color: 'var(--ink)' }}>rydafirst@gmail.com</a>.
         See also our <Link href="/privacy" style={{ color: 'var(--ink)' }}>Privacy Policy</Link>.</p>
     </main>
   );

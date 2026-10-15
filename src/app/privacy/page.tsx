@@ -108,6 +108,7 @@ export default function PrivacyPolicy() {
         <P>Questions about this policy or your data? Reach Rydafirst Limited at:</P>
         <P style={{ color: 'var(--ink)' }}>
           Nigeria<br />
+          <a href="mailto:rydafirst@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>rydafirst@gmail.com</a><br />
           <a href="tel:+2348149249926" style={{ color: 'var(--primary)', textDecoration: 'none' }}>+234 814 924 9926</a>
         </P>
       </Section>

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { BottomNav } from '@/components/BottomNav';
 import { useRequireAuth } from '@/lib/useAuth';
-import { getToken } from '@/lib/session';
+import { clearToken, getToken } from '@/lib/session';
 import { api, type SupportThread, type SupportCategory } from '@/lib/api';
 import { SUPPORT_CATEGORIES, CATEGORY_LABELS, CATEGORY_HINTS } from '@/lib/supportBot';
 
@@ -28,6 +28,19 @@ export default function SupportInboxPage() {
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Account deletion lives here under Help & support, not on the profile.
+  const deleteAccount = async () => {
+    if (deleting) return;
+    if (!window.confirm('Delete your account? This erases your name, email and photo and signs you out everywhere. This cannot be undone. (Records required by law are kept, without identifying you.)')) return;
+    setDeleting(true);
+    try {
+      await api.deleteAccount(getToken());
+      clearToken();
+      window.location.href = '/';
+    } catch (e) { setErr((e as Error).message); setDeleting(false); }
+  };
 
   const load = useCallback(() => {
     api.mySupportThreads(getToken()).then(setThreads).catch((e) => setErr((e as Error).message));
@@ -100,6 +113,20 @@ export default function SupportInboxPage() {
             </a>
           );
         })}
+      </div>
+
+      {/* Account deletion lives here under Help & support, not on the profile. */}
+      <div className="rf-card" style={{ marginTop: 28, borderColor: 'var(--danger)' }}>
+        <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--danger)', margin: '0 0 6px', letterSpacing: '.06em' }}>DELETE ACCOUNT</p>
+        <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 12px', lineHeight: 1.45 }}>
+          Permanently erase your personal data (name, email, photo) and sign out everywhere. Records the
+          law requires us to keep are retained without identifying you.{' '}
+          <a href="/delete-account" style={{ color: 'var(--ink)' }}>Learn more</a>.
+        </p>
+        <button onClick={deleteAccount} disabled={deleting}
+          style={{ background: 'var(--danger)', color: 'var(--on-dark)', border: 'none', borderRadius: 8, padding: '10px 16px', cursor: deleting ? 'default' : 'pointer', fontSize: 'var(--text-body)', fontWeight: 600 }}>
+          {deleting ? 'Deleting…' : 'Delete my account'}
+        </button>
       </div>
 
       <BottomNav />

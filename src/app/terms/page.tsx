@@ -51,7 +51,9 @@ export default function TermsPage() {
 
       <h2 style={{ fontSize: 'var(--text-subtitle)', marginTop: 20 }}>8. Changes and contact</h2>
       <p>We may update these terms and will post the updated version here. Questions? Contact Rydafirst
-        Limited in Nigeria, or call{' '}
+        Limited in Nigeria, email{' '}
+        <a href="mailto:rydafirst@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>rydafirst@gmail.com</a>,
+        or call{' '}
         <a href="tel:+2348149249926" style={{ color: 'var(--primary)', textDecoration: 'none' }}>+234 814 924 9926</a>.</p>
      </div>
     </main>

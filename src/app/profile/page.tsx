@@ -12,11 +12,9 @@ export default function ProfilePage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  // Declared with the other hooks — NOT after the `if (!ready) return null` below. A hook placed
-  // after that early return runs only once auth resolves, so React sees the hook count jump between
-  // renders and throws #300 ("rendered more hooks than during the previous render"), white-screening
-  // the page. This is the crash testers hit on every profile open.
-  const [deleting, setDeleting] = useState(false);
+  // NB: declare every hook before the `if (!ready) return null` early-return below — a hook placed
+  // after it only runs once auth resolves, so React sees the hook count change between renders and
+  // throws #300 ("rendered more hooks than during the previous render"), white-screening the page.
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => { if (ready) api.myAvatar(getToken()).then((a) => setPhotoUrl(a.photoUrl)).catch(() => {}); }, [ready]);
   useEffect(() => { if (ready) api.me(getToken()).then((m) => setPhone(m.phone)).catch(() => {}); }, [ready]);
@@ -41,17 +39,6 @@ export default function ProfilePage() {
   const logout = () => {
     clearToken();
     window.location.href = '/';
-  };
-
-  const deleteAccount = async () => {
-    if (deleting) return;
-    if (!window.confirm('Delete your account? This erases your name, email and photo and signs you out everywhere. This cannot be undone. (Records required by law are kept, without identifying you.)')) return;
-    setDeleting(true);
-    try {
-      await api.deleteAccount(getToken());
-      clearToken();
-      window.location.href = '/';
-    } catch { setDeleting(false); }
   };
 
   return (
@@ -97,18 +84,10 @@ export default function ProfilePage() {
         <Button variant="ghost" onClick={logout}>Log out</Button>
       </div>
 
-      <div className="rf-card" style={{ marginBottom: 16, borderColor: 'var(--danger)' }}>
-        <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--danger)', margin: '0 0 6px', letterSpacing: '.06em' }}>DELETE ACCOUNT</p>
-        <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '0 0 12px', lineHeight: 1.45 }}>
-          Permanently erase your personal data (name, email, photo) and sign out everywhere. Records the
-          law requires us to keep are retained without identifying you.{' '}
-          <a href="/delete-account" style={{ color: 'var(--ink)' }}>Learn more</a>.
-        </p>
-        <button onClick={deleteAccount} disabled={deleting}
-          style={{ background: 'var(--danger)', color: 'var(--on-dark)', border: 'none', borderRadius: 8, padding: '10px 16px', cursor: deleting ? 'default' : 'pointer', fontSize: 'var(--text-body)', fontWeight: 600 }}>
-          {deleting ? 'Deleting…' : 'Delete my account'}
-        </button>
-      </div>
+      <p style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center', marginTop: 12 }}>
+        Need to delete your account? It&apos;s under{' '}
+        <a href="/support" style={{ color: 'var(--ink)' }}>Help &amp; support</a>.
+      </p>
 
       <BottomNav />
     </main>

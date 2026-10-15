@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import { getUserRole, isLoggedIn, setToken } from '@/lib/session';
 
-type Role = 'CUSTOMER' | 'RIDER';
 type Mode = 'signin' | 'signup';
 const RESEND_COOLDOWN = 30; // seconds between code requests (UX guard on top of the server rate limit)
 
@@ -20,7 +19,6 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState<Mode>('signin');
   const [phase, setPhase] = useState<'phone' | 'code'>('phone');
-  const [role, setRole] = useState<Role>('CUSTOMER');
   const [name, setName] = useState('');
 
   // A referral code carried in from a rider's shared link (?ref=CODE). Kept so we can attach it right
@@ -31,10 +29,9 @@ export default function LoginPage() {
   // mobile app) lands straight on the rider sign-up form; ?ref=CODE pre-fills a referral.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    if (q.get('role')?.toUpperCase() === 'RIDER') { setRole('RIDER'); setMode('signup'); }
-    else if (q.get('signup') != null) setMode('signup');
+    if (q.get('role')?.toUpperCase() === 'RIDER' || q.get('signup') != null) setMode('signup');
     const ref = q.get('ref');
-    if (ref) { setRefCode(ref.trim().toUpperCase()); setMode('signup'); setRole('RIDER'); }
+    if (ref) { setRefCode(ref.trim().toUpperCase()); setMode('signup'); }
   }, []);
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
@@ -87,7 +84,9 @@ export default function LoginPage() {
     try {
       // Role is chosen only when creating an account; it's where riders register. For an existing
       // account the server ignores it and returns the account's own (sticky) role.
-      const t = await api.verifyOtp(phone, code, isSignup ? role : 'CUSTOMER');
+      // Web account creation is rider-only; sign-in sends CUSTOMER but the server ignores it for an
+      // existing account and returns that account's own sticky role.
+      const t = await api.verifyOtp(phone, code, isSignup ? 'RIDER' : 'CUSTOMER');
       setToken(t.accessToken);
       // Route by the *actual* role in the issued token (an allowlisted admin phone is upgraded to
       // ADMIN server-side regardless of the requested role).
@@ -123,18 +122,15 @@ export default function LoginPage() {
         ))}
       </div>
 
-      {/* Role is chosen only when creating an account. Signing in uses the account's own fixed role —
-          once a number registers as a customer or a rider, that never changes. */}
+      {/* Creating an account on the web is for RIDERS only — customers book from the mobile app. Signing
+          in works for anyone (the account's own fixed role decides where they land). */}
       {isSignup && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          {(['CUSTOMER', 'RIDER'] as Role[]).map((r) => (
-            <button key={r} onClick={() => setRole(r)} className="mono"
-              style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-caption)', letterSpacing: '.06em',
-                border: `1px solid ${role === r ? 'var(--ink)' : 'var(--line)'}`, background: 'var(--bg)',
-                color: role === r ? 'var(--ink)' : 'var(--mid)' }}>
-              {r === 'CUSTOMER' ? 'I NEED A DELIVERY' : 'I AM A RIDER'}
-            </button>
-          ))}
+        <div className="rf-card" style={{ marginBottom: 20, borderColor: 'var(--ink)' }}>
+          <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>CREATE YOUR RIDER ACCOUNT</div>
+          <p style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', margin: '6px 0 0', lineHeight: 1.5 }}>
+            Register as a rider and start earning. Just need to send a parcel?{' '}
+            <a href="/" style={{ color: 'var(--ink)' }}>Download the app</a> to book a delivery.
+          </p>
         </div>
       )}
 
@@ -145,13 +141,9 @@ export default function LoginPage() {
               <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>FULL NAME</label>
               <input className="rf-input" style={{ margin: '8px 0 16px' }} value={name}
                 onChange={(e) => setName(e.target.value)} placeholder="e.g. Chidi Okafor" autoComplete="name" />
-              {role === 'RIDER' && (
-                <>
-                  <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>REFERRAL CODE (OPTIONAL)</label>
-                  <input className="rf-input mono" style={{ margin: '8px 0 16px', letterSpacing: '.1em', textTransform: 'uppercase' }} value={refCode}
-                    onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="e.g. AB3K9P" maxLength={16} />
-                </>
-              )}
+              <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>REFERRAL CODE (OPTIONAL)</label>
+              <input className="rf-input mono" style={{ margin: '8px 0 16px', letterSpacing: '.1em', textTransform: 'uppercase' }} value={refCode}
+                onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="e.g. AB3K9P" maxLength={16} />
             </>
           )}
           <label className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>PHONE NUMBER</label>
@@ -187,7 +179,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <Button onClick={verify} disabled={busy}>{busy ? 'Working…' : isSignup ? `Create ${role === 'RIDER' ? 'rider' : 'customer'} account` : 'Verify'}</Button>
+          <Button onClick={verify} disabled={busy}>{busy ? 'Working…' : isSignup ? 'Create rider account' : 'Verify'}</Button>
 
           <button onClick={() => { setPhase('phone'); setCode(''); setErr(null); setNote(null); }} className="mono"
             style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>

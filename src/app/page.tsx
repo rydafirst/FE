@@ -139,7 +139,8 @@ export default function Home() {
             {ridersOpen && (
               <div className="mkt-dropdown-menu" role="menu">
                 <a href="#riders" role="menuitem" onClick={() => setRidersOpen(false)}>Why ride with us</a>
-                <Link href="/login" role="menuitem" onClick={() => setRidersOpen(false)}>Rider web app →</Link>
+                <Link href="/login?role=rider" role="menuitem" onClick={() => setRidersOpen(false)}>Become a rider →</Link>
+                <Link href="/login" role="menuitem" onClick={() => setRidersOpen(false)}>Rider web app (sign in) →</Link>
               </div>
             )}
           </div>
@@ -161,7 +162,8 @@ export default function Home() {
           <a href="#how" onClick={() => setMenuOpen(false)}>How it works</a>
           <a href="#trust" onClick={() => setMenuOpen(false)}>The guarantee</a>
           <a href="#riders" onClick={() => setMenuOpen(false)}>Why ride with us</a>
-          <Link href="/login" className="mkt-mobile-menu-rider" onClick={() => setMenuOpen(false)}>Rider web app →</Link>
+          <Link href="/login?role=rider" className="mkt-mobile-menu-rider" onClick={() => setMenuOpen(false)}>Become a rider →</Link>
+          <Link href="/login" onClick={() => setMenuOpen(false)}>Rider web app (sign in) →</Link>
         </div>
       )}
 
@@ -233,9 +235,8 @@ export default function Home() {
             Your payment is locked in escrow before you ever pick up, and released the moment delivery
             is confirmed. Fair pay if a trip fails through no fault of yours. No more “I’ll pay you later.”
           </p>
-          {cta.href
-            ? <a href={cta.href} target="_blank" rel="noopener noreferrer" className="mkt-btn mkt-btn--primary" style={{ marginTop: 26 }}>{platform === 'android' ? <PlayIcon /> : <AppleIcon />}Become a rider</a>
-            : <span className="mkt-btn mkt-btn--soon" style={{ marginTop: 26 }}><PlayIcon />Android app — coming soon</span>}
+          {/* Riders register on the web, so this goes to the rider sign-up — NOT the app store. */}
+          <Link href="/login?role=rider" className="mkt-btn mkt-btn--primary" style={{ marginTop: 26 }}>Become a rider →</Link>
         </div>
       </section>
 
