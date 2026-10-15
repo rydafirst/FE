@@ -22,6 +22,14 @@ export default function LoginPage() {
   const [phase, setPhase] = useState<'phone' | 'code'>('phone');
   const [role, setRole] = useState<Role>('CUSTOMER');
   const [name, setName] = useState('');
+
+  // Rider registration lives on the web. A link like /login?role=rider (from the marketing site or the
+  // mobile app) lands straight on the rider sign-up form.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('role')?.toUpperCase() === 'RIDER') { setRole('RIDER'); setMode('signup'); }
+    else if (q.get('signup') != null) setMode('signup');
+  }, []);
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [err, setErr] = useState<string | null>(null);
@@ -71,7 +79,9 @@ export default function LoginPage() {
   async function verify() {
     setErr(null); setNote(null); setBusy(true);
     try {
-      const t = await api.verifyOtp(phone, code, role);
+      // Role is chosen only when creating an account; it's where riders register. For an existing
+      // account the server ignores it and returns the account's own (sticky) role.
+      const t = await api.verifyOtp(phone, code, isSignup ? role : 'CUSTOMER');
       setToken(t.accessToken);
       // Route by the *actual* role in the issued token (an allowlisted admin phone is upgraded to
       // ADMIN server-side regardless of the requested role).
@@ -102,17 +112,20 @@ export default function LoginPage() {
         ))}
       </div>
 
-      {/* Who's signing in — customer or rider */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {(['CUSTOMER', 'RIDER'] as Role[]).map((r) => (
-          <button key={r} onClick={() => setRole(r)} className="mono"
-            style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-caption)', letterSpacing: '.06em',
-              border: `1px solid ${role === r ? 'var(--ink)' : 'var(--line)'}`, background: 'var(--bg)',
-              color: role === r ? 'var(--ink)' : 'var(--mid)' }}>
-            {r === 'CUSTOMER' ? 'I NEED A DELIVERY' : 'I AM A RIDER'}
-          </button>
-        ))}
-      </div>
+      {/* Role is chosen only when creating an account. Signing in uses the account's own fixed role —
+          once a number registers as a customer or a rider, that never changes. */}
+      {isSignup && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          {(['CUSTOMER', 'RIDER'] as Role[]).map((r) => (
+            <button key={r} onClick={() => setRole(r)} className="mono"
+              style={{ flex: 1, padding: 10, borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-caption)', letterSpacing: '.06em',
+                border: `1px solid ${role === r ? 'var(--ink)' : 'var(--line)'}`, background: 'var(--bg)',
+                color: role === r ? 'var(--ink)' : 'var(--mid)' }}>
+              {r === 'CUSTOMER' ? 'I NEED A DELIVERY' : 'I AM A RIDER'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {phase === 'phone' ? (
         <>
@@ -156,7 +169,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <Button onClick={verify} disabled={busy}>{busy ? 'Working…' : `Verify as ${role === 'RIDER' ? 'rider' : 'customer'}`}</Button>
+          <Button onClick={verify} disabled={busy}>{busy ? 'Working…' : isSignup ? `Create ${role === 'RIDER' ? 'rider' : 'customer'} account` : 'Verify'}</Button>
 
           <button onClick={() => { setPhase('phone'); setCode(''); setErr(null); setNote(null); }} className="mono"
             style={{ background: 'none', border: 'none', marginTop: 12, cursor: 'pointer', fontSize: 'var(--text-caption)', letterSpacing: '.06em', color: 'var(--ink-2)' }}>
