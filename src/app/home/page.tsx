@@ -59,6 +59,7 @@ export default function HomePage() {
   // #0 DIRECT DELIVERY: fallback choice + first-run explainer popup are disabled for launch.
   // const [fallback, setFallback] = useState<Fallback>('WAIT');
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [tier, setTier] = useState<'EXPRESS' | 'ECONOMY'>('EXPRESS'); // speed tier for this booking
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   // const [showFallback, setShowFallback] = useState(false);
@@ -107,6 +108,7 @@ export default function HomePage() {
     try {
       // #4 MULTI-STOP: pass the extra points as ordered `stops`; omitting them is a plain single-stop quote.
       const stops = extraStops.map((s) => s.place).filter((p): p is Place => !!p).map((p) => ({ lat: p.lat, lng: p.lng }));
+      setTier('EXPRESS'); // every new quote defaults to the fast tier
       setQuote(await api.quote(getToken(), {
         type, pickup: { lat: pickup!.lat, lng: pickup!.lng }, dropoff: { lat: dropoff!.lat, lng: dropoff!.lng },
         ...(stops.length ? { stops } : {}),
@@ -125,7 +127,7 @@ export default function HomePage() {
       // #0 DIRECT DELIVERY: create the job WITHOUT `fallbackPolicy` — the backend defaults to
       // direct mode (no waiting fee, no return deposit). `fallbackPolicy: fallback` removed.
       const body: Parameters<typeof api.createJob>[1] = {
-        quoteToken: quote.quoteToken,
+        quoteToken: tier === 'ECONOMY' && quote.economy ? quote.economy.quoteToken : quote.quoteToken,
         ...(pickup?.label ? { pickupAddress: pickup.label } : {}),
         ...(dropoff?.label ? { dropoffAddress: dropoff.label } : {}),
         ...(pickup?.area ? { pickupArea: pickup.area } : {}),
@@ -319,12 +321,34 @@ export default function HomePage() {
         // #0 DIRECT DELIVERY: plain total only — the refundable 75% "Return it to me" deposit lines
         // are removed. (The returnDeposit / grandTotal calc that added it to the total is gone.)
         <div className="rf-card" ref={quoteRef} style={{ marginTop: 16, scrollMarginTop: 16 }}>
+          {/* Speed tier — Express (fast, full price) vs Economy (cheaper, may take longer). Only offered
+              when the backend returns an economy option for this trip. */}
+          {quote.economy && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              {([
+                { key: 'EXPRESS' as const, label: 'Express', sub: 'Fastest', amount: quote.breakdown.totalMinor },
+                { key: 'ECONOMY' as const, label: 'Economy', sub: 'Cheaper · may take longer', amount: quote.economy.amountMinor },
+              ]).map((o) => {
+                const active = tier === o.key;
+                return (
+                  <button key={o.key} onClick={() => setTier(o.key)}
+                    style={{ flex: 1, textAlign: 'left', cursor: 'pointer', borderRadius: 8, padding: '10px 12px',
+                      border: `1px solid ${active ? 'var(--ink)' : 'var(--line)'}`, background: active ? 'var(--bg-2)' : 'var(--bg)' }}>
+                    <div style={{ fontSize: 'var(--text-body)', fontWeight: 700, color: 'var(--ink)' }}>{o.label}</div>
+                    <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', margin: '2px 0 4px' }}>{o.sub}</div>
+                    <div style={{ fontWeight: 700 }}>{naira(o.amount)}</div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <Row label="Base" value={naira(quote.breakdown.baseMinor)} />
           <Row label="Distance" value={naira(quote.breakdown.distanceMinor)} />
           {quote.breakdown.timeMinor > 0 && <Row label="Time" value={naira(quote.breakdown.timeMinor)} />}
-          <Row label="Platform fee" value={naira(quote.breakdown.platformFeeMinor)} />
+          {tier === 'ECONOMY' && quote.economy && <Row label="Economy saving" value={naira(quote.economy.discountMinor)} />}
+          <Row label="Platform fee" value={naira(tier === 'ECONOMY' && quote.economy ? Math.round((quote.breakdown.platformFeeMinor * quote.economy.amountMinor) / quote.breakdown.totalMinor) : quote.breakdown.platformFeeMinor)} />
           <div style={{ borderTop: '1px solid var(--line)', margin: '8px 0' }} />
-          <Row label="Total" value={naira(quote.breakdown.totalMinor)} strong />
+          <Row label="Total" value={naira(tier === 'ECONOMY' && quote.economy ? quote.economy.amountMinor : quote.breakdown.totalMinor)} strong />
           <div style={{ height: 12 }} />
           <Button onClick={pay} disabled={busy}>Pay &amp; hold in escrow</Button>
           <p className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', textAlign: 'center', marginBottom: 0 }}>

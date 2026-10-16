@@ -160,6 +160,9 @@ export default function RiderHome() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{j.type}</span>
+                    <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--on-dark)', background: j.tier === 'ECONOMY' ? 'var(--mid)' : 'var(--ink)', borderRadius: 4, padding: '2px 6px' }}>
+                      {j.tier === 'ECONOMY' ? 'LOW PAY' : 'HIGH PAY'}
+                    </span>
                     {/* #4 MULTI-STOP: flag extra drop-offs BEFORE the rider accepts. */}
                     {j.stopCount && j.stopCount > 1 ? (
                       <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--on-dark)', background: 'var(--ink)', borderRadius: 4, padding: '2px 6px' }}>{j.stopCount} DROPS</span>

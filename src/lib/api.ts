@@ -56,7 +56,9 @@ export interface RiderReliabilitySummary {
 }
 export interface GeoPoint { lat: number; lng: number }
 export interface Quote { quoteToken: string; amountMinor: number; currency: 'NGN'; breakdown: {
-  baseMinor: number; distanceMinor: number; timeMinor: number; platformFeeMinor: number; totalMinor: number } }
+  baseMinor: number; distanceMinor: number; timeMinor: number; discountMinor?: number; platformFeeMinor: number; totalMinor: number };
+  // Present for point-to-point deliveries when the economy tier is enabled: the cheaper (slower) option.
+  economy?: { quoteToken: string; amountMinor: number; discountMinor: number } }
 // #4 MULTI-STOP: the customer-supplied metadata for one EXTRA drop-off, paired BY INDEX to the quote
 // `stops` points (the point itself is authoritative from the signed quote, never sent here).
 export interface ExtraStopInput {
@@ -120,7 +122,7 @@ export function riderJobPayout(job: Job): number {
 export type CreatedJob = Job & { paymentLink?: string; extraStopCodes?: string[] };
 export interface ChatMessage { id: string; jobId: string; senderId: string; body: string; replyToId?: string; audioUrl?: string; audioDurationMs?: number; imageUrl?: string; createdAt: number }
 export interface AvailableJob {
-  id: string; type: JobType; amountMinor: number; currency: 'NGN'; createdAt: string;
+  id: string; type: JobType; tier: 'EXPRESS' | 'ECONOMY'; amountMinor: number; currency: 'NGN'; createdAt: string;
   pickupArea: string; dropoffArea: string; pickupApprox: { lat: number; lng: number };
   tripDistanceMeters: number; tripEtaMin: number;
   toPickupMeters?: number; toPickupEtaMin?: number;
@@ -135,7 +137,7 @@ export interface AdminRiderDoc {
   id: string; type: string; label: string; status: string; version: number;
   rejectionReason?: string; issuedAt?: number; expiresAt?: number; previewUrl: string;
 }
-export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: string; referralRewardMinor: number; referralsEnabled: boolean; disabledDocByTrack: Record<string, string[]>; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: boolean; referralRewardMinor: boolean; referralsEnabled: boolean; disabledDocByTrack: boolean } }
+export interface EffectiveSettings { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: string; referralRewardMinor: number; referralsEnabled: boolean; economyDiscountPct: number; disabledDocByTrack: Record<string, string[]>; overridden: { requireGuarantor: boolean; enforceRiderClearance: boolean; marketplaceEnabled: boolean; lateMoneyPenaltyEnabled: boolean; launchCity: boolean; referralRewardMinor: boolean; referralsEnabled: boolean; economyDiscountPct: boolean; disabledDocByTrack: boolean } }
 export interface DocCatalog { tracks: string[]; items: { type: string; label: string; tracks: string[] }[] }
 export interface MyReferral { enabled: boolean; code: string; link: string; rewardMinor: number; invited: number; pending: number; credited: number; earnedMinor: number }
 export interface AdminReferralRow { id: string; status: 'PENDING' | 'CREDITED' | 'REJECTED'; createdAt: number; referrer: { id: string; name: string | null; phone: string | null }; referee: { id: string; name: string | null; phone: string | null }; refereeDeliveries: number; qualified: boolean; rewardMinor: number; creditedAt?: number; payoutRef?: string; payoutError?: string }
@@ -351,7 +353,7 @@ export const api = {
   adminVerifyRiderName: (token: string, riderId: string, verified: boolean) =>
     call<{ ok?: boolean }>(`/admin/documents/riders/${riderId}/verify-name`, { method: 'POST', token, body: JSON.stringify({ verified }) }),
   adminSettings: (token: string) => call<EffectiveSettings>(`/admin/settings`, { token }),
-  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor' | 'referralsEnabled' | 'disabledDocByTrack'>>) =>
+  adminUpdateSettings: (token: string, patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor' | 'referralsEnabled' | 'economyDiscountPct' | 'disabledDocByTrack'>>) =>
     call<EffectiveSettings>(`/admin/settings`, { method: 'PUT', token, body: JSON.stringify(patch) }),
   adminDocumentCatalog: (token: string) => call<DocCatalog>(`/admin/documents/catalog`, { token }),
 

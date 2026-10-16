@@ -21,7 +21,7 @@ export default function AdminSettingsPage() {
     api.adminDocumentCatalog(getToken()).then(setCatalog).catch(() => {});
   }, [ready, notAdmin]);
 
-  const save = async (patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor' | 'referralsEnabled' | 'disabledDocByTrack'>>) => {
+  const save = async (patch: Partial<Pick<EffectiveSettings, 'requireGuarantor' | 'enforceRiderClearance' | 'marketplaceEnabled' | 'lateMoneyPenaltyEnabled' | 'launchCity' | 'referralRewardMinor' | 'referralsEnabled' | 'economyDiscountPct' | 'disabledDocByTrack'>>) => {
     setBusy(true); setMsg(null);
     try { setS(await api.adminUpdateSettings(getToken(), patch)); setMsg('Saved'); }
     catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
@@ -71,6 +71,9 @@ export default function AdminSettingsPage() {
 
           <ReferralReward valueMinor={s.referralRewardMinor} overridden={s.overridden.referralRewardMinor} busy={busy}
             onSave={(naira) => save({ referralRewardMinor: Math.round(naira * 100) })} />
+
+          <EconomyDiscount value={s.economyDiscountPct} overridden={s.overridden.economyDiscountPct} busy={busy}
+            onSave={(pct) => save({ economyDiscountPct: pct })} />
 
           {catalog && (
             <div className="rf-card" style={{ marginBottom: 12 }}>
@@ -154,6 +157,35 @@ function ReferralReward({ valueMinor, overridden, busy, onSave }: {
         <span className="mono" style={{ fontSize: 'var(--text-body)' }}>₦</span>
         <input className="rf-input mono" style={{ maxWidth: 160 }} value={naira} inputMode="numeric"
           onChange={(e) => setNaira(e.target.value.replace(/[^0-9]/g, ''))} />
+        <button onClick={() => onSave(n)} disabled={busy || !dirty} className="mono"
+          style={{ border: 'none', borderRadius: 8, padding: '10px 16px', cursor: dirty ? 'pointer' : 'not-allowed',
+            background: dirty ? 'var(--ink)' : 'var(--line)', color: dirty ? 'var(--on-dark)' : 'var(--mid)', fontSize: 'var(--text-caption)' }}>
+          SAVE
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EconomyDiscount({ value, overridden, busy, onSave }: {
+  value: number; overridden: boolean; busy: boolean; onSave: (pct: number) => void;
+}) {
+  const [pct, setPct] = useState(String(value));
+  useEffect(() => { setPct(String(value)); }, [value]);
+  const n = Number(pct);
+  const dirty = Number.isFinite(n) && n >= 0 && n <= 90 && n !== value;
+  return (
+    <div className="rf-card" style={{ marginBottom: 12 }}>
+      <div className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', marginBottom: 6 }}>
+        ECONOMY (LOW-PAY) DISCOUNT {overridden ? '· OVERRIDDEN' : '· FROM ENV'}
+      </div>
+      <div style={{ fontSize: 'var(--text-small)', color: 'var(--ink-2)', marginBottom: 10 }}>
+        How much cheaper the Economy delivery tier is vs Express (and how much less the rider earns on it). 0 hides the Economy option.
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input className="rf-input mono" style={{ maxWidth: 110 }} value={pct} inputMode="numeric"
+          onChange={(e) => setPct(e.target.value.replace(/[^0-9]/g, ''))} />
+        <span className="mono" style={{ fontSize: 'var(--text-body)' }}>% off</span>
         <button onClick={() => onSave(n)} disabled={busy || !dirty} className="mono"
           style={{ border: 'none', borderRadius: 8, padding: '10px 16px', cursor: dirty ? 'pointer' : 'not-allowed',
             background: dirty ? 'var(--ink)' : 'var(--line)', color: dirty ? 'var(--on-dark)' : 'var(--mid)', fontSize: 'var(--text-caption)' }}>
