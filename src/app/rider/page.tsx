@@ -9,6 +9,7 @@ import { JobsMap } from '@/components/JobsMap';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useRequireAuth } from '@/lib/useAuth';
 import { useToast } from '@/components/ui/Toast';
+import { subscribeRiderPool } from '@/lib/live';
 
 const naira = (m: number) => `₦${(m / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 // A trip is "active" (resumable) until it reaches a terminal state.
@@ -55,8 +56,16 @@ export default function RiderHome() {
         { enableHighAccuracy: false, maximumAge: 60000, timeout: 8000 },
       );
     } else { loadFeed(); }
-    const t = setInterval(loadFeed, 4000);
-    return () => clearInterval(t);
+    const t = setInterval(loadFeed, 3000);
+    // Real-time: drop a job instantly when it leaves the pool (cancelled/taken); refetch on an add.
+    // Polling above stays as a fallback. cleanup() resolves once the socket is connected.
+    let cleanup: (() => void) | null = null;
+    let cancelled = false;
+    subscribeRiderPool((e) => {
+      if (e.kind === 'remove') setJobs((prev) => prev.filter((j) => j.id !== e.jobId));
+      else loadFeed();
+    }).then((off) => { if (cancelled) off(); else cleanup = off; }).catch(() => {});
+    return () => { cancelled = true; clearInterval(t); cleanup?.(); };
   }, [online, loadFeed]);
 
   const noBank = hasBank === false;
@@ -85,7 +94,15 @@ export default function RiderHome() {
     // Stacking cap: at the max, send the rider to their first active trip instead of a 409 round-trip.
     if (activeJobs.length >= MAX_ACTIVE) { show(`You already have ${activeJobs.length} active deliveries — finish or release one first`); location.href = `/jobs/${activeJobs[0].id}/rider`; return; }
     try { const j = await api.accept(getToken(), id); location.href = `/jobs/${j.id}/rider`; }
-    catch (e) { show((e as Error).message); loadFeed(); }
+    catch (e) {
+      const msg = (e as Error).message;
+      // Cancelled or snapped up between refreshes: drop the dead card + a soft note, not a scary error.
+      if (/no longer available|just been taken|not valid|no longer valid/i.test(msg)) {
+        setJobs((prev) => prev.filter((j) => j.id !== id));
+        show('That order was just taken or cancelled.');
+      } else { show(msg); }
+      loadFeed();
+    }
   };
 
   if (!ready) return null;

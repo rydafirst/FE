@@ -65,6 +65,21 @@ export async function connectSocket(): Promise<any> {
   return io(socketBase(), { transports: ['websocket'], forceNew: true });
 }
 
+export interface PoolEvent { kind: 'add' | 'remove'; jobId: string }
+
+/**
+ * Rider board: live job-pool updates. Joins the pool room; `onEvent` fires when a job enters ('add')
+ * or leaves ('remove' — cancelled/taken) the pool, so the board updates instantly. Returns a cleanup.
+ */
+export async function subscribeRiderPool(onEvent: (e: PoolEvent) => void): Promise<() => void> {
+  const socket = await connectSocket();
+  const join = () => socket.emit('joinPool');
+  socket.on('connect', join);
+  if (socket.connected) join();
+  socket.on('pool', (e: PoolEvent) => onEvent(e));
+  return () => { try { socket.emit('leavePool'); } catch { /* noop */ } try { socket.disconnect(); } catch { /* noop */ } };
+}
+
 export interface RoutePoint { lat: number; lng: number }
 
 /**
