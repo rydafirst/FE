@@ -55,6 +55,7 @@ export interface RiderReliabilitySummary {
   score: number; reports: LateReport[];
 }
 export interface GeoPoint { lat: number; lng: number }
+export interface RecentPlace { label: string; area: string; lat: number; lng: number }
 export interface Quote { quoteToken: string; amountMinor: number; currency: 'NGN'; breakdown: {
   baseMinor: number; distanceMinor: number; timeMinor: number; discountMinor?: number; platformFeeMinor: number; totalMinor: number };
   // Present for point-to-point deliveries when the economy tier is enabled: the cheaper (slower) option.
@@ -269,6 +270,8 @@ export const api = {
   setAvailability: (token: string, online: boolean) =>
     call<{ online: boolean }>(`/me/availability`, { method: 'PUT', token, body: JSON.stringify({ online }) }),
   myJobs: (token: string) => call<Job[]>(`/jobs/mine`, { token }),
+  // Uber-style recent places — the customer's last-used addresses, for the address field before typing.
+  recentPlaces: (token: string) => call<RecentPlace[]>(`/jobs/recent-places`, { token }),
   cancelJob: (token: string, id: string) => call<{ status: string; refunded: boolean }>(`/jobs/${id}/cancel`, { method: 'POST', token }),
   notifyComing: (token: string, id: string) => call<{ ok: boolean }>(`/jobs/${id}/coming`, { method: 'POST', token }),
   accept: (token: string, id: string) => call<Job>(`/jobs/${id}/accept`, { method: 'POST', token }),

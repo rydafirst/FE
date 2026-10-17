@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '@/lib/google-maps';
+import { api, type RecentPlace } from '@/lib/api';
+import { getToken } from '@/lib/session';
 
 export interface Place { label: string; lat: number; lng: number; area?: string }
 
@@ -23,6 +25,20 @@ export function AddressInput({ label, placeholder, onSelect, autoLocate }: {
   const inputRef = useRef<HTMLInputElement>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recents, setRecents] = useState<RecentPlace[]>([]);
+  const [focused, setFocused] = useState(false);
+  const [hasText, setHasText] = useState(false);
+
+  // Load the customer's recent places once, so they appear the instant the field is focused (Uber-style).
+  useEffect(() => { api.recentPlaces(getToken()).then(setRecents).catch(() => {}); }, []);
+
+  // A recent place is already resolved to coordinates — fill it directly.
+  const pickRecent = (p: RecentPlace) => {
+    if (inputRef.current) inputRef.current.value = p.label;
+    setFocused(false); setHasText(true);
+    onSelect({ label: p.label, lat: p.lat, lng: p.lng, ...(p.area ? { area: p.area } : {}) });
+  };
+  const showRecents = focused && !hasText && recents.length > 0;
 
   useEffect(() => {
     let ac: google.maps.places.Autocomplete | undefined;
@@ -37,6 +53,7 @@ export function AddressInput({ label, placeholder, onSelect, autoLocate }: {
         const loc = place.geometry?.location;
         if (!loc) return;
         const area = localityOf(place);
+        setHasText(true); setFocused(false);
         onSelect({ label: place.formatted_address ?? place.name ?? '', lat: loc.lat(), lng: loc.lng(), ...(area ? { area } : {}) });
       });
       setReady(true);
@@ -69,7 +86,36 @@ export function AddressInput({ label, placeholder, onSelect, autoLocate }: {
         <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--ink-2)', letterSpacing: '.06em' }}>{label}</span>
         <button onClick={useMyLocation} className="mono" style={{ fontSize: 'var(--text-caption)', background: 'none', border: '1px solid var(--line)', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', color: 'var(--ink)' }}>USE MY LOCATION</button>
       </div>
-      <input ref={inputRef} className="rf-input" placeholder={placeholder ?? (ready ? 'Search address…' : 'Loading…')} />
+      <div style={{ position: 'relative' }}>
+        <input
+          ref={inputRef}
+          className="rf-input"
+          placeholder={placeholder ?? (ready ? 'Search address…' : 'Loading…')}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
+          onInput={(e) => setHasText((e.target as HTMLInputElement).value.trim().length > 0)}
+        />
+        {showRecents && (
+          <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: 'var(--bg)', border: '1px solid var(--line)', borderTop: 'none', borderBottomLeftRadius: 'var(--radius-md)', borderBottomRightRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+            <div style={{ padding: '7px 12px', background: 'var(--bg-2)', borderTop: '1px solid var(--line-2)' }}>
+              <span className="mono" style={{ fontSize: 'var(--text-caption)', color: 'var(--mid)' }}>RECENT</span>
+            </div>
+            {recents.map((r, i) => (
+              <button
+                key={`${r.lat},${r.lng}-${i}`}
+                onMouseDown={(e) => { e.preventDefault(); pickRecent(r); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '10px 12px', background: 'none', border: 'none', borderTop: '1px solid var(--line-2)', cursor: 'pointer' }}
+              >
+                <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="var(--mid)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx={12} cy={12} r={9} /><path d="M12 7.5V12l3 2" /></svg>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 'var(--text-body)', color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.label}</span>
+                  {r.area ? <span style={{ display: 'block', fontSize: 'var(--text-caption)', color: 'var(--ink-2)' }}>{r.area}</span> : null}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       {error && <p style={{ color: 'var(--danger)', fontSize: 'var(--text-caption)', margin: '6px 0 0' }}>{error}</p>}
     </div>
   );
